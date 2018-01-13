@@ -1,0 +1,5 @@
+add_library(downloader_static STATIC downloader node http_downloader manager thread url_info)
+add_library(downloader_shared SHARED downloader node http_downloader manager thread url_info)
+set_target_properties(downloader_static PROPERTIES OUTPUT_NAME downlader_static)
+set_target_properties(downloader_shared PROPERTIES OUTPUT_NAME downlader_shared)
+

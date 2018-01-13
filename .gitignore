@@ -1,0 +1,15 @@
+CMakeFiles/
+CMakeCache.txt
+Makefile
+**.cmake
+**.un~
+main
+src/CMekeFiles/
+build/
+
+
+
+libs/*.so
+libs/*.a
+
+
