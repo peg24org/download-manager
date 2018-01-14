@@ -27,7 +27,7 @@ void Node::run()
 	ofs->seekp(file_length-1);
 	ofs->write(" ", 1);
 	ofs->close();
-	FILE*    fp = fopen(dwl_str.file_name_on_server.c_str(), "w");
+	FILE*    fp = fopen(dwl_str.file_name_on_server.c_str(), "wb");
 	Downloader *dnwl;
 	switch(protocol){
 		case http_1_0:
@@ -62,6 +62,7 @@ void Node::run()
 		}
 	}
 	wait();
+	fclose(fp);
 }
 void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag)
 {
