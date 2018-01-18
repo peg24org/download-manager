@@ -16,7 +16,7 @@ class Manager{
 	public:
 	Manager();
 	~Manager();
-	int new_download(addr_info addr, int num_of_trds);
+	int new_download(addr_struct addr, int num_of_trds);
 	void wait();
 	void on_status_changed(string prm)
 	{

@@ -12,8 +12,8 @@ using namespace std;
 class URLInfo
 {
 	std::string url;
-	addr_info dl_info;
+	addr_struct dl_info;
 	public:
 	URLInfo(std::string url);
-	addr_info get_download_info();
+	addr_struct get_download_info();
 };

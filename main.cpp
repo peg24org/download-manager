@@ -63,7 +63,7 @@ int main (int argc, char* argv[])
 	//******************************************
 
 	URLInfo u_info(link);
-	addr_info dl_str = u_info.get_download_info();
+	addr_struct dl_str = u_info.get_download_info();
 	Manager mng;
 	mng.new_download(dl_str,number_of_connections);
 	mng.wait();

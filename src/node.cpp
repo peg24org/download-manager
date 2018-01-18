@@ -1,9 +1,10 @@
 #include "node.h"
 #include <unistd.h>
 #include <cstdio>
+#include <regex>
 #include "manager.h"
 #include "http_downloader.h"
-Node::Node(addr_info dwl_str, int num_of_trds, protocol_type protocol, void *ptr_to_manager)
+Node::Node(addr_struct dwl_str, int num_of_trds, protocol_type protocol, void *ptr_to_manager)
 {
 	this->dwl_str = dwl_str;
 	this->protocol = protocol;
@@ -18,32 +19,63 @@ void Node::wait()
 }
 void Node::run()
 {
-	Downloader *dwl = new HttpDownloader(dwl_str, 0, -1,this,0);
+	Downloader *dwl = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
 	file_length = dwl->get_size();
 	delete dwl;
+
 	off_t trd_norm_len = file_length/num_of_trds;
 	// Create file with specified size
-	ofs = new ofstream(dwl_str.file_name_on_server, ios::binary | ios::out);
-	ofs->seekp(file_length-1);
-	ofs->write(" ", 1);
-	ofs->close();
-	FILE*    fp = fopen(dwl_str.file_name_on_server.c_str(), "wb");
+	FILE* tmp_fp = fopen(dwl_str.file_name_on_server.c_str(), "r");
+	if(!tmp_fp){
+		FILE *fp = fopen(dwl_str.file_name_on_server.c_str(), "w");
+		fseek(fp, file_length-1 , SEEK_SET);
+		fputc('\0', fp);
+		fclose(fp);
+	}
+	else
+		fclose(tmp_fp);
+
+	node_data = new node_struct;
+	node_data->fp		= fopen(dwl_str.file_name_on_server.c_str(), "r+b");
+	node_data->log_fp 	= fopen(("."+dwl_str.file_name_on_server+".LOG").c_str(), "r+");
+	node_data->file_mutex	= new mutex;
+	node_data->node 	= this;
+	stopped_positions[0] = 0;
+	if(node_data->log_fp){
+		read_resume_log();
+		node_data->resuming = true;
+		for (map<int, int>::iterator it=start_positions.begin(); it!=start_positions.end(); ++it){
+			if(it->first < start_positions.size()-1){
+				trds_length[it->first] = start_positions[it->first+1]-stopped_positions[it->first];
+			}
+			else
+				trds_length[it->first] = file_length - stopped_positions[it->first];
+		}
+	}
+	else{
+		node_data->resuming = false;
+		node_data->log_fp = fopen(("."+dwl_str.file_name_on_server+".LOG").c_str(), "w");
+		for(int i=0; i<num_of_trds; i++){
+			off_t len = trd_norm_len;
+			off_t pos = i*trd_norm_len;
+			if(i == (num_of_trds-1)){
+				len = file_length-(trd_norm_len*i);
+				pos = i*trd_norm_len;
+			}
+			stopped_positions[i] = pos;
+			trds_length[i] = len-1;
+		}
+	}
+
 	Downloader *dnwl;
 	switch(protocol){
 		case http_1_0:
 			break;
 		case http_1_1:
-			for(int i=0; i<num_of_trds; i++){
-				off_t len = trd_norm_len;
-				off_t pos = i*trd_norm_len;
-				if(i == (num_of_trds-1)){
-					len = file_length-(trd_norm_len*i);
-					pos = i*trd_norm_len;
-				}
-				dnwl = new HttpDownloader(dwl_str, pos,len-1, this,i);
-				dnwl->set_node_mutex_and_fd(fp, &node_file_mutex);
+			for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
+				dnwl = new HttpDownloader(node_data, dwl_str,it->second,trds_length[it->first],it->first);
 				dnwl->start();
-				download_threads[i] = dnwl;
+				download_threads[it->first] = dnwl;
 			}
 			break;
 		case ftp:
@@ -62,7 +94,10 @@ void Node::run()
 		}
 	}
 	wait();
-	fclose(fp);
+	fclose(node_data->fp);
+	fclose(node_data->log_fp);
+	delete node_data;
+
 }
 void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag)
 {
@@ -77,5 +112,38 @@ void Node::get_status(int downloader_trd_index, off_t received_bytes, int stat_f
 	download_threads_it = download_threads.find(downloader_trd_index);
 	if(download_threads_it!=download_threads.end()){
 		total_received_bytes += received_bytes;
+	}
+}
+
+bool Node::read_resume_log()
+{
+	fseek(node_data->log_fp, 0, SEEK_END);
+	off_t fsize = ftell(node_data->log_fp);
+	rewind(node_data->log_fp);
+	char *buf = (char*)malloc(fsize + 1);
+	fread(buf, fsize, 1, node_data->log_fp);
+	buf[fsize] = 0;
+	string buffer = string(buf);
+	free(buf);
+	node_data->log_buffer_str = buffer;
+
+	regex *r = new regex("(p)(\\d+\t)(\\d+\n)");
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);i != sregex_iterator();++i ){
+		smatch m = *i;
+		stopped_positions[stoi(m[2])] = stoi(m[3]);
+	}
+	delete r;
+	r = new regex("(s)(\\d+\t)(\\d+\n)");
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);i != sregex_iterator();++i ){
+		smatch m = *i;
+		start_positions[stoi(m[2])] = stoi(m[3]);
+	}
+	delete r;
+
+	//p stopped_position
+	//s start position for resume
+	for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
+		cout<<"p["<<it->first << "]= "<<it->second<<endl;
+		total_received_bytes += (it->second - start_positions[it->first]);
 	}
 }

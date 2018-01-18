@@ -5,26 +5,14 @@
 #include <cstdlib>
 #include <cstring> //strlen()
 #include <regex>
-HttpDownloader::HttpDownloader(const addr_info dwl_str, off_t pos, off_t trd_length, void* node,int index)
-{
-	this->ip 	= dwl_str.ip;
-	this->file_path	= dwl_str.file_path_on_server;
-	this->port 	= dwl_str.port;
-	this->file_name	= dwl_str.file_name_on_server;
-	this->host_name	= dwl_str.host_name;
-	this->index 	= index;
-	this->pos	= pos;
-	this->trd_len	= trd_length;
-	this->node	= node;
-}
 void HttpDownloader::downloader_trd()
 {	
 	int n;
-	buffer = (char *)malloc(500*sizeof(char));
+	buffer = (char *)malloc(1024*sizeof(char));
 
-	string command_buffer = "GET "+file_path+" HTTP/1.1\r\n"+
+	string command_buffer = "GET "+addr_data.file_path_on_server+" HTTP/1.1\r\n"+
 				"Range: bytes="+to_string(pos)+"-"+to_string(pos+trd_len)+"\r\n"
-				"Host:"+host_name+":"+to_string(port)+"\r\n\r\n";
+				"Host:"+addr_data.host_name+":"+to_string(addr_data.port)+"\r\n\r\n";
 	if ( !sockfd )
 		connect_to_server();
 	n = send(sockfd, command_buffer.c_str(), command_buffer.length(),0);
@@ -37,7 +25,7 @@ void HttpDownloader::downloader_trd()
 	int header_delimiter = 0;
 	off_t temp_received_bytes = 0;
 	while(recieved_bytes < trd_len){
-		n = recv(sockfd, buffer, 500,0);
+		n = recv(sockfd, buffer, 1024,0);
 		if (n < 0) {
 			perror("ERROR reading from socket");
 			exit(1);
@@ -51,7 +39,7 @@ void HttpDownloader::downloader_trd()
 				bool found = regex_search(recv_buffer, m, *e);
 				delete e;
 				if(found){
-					if(stoi(m[2])/100!=2){
+					if(stoi(m[2].str())/100!=2){
 						cerr<<"Error: "<<m[2]<<" "<<m[3]<<endl;
 						exit(1);
 					}
@@ -60,10 +48,8 @@ void HttpDownloader::downloader_trd()
 				}
 				else{
 					cerr<<"Unknown error."<<endl;
-					LOG;
 					exit(1);
 				}
-
 				header_delimiter = (int)(header_delimiter_pos-buffer)+4;// [\r\n\r\n]=4 Bytes
 				temp_received_bytes = n-header_delimiter;
 				write_to_file(pos, temp_received_bytes, buffer+header_delimiter);//n=length
@@ -89,8 +75,8 @@ void HttpDownloader::connect_to_server()
 	struct sockaddr_in dest_addr;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	dest_addr.sin_family = AF_INET;
-	dest_addr.sin_port = htons(port);
-	dest_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+	dest_addr.sin_port = htons(addr_data.port);
+	dest_addr.sin_addr.s_addr = inet_addr(addr_data.ip.c_str());
 	memset(&(dest_addr.sin_zero),'\0',8);
 	if( connect(sockfd, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) < 0) {
 		perror("ERROR connecting");
@@ -100,7 +86,8 @@ void HttpDownloader::connect_to_server()
 off_t HttpDownloader::get_size()
 {	
 	int n;
-	string command_buffer = "HEAD "+file_path+" HTTP/1.1\r\n"+"Host:"+host_name+"\r\n\r\n";
+	cout<<"ip in get http = "<<addr_data.ip<<endl;
+	string command_buffer = "HEAD "+addr_data.file_path_on_server+" HTTP/1.1\r\n"+"Host:"+addr_data.host_name+"\r\n\r\n";
 	buffer = (char *)malloc(8192*sizeof(char));
 	if ( !sockfd )
 		connect_to_server();
@@ -150,5 +137,5 @@ void HttpDownloader::call_node_status_changed(int recieved_bytes, int err_flag)
 {
 	void (*call_back_func_ptr)(void* node, int downloader_trd_index, off_t recieved_bytes, int stat_flag);
 	call_back_func_ptr = Node::wrapper_to_get_status;
-	call_back_func_ptr(node, index, recieved_bytes, 0);
+	call_back_func_ptr(node_data->node, index, recieved_bytes, 0);
 }

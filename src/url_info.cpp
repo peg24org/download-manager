@@ -39,14 +39,11 @@ URLInfo::URLInfo(std::string url)
 		exit(0);
 	}
 	dl_info.ip = string(inet_ntoa(*((struct in_addr*) server->h_addr)));
-
-
-
-
+	
 	e = new regex("%20");
 	dl_info.file_name_on_server = regex_replace(dl_info.file_name_on_server,*e," ");
 	delete e;
 }
-addr_info URLInfo::get_download_info(){
+addr_struct URLInfo::get_download_info(){
 	return dl_info;
 }

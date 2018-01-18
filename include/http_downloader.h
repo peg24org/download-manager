@@ -10,18 +10,14 @@ class HttpDownloader:public Downloader {
 	    sockfd = 0;
 	off_t file_size = 0;
 	struct hostent *server;
-	string ip,
-	       file_path,
-	       file_name,
-	       host_name;
 	char *buffer;
-
-	//int get_sockfd();//sockfd after connection
 	void downloader_trd();	
 
 	public:
-	HttpDownloader(const addr_info, off_t pos, off_t trd_length, void *node,int index=0);//trd_length=-1: a constructor for getting info
-	//void init_trd();
+	
+        HttpDownloader(node_struct* node_data, const addr_struct addr_data,off_t pos, off_t trd_length, int index):Downloader(node_data, addr_data, pos,trd_length, index)
+			{
+			}
 	void connect_to_server();
 	off_t get_size();
 	void call_node_status_changed(int recieved_bytes, int err_flag = 0);
