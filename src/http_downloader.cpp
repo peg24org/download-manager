@@ -8,7 +8,7 @@
 void HttpDownloader::downloader_trd()
 {	
 	int n;
-	buffer = (char *)malloc(1024*sizeof(char));
+	buffer = (char *)malloc(256*1024*sizeof(char));
 
 	string command_buffer = "GET "+addr_data.file_path_on_server+" HTTP/1.1\r\n"+
 				"Range: bytes="+to_string(pos)+"-"+to_string(pos+trd_len)+"\r\n"
@@ -25,7 +25,7 @@ void HttpDownloader::downloader_trd()
 	int header_delimiter = 0;
 	off_t temp_received_bytes = 0;
 	while(recieved_bytes < trd_len){
-		n = recv(sockfd, buffer, 1024,0);
+		n = recv(sockfd, buffer, 256*1024,0);
 		if (n < 0) {
 			perror("ERROR reading from socket");
 			exit(1);
