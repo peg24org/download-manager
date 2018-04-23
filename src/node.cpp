@@ -4,12 +4,11 @@
 #include <regex>
 #include "manager.h"
 #include "http_downloader.h"
-Node::Node(addr_struct dwl_str, int num_of_trds, protocol_type protocol, void *ptr_to_manager)
+#include "https_downloader.h"
+Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager):
+	dwl_str(dwl_str_), num_of_trds(number_of_trds), ptr_to_manager(pointer_to_manager)
+
 {
-	this->dwl_str = dwl_str;
-	this->protocol = protocol;
-	this->num_of_trds = num_of_trds;
-	this->ptr_to_manager = ptr_to_manager;
 }
 void Node::wait()
 {
@@ -19,11 +18,16 @@ void Node::wait()
 }
 void Node::run()
 {
-	Downloader *dwl = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
+	Downloader* dwl;
+	if (dwl_str.port == 80)
+		dwl = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
+	else if(dwl_str.port == 443)
+		dwl = new HttpsDownloader(node_data, dwl_str, 0, 0, 0);
 	file_length = dwl->get_size();
 	delete dwl;
 
 	off_t trd_norm_len = file_length/num_of_trds;
+	
 	// Create file with specified size
 	FILE* tmp_fp = fopen(dwl_str.file_name_on_server.c_str(), "r");
 	if(!tmp_fp){
@@ -68,17 +72,24 @@ void Node::run()
 	}
 
 	Downloader *dnwl;
-	switch(protocol){
-		case http_1_0:
-			break;
-		case http_1_1:
-			for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
-				dnwl = new HttpDownloader(node_data, dwl_str,it->second,trds_length[it->first],it->first);
-				dnwl->start();
-				download_threads[it->first] = dnwl;
+	switch(dwl_str.protocol){
+		case kHttp:
+			if( dwl_str.encrypted ){	
+				for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
+					dnwl = new HttpsDownloader(node_data, dwl_str,it->second,trds_length[it->first],it->first);
+					dnwl->start();
+					download_threads[it->first] = dnwl;
+				}
+			}
+			else{
+				for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
+					dnwl = new HttpDownloader(node_data, dwl_str,it->second,trds_length[it->first],it->first);
+					dnwl->start();
+					download_threads[it->first] = dnwl;
+				}
 			}
 			break;
-		case ftp:
+		case kFtp:
 			break;
 	}
 
@@ -143,7 +154,6 @@ bool Node::read_resume_log()
 	//p stopped_position
 	//s start position for resume
 	for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
-		cout<<"p["<<it->first << "]= "<<it->second<<endl;
 		total_received_bytes += (it->second - start_positions[it->first]);
 	}
 }

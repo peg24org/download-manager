@@ -11,7 +11,7 @@ Manager::~Manager()
 
 int Manager::new_download(addr_struct addr, int num_of_trds)
 {
-	Node *nd = new Node(addr, num_of_trds, http_1_1, this);
+	Node *nd = new Node(addr, num_of_trds, this);
 	nd->start();
 	node_vector.push_back(nd);
 	return node_vector.size();

@@ -2,6 +2,7 @@
 #include <string>
 #include <regex>
 #include <vector>
+#include <iostream>
 URLInfo::URLInfo(std::string url)
 {
 	this->url = url;
@@ -24,12 +25,17 @@ URLInfo::URLInfo(std::string url)
 		dl_info.file_name_on_server = m[2];
 	}
 	if(!dl_info.port){
-		e = new regex("http:|ftp:");
+		e = new regex("http:|https:");
 		found = regex_search(url, m, *e);
 		delete e;
 		if(found){
+			dl_info.protocol = kHttp;
 			if(m[0].str()=="http:" || m[0].str()=="")
 				dl_info.port = 80;
+			else if(m[0].str()=="https:"){
+				dl_info.port = 443;
+				dl_info.encrypted = true;
+			}
 		}
 	}
 	struct hostent *server;
@@ -45,5 +51,6 @@ URLInfo::URLInfo(std::string url)
 	delete e;
 }
 addr_struct URLInfo::get_download_info(){
+	cout << " file path = " << dl_info.file_name_on_server << endl;
 	return dl_info;
 }

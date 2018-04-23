@@ -13,6 +13,21 @@
 using namespace std;
 
 class Node:public Thread {
+
+	public:
+	Node(const addr_struct , int number_of_trds, void* pointer_to_manager);
+	void Display(const string text) { cout << text << endl; cout<<"this="<<this<<endl; };
+	static void wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag=0);
+
+	void call_manager_stat_change(void* ptr_to_object, void (*ptr_to_function)(void* ptr_to_object, string text))
+	{
+		ptr_to_function(ptr_to_object,"--");  // make callback
+	}
+
+
+	private:
+	node_struct*	node_data;
+
 	map<int, Downloader*> download_threads;
 	map<int, Downloader*>::iterator download_threads_it;
 
@@ -21,9 +36,8 @@ class Node:public Thread {
 	map<int, off_t> trds_length;
 
 	addr_struct dwl_str;
-	protocol_type protocol;
 
-	int 	num_of_trds = 0; 
+	int 	num_of_trds; 
 	off_t 	file_length = 0;
 	off_t 	total_received_bytes = 0;
 	float 	progress = 0;
@@ -37,17 +51,6 @@ class Node:public Thread {
 	void get_status(int downloader_trd_index, off_t received_bytes, int stat_flag);
 	bool read_resume_log();
 
-	public:
-	Node(const addr_struct , int num_of_trds, protocol_type protocol, void* ptr_to_manager);
-	void Display(const string text) { cout << text << endl; cout<<"this="<<this<<endl; };
-	static void wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag=0);
-
-	void call_manager_stat_change(void* ptr_to_object, void (*ptr_to_function)(void* ptr_to_object, string text))
-	{
-		ptr_to_function(ptr_to_object,"--");  // make callback
-	}
-
-	node_struct*	node_data;
 };
 
 #endif

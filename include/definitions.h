@@ -8,12 +8,13 @@ typedef struct{
 	std::string file_path_on_server;
 	std::string file_name_on_server;
 	std::string host_name;
+	bool encrypted;
+	int protocol;
 }addr_struct;
 
 enum protocol_type {
-	http_1_0,
-	http_1_1,
-	ftp,
+	kHttp,
+	kFtp,
 };
 
 typedef struct {
