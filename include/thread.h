@@ -16,7 +16,7 @@ class Thread{
 	public:
 		void start();
 		Thread();
-		~Thread();
+		virtual ~Thread();
 		void join();
 };
 

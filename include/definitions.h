@@ -9,7 +9,7 @@ typedef struct{
 	std::string file_name_on_server;
 	std::string host_name;
 	bool encrypted;
-	int protocol;
+	int protocol;		// Enum protocol type
 }addr_struct;
 
 enum protocol_type {

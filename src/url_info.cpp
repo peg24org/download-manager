@@ -50,6 +50,7 @@ URLInfo::URLInfo(std::string url)
 	dl_info.file_name_on_server = regex_replace(dl_info.file_name_on_server,*e," ");
 	delete e;
 }
+
 addr_struct URLInfo::get_download_info(){
 	cout << " file path = " << dl_info.file_name_on_server << endl;
 	return dl_info;

@@ -1,33 +1,32 @@
 #include "node.h"
+#include "url_info.h"
 #include <unistd.h>
 #include <cstdio>
 #include <regex>
 #include "manager.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
+
+//TODO: clear C-Style codes
 Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager):
 	dwl_str(dwl_str_), num_of_trds(number_of_trds), ptr_to_manager(pointer_to_manager)
-
 {
 }
+
 void Node::wait()
 {
-	for (map<int, Downloader*>::iterator it=download_threads.begin(); it!=download_threads.end(); ++it){
+	for (map<int, Downloader*>::iterator it=download_threads.begin();
+			it!=download_threads.end(); ++it){
 		it->second->join();
 	}
 }
+
 void Node::run()
 {
-	Downloader* dwl;
-	if (dwl_str.port == 80)
-		dwl = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
-	else if(dwl_str.port == 443)
-		dwl = new HttpsDownloader(node_data, dwl_str, 0, 0, 0);
-	file_length = dwl->get_size();
-	delete dwl;
+	check_url_details();
 
 	off_t trd_norm_len = file_length/num_of_trds;
-	
+
 	// Create file with specified size
 	FILE* tmp_fp = fopen(dwl_str.file_name_on_server.c_str(), "r");
 	if(!tmp_fp){
@@ -45,13 +44,13 @@ void Node::run()
 	node_data->file_mutex	= new mutex;
 	node_data->node 	= this;
 	stopped_positions[0] = 0;
+
 	if(node_data->log_fp){
 		read_resume_log();
 		node_data->resuming = true;
 		for (map<int, int>::iterator it=start_positions.begin(); it!=start_positions.end(); ++it){
-			if(it->first < start_positions.size()-1){
+			if(it->first < start_positions.size() - 1)
 				trds_length[it->first] = start_positions[it->first+1]-stopped_positions[it->first];
-			}
 			else
 				trds_length[it->first] = file_length - stopped_positions[it->first];
 		}
@@ -101,7 +100,7 @@ void Node::run()
 			speed = (total_received_bytes-temp_total_recv_bytes); // received bytes per second
 			cout<<"Proggress= "<<progress<<"% Speed = "<<speed/1024.0<<"KB/s"<<endl;
 			temp_total_recv_bytes = total_received_bytes;
-			//call_manager_stat_change((void*) &ptr_to_manager, Manager::status_changed);
+			call_manager_stat_change((void*) &ptr_to_manager, Manager::status_changed);
 		}
 	}
 	wait();
@@ -110,6 +109,7 @@ void Node::run()
 	delete node_data;
 
 }
+
 void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag)
 {
 	static mutex mtx;
@@ -118,6 +118,7 @@ void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, 
 	my_self->get_status(downloader_trd_index, received_bytes, stat_flag);
 	mtx.unlock();
 }
+
 void Node::get_status(int downloader_trd_index, off_t received_bytes, int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
@@ -151,9 +152,30 @@ bool Node::read_resume_log()
 	}
 	delete r;
 
-	//p stopped_position
-	//s start position for resume
 	for (map<int, int>::iterator it=stopped_positions.begin(); it!=stopped_positions.end(); ++it){
 		total_received_bytes += (it->second - start_positions[it->first]);
 	}
+}
+
+void Node::check_url_details()
+{
+	Downloader* check_info_downloader;
+
+	while(true){
+		if (dwl_str.port != 443)
+			check_info_downloader = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
+		else if(dwl_str.port == 443)
+			check_info_downloader = new HttpsDownloader(node_data, dwl_str, 0, 0, 0);
+		string redirected_url;
+		bool redirection = check_info_downloader->check_link(redirected_url, file_length);
+		if (redirection){
+			URLInfo u_info(redirected_url);
+			addr_struct dl_str = u_info.get_download_info();
+			dwl_str = dl_str;
+			delete check_info_downloader;
+		}
+		else
+			break;
+	}
+	delete check_info_downloader;
 }

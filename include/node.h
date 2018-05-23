@@ -49,6 +49,7 @@ class Node:public Thread {
 	void wait();
 	void run();
 	void get_status(int downloader_trd_index, off_t received_bytes, int stat_flag);
+	void check_url_details();
 	bool read_resume_log();
 
 };
