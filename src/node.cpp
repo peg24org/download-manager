@@ -1,7 +1,10 @@
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cstdio>
+
 #include "node.h"
 #include "url_info.h"
-#include <unistd.h>
-#include <cstdio>
 #include <regex>
 #include "manager.h"
 #include "http_downloader.h"
@@ -27,7 +30,10 @@ void Node::run()
 
 	off_t trd_norm_len = file_length/num_of_trds;
 
+	string log_file;
 	// Create file with specified size
+	check_file_exist(dwl_str.file_name_on_server, log_file);
+
 	FILE* tmp_fp = fopen(dwl_str.file_name_on_server.c_str(), "r");
 	if(!tmp_fp){
 		FILE *fp = fopen(dwl_str.file_name_on_server.c_str(), "w");
@@ -106,8 +112,8 @@ void Node::run()
 	wait();
 	fclose(node_data->fp);
 	fclose(node_data->log_fp);
+	remove(("." + dwl_str.file_name_on_server + ".LOG").c_str());
 	delete node_data;
-
 }
 
 void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag)
@@ -178,4 +184,44 @@ void Node::check_url_details()
 			break;
 	}
 	delete check_info_downloader;
+}
+
+void Node::check_file_exist(string& file_name, string& log_file)
+{
+  struct stat stat_buf;
+  // File not exist
+
+  log_file = "." + file_name + ".LOG";
+
+  if (stat(file_name.c_str(), &stat_buf) != 0)
+	  return;
+ 
+  // If both file and log exist
+  if (stat(file_name .c_str(), &stat_buf) == 0 &&
+		  stat(log_file.c_str(), &stat_buf) == 0)
+	  return;
+
+  // File exist
+
+  string temp_file_name = file_name;
+  string temp_log_file = log_file;
+
+  int index = 1;
+  while (true){
+	  temp_file_name = file_name + "." + to_string(index);
+	  temp_log_file = "." + temp_file_name + ".LOG";
+
+	  // If both indexed file and log exist
+	  if (stat(temp_file_name.c_str(), &stat_buf) == 0 &&
+			  stat(temp_log_file.c_str(), &stat_buf) == 0)
+		  break;
+
+	  // If indexed file not exist
+	  if (stat(temp_file_name.c_str(), &stat_buf) != 0)
+		  break;
+	  ++index;
+  }
+
+  file_name = temp_file_name;
+  log_file = temp_log_file;
 }

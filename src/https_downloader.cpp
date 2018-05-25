@@ -28,10 +28,11 @@ void HttpsDownloader::downloader_trd()
 	}
 	n = 0 ;
 
-	char* header_delimiter_pos = 0;
 	int header_delimiter = 0;
 	off_t temp_received_bytes = 0;
 	char* buffer = new char[256*1024*sizeof(char)];
+
+	char* header_delimiter_pos = 0;
 
 	while(recieved_bytes < trd_len){
 		n = SSL_read(ssl, buffer, 256*1024);
@@ -92,7 +93,8 @@ void HttpsDownloader::connect_to_server()
 	dest_addr.sin_port = htons(addr_data.port);
 	dest_addr.sin_addr.s_addr = inet_addr(addr_data.ip.c_str());
 	memset(&(dest_addr.sin_zero),'\0',8);
-	if( connect(sockfd, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr)) < 0) {
+	if( connect(sockfd, (struct sockaddr *)&dest_addr,
+				sizeof(struct sockaddr)) < 0) {
 		perror("ERROR connecting");
 		exit(1);
 	}
@@ -117,14 +119,16 @@ void HttpsDownloader::connect_to_server()
 off_t HttpsDownloader::get_size()
 {	
 	string size_string;
-	if (regex_search_string(receive_header, "(Content-Length: )(\\d+)", size_string))
+	if (regex_search_string(receive_header, "(Content-Length: )(\\d+)",
+				size_string))
 		return  stoi(size_string);
 	return 0;
 }
 
 void HttpsDownloader::call_node_status_changed(int recieved_bytes, int err_flag)
 {
-	void (*call_back_func_ptr)(void* node, int downloader_trd_index, off_t recieved_bytes, int stat_flag);
+	void (*call_back_func_ptr)(void* node, int downloader_trd_index,
+			off_t recieved_bytes, int stat_flag);
 	call_back_func_ptr = Node::wrapper_to_get_status;
 	call_back_func_ptr(node_data->node, index, recieved_bytes, 0);
 }
@@ -208,7 +212,8 @@ bool HttpsDownloader::check_ssl_error(int retval_from_function)
 	return true;
 }
 
-bool HttpsDownloader::regex_search_string(const string& input, const string& pattern, string& output)
+bool HttpsDownloader::regex_search_string(const string& input,
+		const string& pattern, string& output)
 {
 	smatch m;
 	regex e(pattern);
