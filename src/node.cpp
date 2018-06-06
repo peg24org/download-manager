@@ -1,18 +1,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cstdio>
+#include <regex>
 
 #include "node.h"
 #include "url_info.h"
-#include <regex>
 #include "manager.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
 
-//TODO: clear C-Style codes
-Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager):
-	dwl_str(dwl_str_), num_of_trds(number_of_trds), ptr_to_manager(pointer_to_manager)
+Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager)
+	:dwl_str(dwl_str_), num_of_trds(number_of_trds)
+	, ptr_to_manager(pointer_to_manager)
 {
 }
 
@@ -28,7 +27,7 @@ void Node::run()
 {
 	check_url_details();
 
-	off_t trd_norm_len = file_length/num_of_trds;
+	size_t trd_norm_len = file_length/num_of_trds;
 
 	string log_file;
 	// Create file with specified size
@@ -54,7 +53,7 @@ void Node::run()
 	if(node_data->log_fp){
 		read_resume_log();
 		node_data->resuming = true;
-		for (map<int, int>::iterator it=start_positions.begin(); it!=start_positions.end(); ++it){
+		for (map<size_t, size_t>::iterator it=start_positions.begin(); it!=start_positions.end(); ++it){
 			if(it->first < start_positions.size() - 1)
 				trds_length[it->first] = start_positions[it->first+1]-stopped_positions[it->first];
 			else
@@ -65,8 +64,8 @@ void Node::run()
 		node_data->resuming = false;
 		node_data->log_fp = fopen(("."+dwl_str.file_name_on_server+".LOG").c_str(), "w");
 		for(int i=0; i<num_of_trds; i++){
-			off_t len = trd_norm_len;
-			off_t pos = i*trd_norm_len;
+			size_t len = trd_norm_len;
+			size_t pos = i*trd_norm_len;
 			if(i == (num_of_trds-1)){
 				len = file_length-(trd_norm_len*i);
 				pos = i*trd_norm_len;
@@ -98,7 +97,7 @@ void Node::run()
 			break;
 	}
 
-	off_t temp_total_recv_bytes = total_received_bytes;
+	size_t temp_total_recv_bytes = total_received_bytes;
 	while(total_received_bytes < file_length){
 		usleep(1000000);
 		if(total_received_bytes != temp_total_recv_bytes){
@@ -116,7 +115,7 @@ void Node::run()
 	delete node_data;
 }
 
-void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, off_t received_bytes, int stat_flag)
+void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, size_t received_bytes, int stat_flag)
 {
 	static mutex mtx;
 	mtx.lock();
@@ -125,7 +124,7 @@ void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index, 
 	mtx.unlock();
 }
 
-void Node::get_status(int downloader_trd_index, off_t received_bytes, int stat_flag)
+void Node::get_status(int downloader_trd_index, size_t received_bytes, int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
 	if(download_threads_it!=download_threads.end()){
@@ -133,10 +132,10 @@ void Node::get_status(int downloader_trd_index, off_t received_bytes, int stat_f
 	}
 }
 
-bool Node::read_resume_log()
+void Node::read_resume_log()
 {
 	fseek(node_data->log_fp, 0, SEEK_END);
-	off_t fsize = ftell(node_data->log_fp);
+	size_t fsize = ftell(node_data->log_fp);
 	rewind(node_data->log_fp);
 	char *buf = (char*)malloc(fsize + 1);
 	fread(buf, fsize, 1, node_data->log_fp);
@@ -202,7 +201,6 @@ void Node::check_file_exist(string& file_name, string& log_file)
 	  return;
 
   // File exist
-
   string temp_file_name = file_name;
   string temp_log_file = log_file;
 

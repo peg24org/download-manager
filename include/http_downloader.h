@@ -1,29 +1,22 @@
 #ifndef _HTTP_DOWNLOADER_H
 #define _HTTP_DOWNLOADER_H
 
-#include "downloader.h"
+#include "http_general.h"
 #include "definitions.h"
 #include "node.h"
-class HttpDownloader:public Downloader {
 
-	int port = 0,
-		sockfd = 0;
-	off_t file_size = 0;
-	struct hostent *server;
-	char *buffer;
-	void downloader_trd() override;	
+class HttpDownloader : public HttpGeneral{
 
 	public:
+	using HttpGeneral::HttpGeneral;
 
-	HttpDownloader(node_struct* node_data,
-			const addr_struct addr_data,off_t pos,
-			off_t trd_length, int index):Downloader(node_data,
-				addr_data, pos, trd_length, index)
-	{
-	}
-	void connect_to_server();
-	off_t get_size() override;
-	void call_node_status_changed(int recieved_bytes, int err_flag = 0);
+	void connect_to_server() override;
+
+	private:
+	bool check_error(int len) const override;
+	void disconnect() override;
+	bool socket_send(const char* buffer, size_t len) override;
+	bool socket_receive(char* buffer, size_t& received_len, size_t buffer_capacity) override;
 
 };
 #endif

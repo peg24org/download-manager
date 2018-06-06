@@ -11,8 +11,6 @@ void print_usage (int exit_code)
 	cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
 	cerr <<" -h --help \n \
 			Display this usage information.\n \
-			-o --output filename Write output to file.(Not implemented)\n \
-			-v --verbose\n \
 			-n number of connections\n";
 	exit (exit_code);
 }
@@ -30,8 +28,6 @@ int main (int argc, char* argv[])
 		{"verbose", 	0, NULL, 'v'},
 		{NULL,		0, NULL,  0 }
 	};
-	const char* output_filename = NULL;
-	int verbose = 0;
 	program_name = argv[0];
 	if(argc <2 )
 		print_usage(1);
@@ -40,12 +36,6 @@ int main (int argc, char* argv[])
 		switch (next_option){
 			case 'h':
 				print_usage (0);
-			case 'o':
-				output_filename = optarg;
-				break;
-			case 'v':
-				verbose = 1;
-				break;
 			case 'n':
 				number_of_connections = stoi(optarg);
 				break;

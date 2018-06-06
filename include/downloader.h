@@ -1,12 +1,7 @@
 #ifndef _DOWNLOADER_H
 #define _DOWNLOADER_H
 
-#include <iostream>
-#include <thread>
-#include <fstream>
-#include <thread.h>
-#include <mutex>
-#include <cstdio>
+#include "thread.h"
 #include "definitions.h"
 
 using namespace std;
@@ -15,44 +10,35 @@ using namespace std;
 class Downloader:public Thread{
 	private:
 		void run();
-		string log_buffer_str;
-		long size = 0;
 		bool is_start_pos_written = false;
 
 	protected:
+		function<void(size_t,string,int)> init_callback_func;
+		bool regex_search_string(const string& input, const string& pattern,
+			string& output);
+
 		virtual void downloader_trd() 	= 0;
-		function<void(off_t,string,int)> init_callback_func;
-		constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
-		virtual bool regex_search_string(string& input, string& output) {};
-
 		int 		index 		= 0;
-	//	FILE*		fp		= NULL;	//main file descriptor.
-	//	FILE*		log_fp		= NULL;	//log file descriptor.
-		off_t		trd_len		= 0;	// file size in bytes
-		off_t		recieved_bytes	= 0;	
-		char*		log_buffer	= NULL;
-		off_t		pos		= 0;	//fp last position
-		void *node;
-
+		size_t		trd_len		= 0;	// file size in bytes
+		size_t		pos		= 0;	//fp last position
 		node_struct*	node_data;
 		addr_struct	addr_data;
 
-		void write_to_file(off_t pos, off_t len, char* buf);
-		void write_log_file(off_t pos);
-		void write_start_pos_log(off_t start_pos);
-		
-	public:
-		Downloader(node_struct* node_data, const addr_struct, off_t pos,
-				off_t trd_length, int index);
-		~Downloader();
+		void write_to_file(size_t pos, size_t len, char* buf);
+		void write_log_file(size_t pos);
+		void write_start_pos_log(size_t start_pos);
+		int	sockfd = 0;
 
+	public:
+		Downloader(node_struct* node_data, const addr_struct, size_t pos,
+				size_t trd_length, int index);
+		~Downloader();
+		void call_node_status_changed(int recieved_bytes, int err_flag = 0);
 		int get_index();
 		void set_index(int value);
 
-		off_t get_trd_len();
+		size_t get_trd_len();
 
-		virtual off_t get_size() = 0;
-		virtual bool check_redirection(string& redirect_url) {};
 
 		/**
 		 * Check the size of file and redirection
@@ -63,7 +49,12 @@ class Downloader:public Thread{
 		 *
 		 * @return True if redirection detected
 		 */
-		virtual bool check_link(string& redirect_url, off_t& size) {};
+		virtual bool check_link(string& redirect_url, size_t& size) = 0;
+		virtual void connect_to_server() = 0;
+		virtual void disconnect() = 0;
+
+		// "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
+		const static string HTTP_HEADER;
 };
 
 #endif

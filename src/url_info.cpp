@@ -1,8 +1,11 @@
-#include "url_info.h"
+#include <netdb.h>
+#include <arpa/inet.h>
+
 #include <string>
 #include <regex>
-#include <vector>
-#include <iostream>
+
+#include "url_info.h"
+
 URLInfo::URLInfo(std::string url)
 {
 	this->url = url;
@@ -12,38 +15,46 @@ URLInfo::URLInfo(std::string url)
 	bool found;
 	found = regex_search(url, m, *e);
 	delete e;
+
 	if(found){
 		dl_info.host_name = m[4];
 		if(m[6].length() >0)
 			dl_info.port = stoi(m[6]);
 		dl_info.file_path_on_server = '/'+m.suffix().str();
 	}
+
 	e = new regex("(.*?/.+/)(.*)");
 	found = regex_search(url, m, *e);
 	delete e;
-	if(found){
+
+	if (found)
 		dl_info.file_name_on_server = m[2];
-	}
-	if(!dl_info.port){
+
+	if (!dl_info.port){
 		e = new regex("http:|https:");
 		found = regex_search(url, m, *e);
 		delete e;
 		if(found){
 			dl_info.protocol = kHttp;
-			if(m[0].str()=="http:" || m[0].str()=="")
+			if(m[0].str()=="http:" || m[0].str()==""){
 				dl_info.port = 80;
+				dl_info.encrypted = false;
+			}
 			else if(m[0].str()=="https:"){
 				dl_info.port = 443;
 				dl_info.encrypted = true;
 			}
 		}
 	}
+
 	struct hostent *server;
 	server = gethostbyname(dl_info.host_name.c_str());
-	if (server == NULL) {
+
+	if (server == NULL){
 		fprintf(stderr,"ERROR, no such host\n");
 		exit(0);
 	}
+
 	dl_info.ip = string(inet_ntoa(*((struct in_addr*) server->h_addr)));
 	
 	e = new regex("%20");
@@ -51,6 +62,7 @@ URLInfo::URLInfo(std::string url)
 	delete e;
 }
 
-addr_struct URLInfo::get_download_info(){
+addr_struct URLInfo::get_download_info()
+{
 	return dl_info;
 }

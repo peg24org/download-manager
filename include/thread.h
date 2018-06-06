@@ -1,9 +1,7 @@
 #ifndef _THREAD_H
 #define _THREAD_H
 
-#include <iostream>
 #include <thread>
-#include <fstream>
 
 using namespace std;
 

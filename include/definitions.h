@@ -20,14 +20,17 @@ enum protocol_type {
 typedef struct {
 	FILE*	fp;
 	FILE*	log_fp;
+	void* 	node;
+	bool	resuming;	
 	std::string log_buffer_str;
 	std::mutex*	file_mutex;
-	void* node;
-	bool	resuming;
 }node_struct;
 
-#define LOG cout << "FILE"<<__FILE__<<" Line:"<<__LINE__<<std::endl;
-#define HTTP_1_0
-#define HTTP_1_1
-#define FTP
+constexpr size_t CHUNK_SIZE = 256 * 1024;
+
+#define LOG cerr << "FILE"<<__FILE__<<" Line:"<<__LINE__<<std::endl;
+//#define HTTP_1_0
+//#define HTTP_1_1
+//#define FTP
+
 #endif
