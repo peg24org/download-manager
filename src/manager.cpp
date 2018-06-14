@@ -13,7 +13,8 @@ int Manager::new_download(addr_struct addr, int num_of_trds)
 
 void Manager::wait()
 {
-	for(std::vector<Node*>::iterator it = node_vector.begin(); it != node_vector.end(); ++it){
+	for (std::vector<Node*>::iterator it = node_vector.begin();
+			it != node_vector.end(); ++it){
 		(*it)->join();
 		delete (*it);
 	}

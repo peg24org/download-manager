@@ -19,17 +19,6 @@ Downloader::Downloader(node_struct* node_data, const addr_struct addr_data,
 	this->index	= index;
 }
 
-Downloader::~Downloader()
-{
-	try {
-		if(threadObject)
-			delete threadObject;
-	}
-	catch(...){
-		std::cerr<<"Pointer delete exception."<<std::endl;
-	}
-}
-
 int Downloader::get_index()
 {
 	return index;
@@ -80,7 +69,7 @@ void Downloader::write_log_file(size_t pos)
 	rewind(node_data->log_fp);
 	fwrite(node_data->log_buffer_str.c_str(), 1,
 			node_data->log_buffer_str.length(), node_data->log_fp);
-	if(!is_start_pos_written && !node_data->resuming){
+	if (!is_start_pos_written && !node_data->resuming){
 		write_start_pos_log(pos);
 		is_start_pos_written = true;
 	}

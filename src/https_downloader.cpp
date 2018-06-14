@@ -65,6 +65,8 @@ bool HttpsDownloader::socket_send(const char* buffer, size_t len)
 			sent_bytes += tmp_sent_bytes;
 		else {
 			check_error(tmp_sent_bytes);
+			cerr << " Https Err " << endl;
+			return false;
 		}
 	}
 	return true;

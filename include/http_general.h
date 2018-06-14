@@ -12,7 +12,6 @@ class HttpGeneral : public Downloader {
 			size_t trd_length, int index)
 		: Downloader(node_data, addr_data, pos, trd_length, index)
 	{}
-
 	bool check_link(string& redirected_url, size_t& size) override;
 
 	private:
@@ -24,9 +23,6 @@ class HttpGeneral : public Downloader {
 	virtual bool socket_send(const char* buffer, size_t len) = 0;
 	virtual bool socket_receive(char* buffer, size_t& received_len,
 			size_t buffer_capacity) = 0;
-
-
-	struct hostent *server;
 
 	protected:
 

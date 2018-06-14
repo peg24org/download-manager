@@ -5,12 +5,12 @@
 #include <cstdlib>
 
 #include "node.h"
-	
+
 void HttpGeneral::downloader_trd()
 {
 	string command_buffer = "GET " + addr_data.file_path_on_server +
 		" HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" +
-		to_string(pos+trd_len) + "\r\nHost:" + addr_data.host_name + ":" +
+		to_string(pos + trd_len) + "\r\nHost:" + addr_data.host_name + ":" +
 		to_string(addr_data.port) + "\r\n\r\n";
 
 	if ( !sockfd )

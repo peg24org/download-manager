@@ -32,13 +32,11 @@ class Downloader:public Thread{
 	public:
 		Downloader(node_struct* node_data, const addr_struct, size_t pos,
 				size_t trd_length, int index);
-		~Downloader();
 		void call_node_status_changed(int recieved_bytes, int err_flag = 0);
 		int get_index();
 		void set_index(int value);
 
 		size_t get_trd_len();
-
 
 		/**
 		 * Check the size of file and redirection

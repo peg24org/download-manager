@@ -29,8 +29,8 @@ class Node:public Thread {
 	map<int, Downloader*>::iterator download_threads_it;
 
 	map<size_t, size_t> start_positions;
-	map<int, int> stopped_positions;
-	map<int, size_t> trds_length;
+	map<size_t, size_t> stopped_positions;
+	map<size_t, size_t> trds_length;
 
 	addr_struct dwl_str;
 
@@ -48,7 +48,7 @@ class Node:public Thread {
 	void get_status(int downloader_trd_index, size_t received_bytes, int stat_flag);
 	void check_url_details();
 	void  read_resume_log();
-	void check_file_exist(string& file_name, string& log_file);
+	void check_file_exist();
 };
 
 #endif

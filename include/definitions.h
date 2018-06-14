@@ -29,8 +29,5 @@ typedef struct {
 constexpr size_t CHUNK_SIZE = 256 * 1024;
 
 #define LOG cerr << "FILE"<<__FILE__<<" Line:"<<__LINE__<<std::endl;
-//#define HTTP_1_0
-//#define HTTP_1_1
-//#define FTP
 
 #endif
