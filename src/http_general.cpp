@@ -76,7 +76,7 @@ size_t HttpGeneral::get_size()
 	string size_string;
 	if (regex_search_string(receive_header, "(Content-Length: )(\\d+)",
 				size_string))
-		return  stoi(size_string);
+		return  strtoul(static_cast<const char*>(size_string.c_str()), nullptr, 0);
 	return 0;
 }
 
