@@ -1,4 +1,5 @@
-add_library(downloader_static STATIC downloader node http_general https_downloader http_downloader manager thread url_info)
-add_library(downloader_shared SHARED downloader node http_general https_downloader http_downloader manager thread url_info)
+file(GLOB SOURCES *.cpp)
+add_library(downloader_static STATIC "${SOURCES}")
+#add_library(downloader_shared SHARED downloader node http_general https_downloader http_downloader manager thread url_info)
 set_target_properties(downloader_static PROPERTIES OUTPUT_NAME downlader_static)
-set_target_properties(downloader_shared PROPERTIES OUTPUT_NAME downlader_shared)
+#set_target_properties(downloader_shared PROPERTIES OUTPUT_NAME downlader_shared)

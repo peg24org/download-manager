@@ -38,20 +38,6 @@ void HttpDownloader::disconnect()
 	}
 }
 
-bool HttpDownloader::socket_send(const char* buffer, size_t len)
-{
-	size_t sent_bytes = 0;
-	size_t tmp_sent_bytes = 0;
-	while (sent_bytes < len){
-		if ((tmp_sent_bytes = send(sockfd, buffer, len, 0)) > 0)
-			sent_bytes += tmp_sent_bytes;
-		else {
-			check_error(tmp_sent_bytes);
-		}
-	}
-	return true;
-}
-
 bool HttpDownloader::socket_receive(char* buffer, size_t& received_len,
 		size_t buffer_capacity)
 {

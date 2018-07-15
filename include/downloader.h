@@ -15,14 +15,20 @@ class Downloader:public Thread{
 	protected:
 		function<void(size_t,string,int)> init_callback_func;
 		bool regex_search_string(const string& input, const string& pattern,
-			string& output);
+			string& output, int pos_of_pattern = 2);
+		bool regex_search_string(const string& input, const string& pattern);
 
 		virtual void downloader_trd() 	= 0;
-		int 		index 		= 0;
-		size_t		trd_len		= 0;	// file size in bytes
-		size_t		pos		= 0;	//fp last position
-		node_struct*	node_data;
-		addr_struct	addr_data;
+		virtual bool check_error(int len) const;
+		virtual bool socket_send(const char* buffer, size_t len);
+		virtual bool socket_receive(char* buffer, size_t& received_len,
+			size_t buffer_capacity);
+
+		int 		index;
+		size_t		trd_len;	// file size in bytes
+		size_t		pos;		//fp last position
+		node_struct* node_data;
+		addr_struct addr_data;
 
 		void write_to_file(size_t pos, size_t len, char* buf);
 		void write_log_file(size_t pos);
@@ -30,8 +36,17 @@ class Downloader:public Thread{
 		int	sockfd = 0;
 
 	public:
-		Downloader(node_struct* node_data, const addr_struct, size_t pos,
-				size_t trd_length, int index);
+		Downloader(node_struct* node_data_info,
+				const addr_struct addr_data_info,
+				size_t position,
+				size_t trd_length,
+				int trd_index)
+		: index(trd_index)
+		, trd_len(trd_length)
+		, pos(position)
+		, node_data(node_data_info)
+		, addr_data(addr_data_info) {};
+
 		void call_node_status_changed(int recieved_bytes, int err_flag = 0);
 		int get_index();
 		void set_index(int value);

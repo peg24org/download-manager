@@ -17,12 +17,7 @@ class HttpGeneral : public Downloader {
 	private:
 	
 	constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
-
 	void downloader_trd() override;	
-	virtual bool check_error(int len) const = 0;
-	virtual bool socket_send(const char* buffer, size_t len) = 0;
-	virtual bool socket_receive(char* buffer, size_t& received_len,
-			size_t buffer_capacity) = 0;
 
 	protected:
 

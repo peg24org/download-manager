@@ -1,11 +1,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
-
+#include <iomanip>
 #include <regex>
 
 #include "node.h"
 #include "url_info.h"
 #include "manager.h"
+#include "ftp_downloader.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
 
@@ -25,12 +26,11 @@ void Node::wait()
 
 void Node::run()
 {
+	node_data = new node_struct;
+	node_data->file_name = dwl_str.file_name_on_server;
 	check_url_details();
 	size_t trd_norm_len = file_length / num_of_trds;
-
 	string log_file;
-	
-	node_data = new node_struct;
 
 	check_file_exist();
 
@@ -38,7 +38,6 @@ void Node::run()
 	
 	node_data->node 	= this;
 	stopped_positions[0] = 0;
-
 	if(node_data->log_fp){
 		read_resume_log();
 		node_data->resuming = true;
@@ -54,7 +53,7 @@ void Node::run()
 	}
 	else{
 		node_data->resuming = false;
-		node_data->log_fp = fopen(("." + dwl_str.file_name_on_server +
+		node_data->log_fp = fopen(("." + node_data->file_name +
 					".LOG").c_str(), "w");
 		for(int i = 0; i < num_of_trds; i++){
 			size_t len = trd_norm_len;
@@ -91,6 +90,13 @@ void Node::run()
 			}
 			break;
 		case kFtp:
+			for (map<size_t, size_t>::iterator it = stopped_positions.begin();
+					it != stopped_positions.end(); ++it){
+				dnwl = new FtpDownloader(node_data, dwl_str,
+						it->second, trds_length[it->first], it->first);
+				dnwl->start();
+				download_threads[it->first] = dnwl;
+			}
 			break;
 	}
 	size_t temp_total_recv_bytes = total_received_bytes;
@@ -98,7 +104,7 @@ void Node::run()
 		usleep(500000);
 		if(total_received_bytes != temp_total_recv_bytes){
 			progress = ((float)total_received_bytes / (float)file_length) * 100;
-			
+
 			// Received bytes per second
 			speed = (total_received_bytes - temp_total_recv_bytes);
 			cout << "Progress= " << progress << "% Speed = "
@@ -116,7 +122,7 @@ void Node::run()
 
 	fclose(node_data->fp);
 	fclose(node_data->log_fp);
-	remove(("." + dwl_str.file_name_on_server + ".LOG").c_str());
+	remove(("." + node_data->file_name + ".LOG").c_str());
 
 	delete node_data->file_mutex;
 	delete node_data;
@@ -136,9 +142,8 @@ void Node::get_status(int downloader_trd_index, size_t received_bytes,
 		int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
-	if(download_threads_it!=download_threads.end()){
+	if(download_threads_it!=download_threads.end())
 		total_received_bytes += received_bytes;
-	}
 }
 
 void Node::read_resume_log()
@@ -180,13 +185,16 @@ void Node::check_url_details()
 	Downloader* check_info_downloader;
 
 	while (true){
-		if (dwl_str.encrypted){
-			check_info_downloader = new HttpsDownloader(node_data, dwl_str, 0,
-					0, 0);
-		}
-		else
-			check_info_downloader = new HttpDownloader(node_data, dwl_str, 0,
-					0, 0);
+		if (dwl_str.protocol == kHttp)
+			if (dwl_str.encrypted)
+				check_info_downloader = new HttpsDownloader(node_data, dwl_str,
+						0, 0, 0);
+			else
+				check_info_downloader = new HttpDownloader(node_data, dwl_str,
+						0, 0, 0);
+		else if (dwl_str.protocol == kFtp)
+				check_info_downloader = new FtpDownloader(node_data, dwl_str,
+						0, 0, 0);
 
 		string redirected_url;
 		bool redirection = check_info_downloader->check_link(redirected_url,
@@ -211,8 +219,8 @@ void Node::check_file_exist()
 
 	int index = 1;
 	while (true){
-
 		struct stat stat_buf;
+
 		// If both indexed file and log exist
 		if (stat(temp_file_name.c_str(), &stat_buf) == 0 &&
 				stat(log_file.c_str(), &stat_buf) == 0){
@@ -223,22 +231,23 @@ void Node::check_file_exist()
 		// If indexed file not exist
 		if (stat(temp_file_name.c_str(), &stat_buf) != 0)
 			break;
-	
+
 		temp_file_name = dwl_str.file_name_on_server + "." + to_string(index);
 		log_file = "." + temp_file_name + ".LOG";
 		++index;
 	}
 
-	dwl_str.file_name_on_server = temp_file_name;
+	node_data->file_name = temp_file_name;
 	if (create_new_file){
-		node_data->fp = fopen(dwl_str.file_name_on_server.c_str(), "wb+");
-		for (size_t i = 0; i < file_length - 1; i++)
+		node_data->fp = fopen(node_data->file_name.c_str(), "wb+");
+		for (size_t i = 0; i < file_length - 1; i++){
 			fputc('\0', node_data->fp);
+		}
 		rewind(node_data->fp);
 		node_data->log_fp = nullptr;
 	}
 	else {
-		node_data->fp = fopen(dwl_str.file_name_on_server.c_str(), "rb+");
+		node_data->fp = fopen(node_data->file_name.c_str(), "rb+");
 		node_data->log_fp 	= fopen(log_file.c_str(), "r+");
 	}
 }

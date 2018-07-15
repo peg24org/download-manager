@@ -1,5 +1,8 @@
 #include "downloader.h"
 
+#include <arpa/inet.h>
+#include <sys/socket.h> 
+
 #include <cassert>
 #include <regex>
 #include <cstdlib>
@@ -8,16 +11,6 @@
 
 const string Downloader::
 	HTTP_HEADER = "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
-
-Downloader::Downloader(node_struct* node_data, const addr_struct addr_data,
-		size_t pos, size_t trd_length, int index)
-{
-	this->node_data	= node_data;
-	this->addr_data	= addr_data;
-	this->pos	= pos;
-	this->trd_len	= trd_length;
-	this->index	= index;
-}
 
 int Downloader::get_index()
 {
@@ -85,13 +78,20 @@ void Downloader::write_start_pos_log(size_t start_pos)
 }
 
 bool Downloader::regex_search_string(const string& input,
-		const string& pattern, string& output)
+		const string& pattern, string& output, int pos_of_pattern)
 {
 	smatch m;
 	regex e(pattern);
 	bool retval = regex_search(input, m, e);
-	output = m[2];
+	output = m[pos_of_pattern];
 	return retval;
+}
+
+bool Downloader::regex_search_string(const string& input,
+		const string& pattern)
+{
+	string temp;
+	return regex_search_string(input, pattern, temp);
 }
 
 void Downloader::call_node_status_changed(int recieved_bytes, int err_flag)
@@ -100,4 +100,37 @@ void Downloader::call_node_status_changed(int recieved_bytes, int err_flag)
 			size_t recieved_bytes, int stat_flag);
 	call_back_func_ptr = Node::wrapper_to_get_status;
 	call_back_func_ptr(node_data->node, index, recieved_bytes, 0);
+}
+
+
+bool Downloader::socket_send(const char* buffer, size_t len)
+{
+	size_t sent_bytes = 0;
+	size_t tmp_sent_bytes = 0;
+	while (sent_bytes < len){
+		if ((tmp_sent_bytes = send(sockfd, buffer, len, 0)) > 0)
+			sent_bytes += tmp_sent_bytes;
+		else {
+			check_error(tmp_sent_bytes);
+		}
+	}
+	return true;
+}
+
+
+bool Downloader::check_error(int len) const
+{
+	if (len < 0) {
+		perror("ERROR ");
+		exit(1);
+	}
+	return true;
+}
+
+
+bool Downloader::socket_receive(char* buffer, size_t& received_len,
+		size_t buffer_capacity)
+{
+	return (received_len = recv(sockfd, buffer, buffer_capacity, 0)) > 0 ? true
+		: false;
 }
