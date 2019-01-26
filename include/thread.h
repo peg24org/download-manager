@@ -9,7 +9,7 @@ class Thread{
 
 	protected:
 		virtual void run() = 0;
-		thread	*threadObject = NULL;
+		thread	*threadObject = nullptr;
 
 	public:
 		void start();

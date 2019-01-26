@@ -1,6 +1,7 @@
-#include <openssl/err.h>
-#include <arpa/inet.h>
+#include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <openssl/err.h>
 
 #include "https_downloader.h"
 

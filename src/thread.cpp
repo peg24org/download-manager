@@ -13,12 +13,7 @@ Thread::Thread()
 
 Thread::~Thread()
 {
-	try {
-		delete threadObject;
-	}
-	catch(...){
-		std::cerr<<"Pointer delete exception."<<std::endl;
-	}
+	delete threadObject;
 }
 
 void Thread::join()
