@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include "node.h"
 
+using namespace std;
+
 int Manager::new_download(addr_struct addr, int num_of_trds)
 {
+
 	Node *nd = new Node(addr, num_of_trds, this);
 	nd->start();
 	node_vector.push_back(nd);
@@ -18,10 +21,4 @@ void Manager::wait()
 		(*it)->join();
 		delete (*it);
 	}
-}
-
-void Manager::status_changed(void* ptr_to_object, string text)
-{
-	Manager* mySelf = (Manager*) ptr_to_object;
-	mySelf->on_status_changed(text);
 }

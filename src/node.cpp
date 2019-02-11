@@ -1,11 +1,11 @@
-#include <sys/stat.h>
-#include <unistd.h>
-#include <iomanip>
 #include <regex>
+#include <iomanip>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "node.h"
-#include "url_info.h"
 #include "manager.h"
+#include "url_info.h"
 #include "ftp_downloader.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
@@ -19,8 +19,7 @@ Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager)
 
 void Node::wait()
 {
-	for (map<int, Downloader*>::iterator it = download_threads.begin();
-			it != download_threads.end(); ++it)
+	for (map<int, Downloader*>::iterator it = download_threads.begin(); it != download_threads.end(); ++it)
 		it->second->join();
 }
 
@@ -29,36 +28,35 @@ void Node::run()
 	node_data = new node_struct;
 	node_data->file_name = dwl_str.file_name_on_server;
 	check_url_details();
+	// fire
+	++node_index;
+	((Manager*)ptr_to_manager)->on_get_file_stat(node_index, file_length, &dwl_str);
 	size_t trd_norm_len = file_length / num_of_trds;
 	string log_file;
 
 	check_file_exist();
 
-	node_data->file_mutex	= new mutex;
+	node_data->file_mutex = new mutex;
 	
-	node_data->node 	= this;
+	node_data->node = this;
 	stopped_positions[0] = 0;
-	if(node_data->log_fp){
+	if (node_data->log_fp) {
 		read_resume_log();
 		node_data->resuming = true;
-		for (map<size_t, size_t>::iterator it = start_positions.begin();
-				it != start_positions.end(); ++it){
-			if(it->first < start_positions.size() - 1)
-				trds_length[it->first] = start_positions[it->first + 1] -
-					stopped_positions[it->first];
+		for (map<size_t, size_t>::iterator it = start_positions.begin(); it != start_positions.end(); ++it) {
+			if (it->first < start_positions.size() - 1)
+				trds_length[it->first] = start_positions[it->first + 1] - stopped_positions[it->first];
 			else
-				trds_length[it->first] = file_length -
-					stopped_positions[it->first];
+				trds_length[it->first] = file_length - stopped_positions[it->first];
 		}
 	}
-	else{
+	else {
 		node_data->resuming = false;
-		node_data->log_fp = fopen(("." + node_data->file_name +
-					".LOG").c_str(), "w");
-		for(int i = 0; i < num_of_trds; i++){
+		node_data->log_fp = fopen(("." + node_data->file_name +	".LOG").c_str(), "w");
+		for (int i = 0; i < num_of_trds; i++) {
 			size_t len = trd_norm_len;
 			size_t pos = i * trd_norm_len;
-			if (i == (num_of_trds - 1)){
+			if (i == (num_of_trds - 1)) {
 				len = file_length - (trd_norm_len * i);
 				pos = i * trd_norm_len;
 			}
@@ -99,25 +97,10 @@ void Node::run()
 			}
 			break;
 	}
-	size_t temp_total_recv_bytes = total_received_bytes;
-	while(total_received_bytes < file_length){
-		usleep(500000);
-		if(total_received_bytes != temp_total_recv_bytes){
-			progress = ((float)total_received_bytes / (float)file_length) * 100;
 
-			// Received bytes per second
-			speed = (total_received_bytes - temp_total_recv_bytes);
-			cout << "Progress= " << progress << "% Speed = "
-				<< speed / 512.0 << "KB/s" << endl;
-			temp_total_recv_bytes = total_received_bytes;
-			call_manager_stat_change((void*) &ptr_to_manager,
-					Manager::status_changed);
-		}
-	}
 	wait();
 
-	for (map<int, Downloader*>::iterator it = download_threads.begin();
-			it != download_threads.end(); ++it)
+	for (map<int, Downloader*>::iterator it = download_threads.begin(); it != download_threads.end(); ++it)
 		delete it->second;
 
 	fclose(node_data->fp);
@@ -128,22 +111,26 @@ void Node::run()
 	delete node_data;
 }
 
-void Node::wrapper_to_get_status(void* ptr_to_object, int downloader_trd_index,
-		size_t received_bytes, int stat_flag)
+void Node::wrapper_to_get_status(addr_struct* addr_data, void* ptr_to_object, int downloader_trd_index,
+		size_t total_trd_len, size_t received_bytes, int stat_flag)
 {
 	static mutex mtx;
 	mtx.lock();
 	Node* my_self = (Node*)ptr_to_object;
-	my_self->get_status(downloader_trd_index, received_bytes, stat_flag);
+	my_self->get_status(addr_data, downloader_trd_index, total_trd_len, received_bytes, stat_flag);
+	// TODO continue
 	mtx.unlock();
 }
 
-void Node::get_status(int downloader_trd_index, size_t received_bytes,
+void Node::get_status(addr_struct* addr_data, int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
 		int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
-	if(download_threads_it!=download_threads.end())
+	if (download_threads_it != download_threads.end()) {
 		total_received_bytes += received_bytes;
+		((Manager*)ptr_to_manager)->on_status_changed(downloader_trd_index, total_trd_len ,received_bytes,
+			addr_data);
+	}
 }
 
 void Node::read_resume_log()
@@ -151,7 +138,7 @@ void Node::read_resume_log()
 	fseek(node_data->log_fp, 0, SEEK_END);
 	size_t fsize = ftell(node_data->log_fp);
 	rewind(node_data->log_fp);
-	char *buf = new char[fsize + 1];// (char*)malloc(fsize + 1);
+	char *buf = new char[fsize + 1];
 	fread(buf, fsize, 1, node_data->log_fp);
 	buf[fsize] = 0;
 	string buffer = string(buf);
@@ -251,3 +238,5 @@ void Node::check_file_exist()
 		node_data->log_fp 	= fopen(log_file.c_str(), "r+");
 	}
 }
+
+size_t Node::node_index = 0;

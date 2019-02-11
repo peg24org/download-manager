@@ -13,7 +13,6 @@ class Downloader:public Thread{
 		bool is_start_pos_written = false;
 
 	protected:
-		function<void(size_t,string,int)> init_callback_func;
 		bool regex_search_string(const string& input, const string& pattern,
 			string& output, int pos_of_pattern = 2);
 		bool regex_search_string(const string& input, const string& pattern);
@@ -56,8 +55,7 @@ class Downloader:public Thread{
 		/**
 		 * Check the size of file and redirection
 		 *
-		 * @param redirect_url: Will be filled with redirected url if
-		 * 		redirection exist.
+		 * @param redirect_url: Will be filled with redirected url if redirection exist.
 		 * @param size: Will be filled with size of file if exist.
 		 *
 		 * @return True if redirection detected

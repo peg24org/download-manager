@@ -1,24 +1,24 @@
 #ifndef _MANAGER_H
 #define _MANAGER_H
-#include <iostream>
+
 #include <thread>
 #include <vector>
 #include <mutex>
-#include "downloader.h"
-#include "node.h"
 #include <fstream>
 
-using namespace std;
+#include "downloader.h"
+#include "node.h"
 
-class Manager{
+class Manager
+{
 	vector<Node*> node_vector;
 
 	public:
 	int new_download(addr_struct addr, int num_of_trds);
 	void wait();
-	void on_status_changed(string prm) {}
-
-	static void status_changed(void* ptr_to_bject, string text);
+	virtual void on_status_changed(int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
+			addr_struct* addr_data) {};
+	virtual void on_get_file_stat(size_t node_index, size_t file_size ,addr_struct* addr_data) {};
 };
 
 #endif

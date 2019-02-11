@@ -96,10 +96,7 @@ bool Downloader::regex_search_string(const string& input,
 
 void Downloader::call_node_status_changed(int recieved_bytes, int err_flag)
 {
-	void (*call_back_func_ptr)(void* node, int downloader_trd_index,
-			size_t recieved_bytes, int stat_flag);
-	call_back_func_ptr = Node::wrapper_to_get_status;
-	call_back_func_ptr(node_data->node, index, recieved_bytes, 0);
+	Node::wrapper_to_get_status(&addr_data, node_data->node, index, trd_len, recieved_bytes, 0);
 }
 
 
