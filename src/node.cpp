@@ -117,8 +117,8 @@ void Node::on_get_status(addr_struct* addr_data, int downloader_trd_index, size_
 	download_threads_it = download_threads.find(downloader_trd_index);
 	if (download_threads_it != download_threads.end()) {
 		total_received_bytes += received_bytes;
-		((Manager*)ptr_to_manager)->on_status_changed(downloader_trd_index, total_trd_len ,received_bytes,
-			addr_data);
+		const_cast<Manager*>(static_cast<const Manager*>(ptr_to_manager))->on_status_changed(
+				downloader_trd_index, total_trd_len, received_bytes, addr_data);
 	}
 }
 
@@ -136,24 +136,20 @@ void Node::read_resume_log()
 
 	// s:start position, p:stopped position
 	regex *r = new regex("(p)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
-			i != sregex_iterator(); ++i){
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r); i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		stopped_positions[stoi(m[2])] = stoi(m[3]);
 	}
 	delete r;
 	r = new regex("(s)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
-			i != sregex_iterator(); ++i){
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r); i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		start_positions[stoi(m[2])] = stoi(m[3]);
 	}
 	delete r;
 
-	for (map<size_t, size_t>::iterator it = stopped_positions.begin();
-			it != stopped_positions.end(); ++it){
+	for (map<size_t, size_t>::iterator it = stopped_positions.begin(); it != stopped_positions.end(); ++it)
 		total_received_bytes += (it->second - start_positions[it->first]);
-	}
 }
 
 void Node::check_url_details()
@@ -163,19 +159,15 @@ void Node::check_url_details()
 	while (true) {
 		if (dwl_str.protocol == kHttp)
 			if (dwl_str.encrypted)
-				check_info_downloader = new HttpsDownloader(node_data, dwl_str,
-						0, 0, 0);
+				check_info_downloader = new HttpsDownloader(node_data, dwl_str, 0, 0, 0);
 			else
-				check_info_downloader = new HttpDownloader(node_data, dwl_str,
-						0, 0, 0);
+				check_info_downloader = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
 		else if (dwl_str.protocol == kFtp)
-				check_info_downloader = new FtpDownloader(node_data, dwl_str,
-						0, 0, 0);
+				check_info_downloader = new FtpDownloader(node_data, dwl_str, 0, 0, 0);
 
 		string redirected_url;
-		bool redirection = check_info_downloader->check_link(redirected_url,
-				file_length);
-		if (redirection){
+		bool redirection = check_info_downloader->check_link(redirected_url, file_length);
+		if (redirection) {
 			URLInfo u_info(redirected_url);
 			addr_struct dl_str = u_info.get_download_info();
 			dwl_str = dl_str;

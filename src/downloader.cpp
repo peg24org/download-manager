@@ -1,16 +1,14 @@
-#include "downloader.h"
-
 #include <arpa/inet.h>
 #include <sys/socket.h> 
 
-#include <cassert>
 #include <regex>
+#include <cassert>
 #include <cstdlib>
 
 #include "node.h"
+#include "downloader.h"
 
-const string Downloader::
-	HTTP_HEADER = "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
+const string Downloader::HTTP_HEADER = "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
 
 int Downloader::get_index()
 {
@@ -70,11 +68,9 @@ void Downloader::write_log_file(size_t pos)
 
 void Downloader::write_start_pos_log(size_t start_pos)
 {
-	node_data->log_buffer_str += "s" + to_string(index) + "\t" +
-		to_string(start_pos)+"\n";
+	node_data->log_buffer_str += "s" + to_string(index) + "\t" + to_string(start_pos)+"\n";
 	rewind(node_data->log_fp);
-	fwrite(node_data->log_buffer_str.c_str(), 1,
-			node_data->log_buffer_str.length(), node_data->log_fp);
+	fwrite(node_data->log_buffer_str.c_str(), 1, node_data->log_buffer_str.length(), node_data->log_fp);
 }
 
 bool Downloader::regex_search_string(const string& input,
@@ -125,8 +121,7 @@ bool Downloader::check_error(int len) const
 }
 
 
-bool Downloader::socket_receive(char* buffer, size_t& received_len,
-		size_t buffer_capacity)
+bool Downloader::socket_receive(char* buffer, size_t& received_len, size_t buffer_capacity)
 {
 	return (received_len = recv(sockfd, buffer, buffer_capacity, 0)) > 0 ? true : false;
 }
