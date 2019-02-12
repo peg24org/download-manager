@@ -111,18 +111,7 @@ void Node::run()
 	delete node_data;
 }
 
-void Node::wrapper_to_get_status(addr_struct* addr_data, void* ptr_to_object, int downloader_trd_index,
-		size_t total_trd_len, size_t received_bytes, int stat_flag)
-{
-	static mutex mtx;
-	mtx.lock();
-	Node* my_self = (Node*)ptr_to_object;
-	my_self->get_status(addr_data, downloader_trd_index, total_trd_len, received_bytes, stat_flag);
-	// TODO continue
-	mtx.unlock();
-}
-
-void Node::get_status(addr_struct* addr_data, int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
+void Node::on_get_status(addr_struct* addr_data, int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
 		int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
@@ -171,7 +160,7 @@ void Node::check_url_details()
 {
 	Downloader* check_info_downloader;
 
-	while (true){
+	while (true) {
 		if (dwl_str.protocol == kHttp)
 			if (dwl_str.encrypted)
 				check_info_downloader = new HttpsDownloader(node_data, dwl_str,

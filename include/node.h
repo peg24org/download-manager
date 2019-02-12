@@ -13,10 +13,9 @@ class Node:public Thread {
 
 	public:
 		Node(const addr_struct , int number_of_trds, void* pointer_to_manager);
-		void Display(const string text) { cout << text << endl; cout<<"this="<<this<<endl; };
-		static void wrapper_to_get_status(addr_struct* addr_data, void* ptr_to_object,
-				int downloader_trd_index, size_t total_trd_len,	size_t received_bytes,
-				int stat_flag = 0);
+
+		void on_get_status(addr_struct* addr_data,int downloader_trd_index, size_t total_trd_len,
+				size_t received_bytes, int stat_flag);
 
 	private:
 		node_struct*	node_data;
@@ -41,10 +40,8 @@ class Node:public Thread {
 
 		void wait();
 		void run();
-		void get_status(addr_struct* addr_data,int downloader_trd_index, size_t total_trd_len,
-				size_t received_bytes, int stat_flag);
 		void check_url_details();
-		void  read_resume_log();
+		void read_resume_log();
 		void check_file_exist();
 };
 

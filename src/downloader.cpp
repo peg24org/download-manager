@@ -94,9 +94,9 @@ bool Downloader::regex_search_string(const string& input,
 	return regex_search_string(input, pattern, temp);
 }
 
-void Downloader::call_node_status_changed(int recieved_bytes, int err_flag)
+void Downloader::call_node_status_changed(int received_bytes, int err_flag)
 {
-	Node::wrapper_to_get_status(&addr_data, node_data->node, index, trd_len, recieved_bytes, 0);
+	static_cast<Node*>(node_data->node)->on_get_status(&addr_data, index, trd_len, received_bytes, 0);
 }
 
 
@@ -104,12 +104,12 @@ bool Downloader::socket_send(const char* buffer, size_t len)
 {
 	size_t sent_bytes = 0;
 	size_t tmp_sent_bytes = 0;
-	while (sent_bytes < len){
+
+	while (sent_bytes < len) {
 		if ((tmp_sent_bytes = send(sockfd, buffer, len, 0)) > 0)
 			sent_bytes += tmp_sent_bytes;
-		else {
+		else
 			check_error(tmp_sent_bytes);
-		}
 	}
 	return true;
 }
@@ -128,6 +128,5 @@ bool Downloader::check_error(int len) const
 bool Downloader::socket_receive(char* buffer, size_t& received_len,
 		size_t buffer_capacity)
 {
-	return (received_len = recv(sockfd, buffer, buffer_capacity, 0)) > 0 ? true
-		: false;
+	return (received_len = recv(sockfd, buffer, buffer_capacity, 0)) > 0 ? true : false;
 }
