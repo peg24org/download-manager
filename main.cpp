@@ -1,11 +1,7 @@
 #include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
+
+#include "node.h"
 #include "url_info.h"
-#include "manager.h"
-#include "definitions.h"
-#include <unistd.h>
-#include <functional>
 
 using namespace std;
 
@@ -20,7 +16,7 @@ void print_usage (int exit_code)
 	exit (exit_code);
 }
 
-class DownloadManager : public Manager
+class DownloadMngr : public Node
 {
 	size_t file_length = 0;
 	size_t total_recv_bytes = 0;
@@ -30,21 +26,35 @@ class DownloadManager : public Manager
 		cout << "File size = " << file_size << " Bytes." << endl;
 		file_length = file_size;
 	}
+
 	std::chrono::time_point<std::chrono::system_clock> last_sample = std::chrono::system_clock::now();
 	void on_status_changed(int downloader_trd_index, size_t total_trd_len ,size_t received_bytes,
 			addr_struct* addr_data)
 	{
 		if (received_bytes > 0)
 		{
-			float progress =((float)total_recv_bytes / (float)file_length) * 100;
-			std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-			std::chrono::duration<double> elapsed_seconds = end - last_sample;
-			cout << "Progress = " << progress << "% Speed = " <<
-				received_bytes / (1024 * elapsed_seconds.count()) << "KB/s" << endl;
-			last_sample = std::chrono::system_clock::now();
+			static mutex mtx;
+			mtx.lock();
+
 			total_recv_bytes += received_bytes;
+			float progress =((float)total_recv_bytes / (float)file_length) * 100;
+			std::chrono::time_point<std::chrono::system_clock> current_sample =
+				std::chrono::system_clock::now();
+			std::chrono::duration<double> elapsed_seconds = current_sample - last_sample;
+			last_sample = std::chrono::system_clock::now();
+			cout <<  "\033[1G"  << "Progress = " << progress << "% Speed = " <<
+				received_bytes / (1024 * elapsed_seconds.count()) << "KB/s" << "\033[5G";
+
+			if (progress < 100)
+				cout << flush;
+			else
+				cout << endl;
+
+			mtx.unlock();
 		}
 	}
+
+	using Node::Node;
 };
 
 int main (int argc, char* argv[])
@@ -88,10 +98,10 @@ int main (int argc, char* argv[])
 	URLInfo u_info(link);
 	addr_struct dl_str = u_info.get_download_info();
 
-	DownloadManager download_manager;
-	download_manager.new_download(dl_str,number_of_connections);
-	download_manager.wait();
-
+	DownloadMngr *nd = new DownloadMngr(dl_str, number_of_connections);
+	nd->start();
+	nd->join();
+	
 	return 0;
 }
 

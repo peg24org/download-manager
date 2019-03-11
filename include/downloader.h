@@ -20,8 +20,7 @@ class Downloader:public Thread{
 		virtual void downloader_trd() 	= 0;
 		virtual bool check_error(int len) const;
 		virtual bool socket_send(const char* buffer, size_t len);
-		virtual bool socket_receive(char* buffer, size_t& received_len,
-			size_t buffer_capacity);
+		virtual bool socket_receive(char* buffer, size_t& received_len, size_t buffer_capacity);
 
 		int 		index;
 		size_t		trd_len;	// file size in bytes
@@ -35,9 +34,7 @@ class Downloader:public Thread{
 		int	sockfd = 0;
 
 	public:
-		Downloader(node_struct* node_data_info,
-				const addr_struct addr_data_info,
-				size_t position,
+		Downloader(node_struct* node_data_info, const addr_struct addr_data_info, size_t position,
 				size_t trd_length,
 				int trd_index)
 		: index(trd_index)

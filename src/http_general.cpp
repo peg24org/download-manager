@@ -1,10 +1,10 @@
-#include "http_general.h"
-#include "definitions.h"
-#include <cassert>
 #include <regex>
 #include <cstdlib>
+#include <cassert>
 
 #include "node.h"
+#include "definitions.h"
+#include "http_general.h"
 
 void HttpGeneral::downloader_trd()
 {
@@ -28,14 +28,14 @@ void HttpGeneral::downloader_trd()
 		size_t bytes = 0;
 		if (!socket_receive(buffer, bytes, CHUNK_SIZE))
 			exit(1);
-		if(header_delimiter_pos  == 0){
+		if(header_delimiter_pos  == 0) {
 			header_delimiter_pos = strstr(buffer,"\r\n\r\n");
-			if(header_delimiter_pos){
+			if(header_delimiter_pos) {
 				string recv_buffer = string(buffer);
 				smatch m;
 				regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
 				bool found = regex_search(recv_buffer, m, e);
-				if(found){
+				if(found) {
 					if(stoi(m[2].str())/100!=2){
 						cerr<< __LINE__ << " Error: "<<m[2]<<" "<<m[3]<<endl;
 						exit(1);
@@ -105,7 +105,7 @@ bool HttpGeneral::check_link(string& redirected_url, size_t& size)
 		exit(1);
 	size_t len = 0;
 	char* buffer = new char[CHUNK_SIZE * sizeof(char)];
-	while (true){
+	while (true) {
 		size_t number_of_bytes;
 		if (!socket_receive(const_cast<char*>(receive_header.data()),
 					number_of_bytes, MAX_HTTP_HEADER_LENGTH))
@@ -115,7 +115,7 @@ bool HttpGeneral::check_link(string& redirected_url, size_t& size)
 			break;
 	}
 
-	if (check_redirection(redirected_url)){
+	if (check_redirection(redirected_url)) {
 		return true;
 	}
 	else {

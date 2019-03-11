@@ -1,19 +1,18 @@
 #include <regex>
 #include <iomanip>
+
 #include <unistd.h>
 #include <sys/stat.h>
 
 #include "node.h"
-#include "manager.h"
 #include "url_info.h"
 #include "ftp_downloader.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
 
-Node::Node(addr_struct dwl_str_, int number_of_trds, void *pointer_to_manager)
+Node::Node(addr_struct dwl_str_, int number_of_trds)
 	: dwl_str(dwl_str_)
 	, num_of_trds(number_of_trds)
-	, ptr_to_manager(pointer_to_manager)
 {
 }
 
@@ -28,9 +27,8 @@ void Node::run()
 	node_data = new node_struct;
 	node_data->file_name = dwl_str.file_name_on_server;
 	check_url_details();
-	// fire
 	++node_index;
-	((Manager*)ptr_to_manager)->on_get_file_stat(node_index, file_length, &dwl_str);
+	on_get_file_stat(node_index, file_length, &dwl_str);
 	size_t trd_norm_len = file_length / num_of_trds;
 	string log_file;
 
@@ -117,8 +115,7 @@ void Node::on_get_status(addr_struct* addr_data, int downloader_trd_index, size_
 	download_threads_it = download_threads.find(downloader_trd_index);
 	if (download_threads_it != download_threads.end()) {
 		total_received_bytes += received_bytes;
-		const_cast<Manager*>(static_cast<const Manager*>(ptr_to_manager))->on_status_changed(
-				downloader_trd_index, total_trd_len, received_bytes, addr_data);
+		on_status_changed(downloader_trd_index, total_trd_len, received_bytes, addr_data);
 	}
 }
 

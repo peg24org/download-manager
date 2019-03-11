@@ -12,10 +12,15 @@ using namespace std;
 class Node:public Thread {
 
 	public:
-		Node(const addr_struct , int number_of_trds, void* pointer_to_manager);
+		Node(const addr_struct , int number_of_trds);
 
 		void on_get_status(addr_struct* addr_data,int downloader_trd_index, size_t total_trd_len,
 				size_t received_bytes, int stat_flag);
+
+		virtual void on_status_changed(int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
+			addr_struct* addr_data) {};
+
+		virtual void on_get_file_stat(size_t node_index, size_t file_size ,addr_struct* addr_data) {};
 
 	private:
 		node_struct*	node_data;
@@ -36,7 +41,6 @@ class Node:public Thread {
 		float	speed = 0; // bytes/sec
 
 		static size_t node_index; // index of node
-		const void *ptr_to_manager;
 
 		void wait();
 		void run();
