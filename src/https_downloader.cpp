@@ -23,7 +23,7 @@ void HttpsDownloader::connect_to_server()
 	SSL_library_init();
 	SSLeay_add_ssl_algorithms();
 	SSL_load_error_strings();
-	const SSL_METHOD *meth = TLSv1_2_client_method();
+	const SSL_METHOD *meth = TLS_client_method();
 	SSL_CTX *ctx = SSL_CTX_new (meth);
 	
 	ssl = SSL_new(ctx);

@@ -1,6 +1,11 @@
 cmake_minimum_required (VERSION 2.6)
 project (Downloader)
 
+find_library(SSL ssl)
+if (NOT SSL)
+       message(FATAL_ERROR "ssl library not found")
+endif()
+
 set (Downloader_VERSION_MAJOR 1)
 set (Downloader_VERSION_MINOR 0)
 set (CMAKE_CXX_STANDARD 11)

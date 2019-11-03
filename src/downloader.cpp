@@ -95,7 +95,6 @@ void Downloader::call_node_status_changed(int received_bytes, int err_flag)
 	static_cast<Node*>(node_data->node)->on_get_status(&addr_data, index, trd_len, received_bytes, 0);
 }
 
-
 bool Downloader::socket_send(const char* buffer, size_t len)
 {
 	size_t sent_bytes = 0;
@@ -119,7 +118,6 @@ bool Downloader::check_error(int len) const
 	}
 	return true;
 }
-
 
 bool Downloader::socket_receive(char* buffer, size_t& received_len, size_t buffer_capacity)
 {

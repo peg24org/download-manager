@@ -7,7 +7,7 @@
 using namespace std;
 
 
-class Downloader:public Thread{
+class Downloader : public Thread{
 	private:
 		void run();
 		bool is_start_pos_written = false;
