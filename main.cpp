@@ -1,3 +1,5 @@
+#include <iomanip>
+
 #include <getopt.h>
 
 #include "node.h"
@@ -31,8 +33,7 @@ class DownloadMngr : public Node
 	void on_status_changed(int downloader_trd_index, size_t total_trd_len ,size_t received_bytes,
 			addr_struct* addr_data)
 	{
-		if (received_bytes > 0)
-		{
+		if (received_bytes > 0) {
 			static mutex mtx;
 			mtx.lock();
 
@@ -42,8 +43,16 @@ class DownloadMngr : public Node
 				std::chrono::system_clock::now();
 			std::chrono::duration<double> elapsed_seconds = current_sample - last_sample;
 			last_sample = std::chrono::system_clock::now();
-			cout <<  "\033[1G"  << "Progress = " << progress << "% Speed = " <<
-				received_bytes / (1024 * elapsed_seconds.count()) << "KB/s" << "\033[5G";
+
+			float speed = received_bytes / (1024 * elapsed_seconds.count());
+			string speed_unit = "KB";
+			if (speed > 1024) {
+				speed_unit = "MB";
+				speed /= 1024;
+			}
+
+			cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " << setprecision(4) << progress <<"% Speed = " <<
+				speed << speed_unit << "\033[5G";
 
 			if (progress < 100)
 				cout << flush;
@@ -72,11 +81,11 @@ int main (int argc, char* argv[])
 		{NULL,		0, NULL,  0 }
 	};
 	program_name = argv[0];
-	if(argc <2 )
+	if (argc <2 )
 		print_usage(1);
 	do {
 		next_option = getopt_long (argc, argv, short_options,long_options, NULL);
-		switch (next_option){
+		switch (next_option) {
 			case 'h':
 				print_usage (0);
 			case 'n':
@@ -89,8 +98,8 @@ int main (int argc, char* argv[])
 			default:
 				abort ();
 		}
-	}while (next_option != -1);
-	for (int i = optind; i < argc; ++i){
+	} while (next_option != -1);
+	for (int i = optind; i < argc; ++i) {
 		link = string(argv[i]);
 	}
 	//******************************************

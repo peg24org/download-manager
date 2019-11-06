@@ -24,7 +24,7 @@ typedef struct {
 	bool resuming;
 	std::string log_buffer_str;
 	std::string file_name;
-	std::mutex* file_mutex;
+	std::mutex file_mutex;
 }node_struct;
 
 constexpr size_t CHUNK_SIZE = 256 * 1024;

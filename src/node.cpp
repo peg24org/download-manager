@@ -24,6 +24,7 @@ void Node::wait()
 
 void Node::run()
 {
+
 	node_data = new node_struct;
 	node_data->file_name = dwl_str.file_name_on_server;
 	check_url_details();
@@ -34,8 +35,6 @@ void Node::run()
 
 	check_file_exist();
 
-	node_data->file_mutex = new mutex;
-	
 	node_data->node = this;
 	stopped_positions[0] = 0;
 	if (node_data->log_fp) {
@@ -105,7 +104,6 @@ void Node::run()
 	fclose(node_data->log_fp);
 	remove(("." + node_data->file_name + ".LOG").c_str());
 
-	delete node_data->file_mutex;
 	delete node_data;
 }
 
