@@ -52,7 +52,7 @@ class DownloadMngr : public Node
 			}
 
 			cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " << setprecision(4) << progress <<"% Speed = " <<
-				speed << speed_unit << "\033[5G";
+				speed << speed_unit + "/s" << "\033[5G";
 
 			if (progress < 100)
 				cout << flush;
