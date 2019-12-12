@@ -22,6 +22,8 @@ class DownloadMngr : public Node
 {
 	size_t file_length = 0;
 	size_t total_recv_bytes = 0;
+	size_t temp_recv_bytes = 0;
+	mutex mtx;
 
 	void on_get_file_stat(size_t node_index, size_t file_size ,addr_struct* addr_data)
 	{
@@ -29,36 +31,35 @@ class DownloadMngr : public Node
 		file_length = file_size;
 	}
 
-	std::chrono::time_point<std::chrono::system_clock> last_sample = std::chrono::system_clock::now();
+	std::chrono::time_point<std::chrono::system_clock> last_time_sample = std::chrono::system_clock::now();
 	void on_status_changed(int downloader_trd_index, size_t total_trd_len ,size_t received_bytes,
 			addr_struct* addr_data)
 	{
 		if (received_bytes > 0) {
-			static mutex mtx;
 			mtx.lock();
-
 			total_recv_bytes += received_bytes;
-			float progress =((float)total_recv_bytes / (float)file_length) * 100;
-			std::chrono::time_point<std::chrono::system_clock> current_sample =
-				std::chrono::system_clock::now();
-			std::chrono::duration<double> elapsed_seconds = current_sample - last_sample;
-			last_sample = std::chrono::system_clock::now();
+			std::chrono::time_point<std::chrono::system_clock> current_time_sample = std::chrono::system_clock::now();
+			std::chrono::duration<double> elapsed_seconds = current_time_sample - last_time_sample;
+			float progress = (static_cast<float>(total_recv_bytes) / static_cast<float>(file_length)) * 100;
 
-			float speed = received_bytes / (1024 * elapsed_seconds.count());
-			string speed_unit = "KB";
-			if (speed > 1024) {
-				speed_unit = "MB";
-				speed /= 1024;
+			if (elapsed_seconds.count() > 0.5 ) {
+				last_time_sample = std::chrono::system_clock::now();
+				float speed = (total_recv_bytes - temp_recv_bytes) / (1024 * elapsed_seconds.count());
+				temp_recv_bytes = total_recv_bytes;
+				string speed_unit = "KB";
+
+				if (speed > 1024) {
+					speed_unit = "MB";
+					speed /= 1024;
+				}
+				cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " << setprecision(4) << progress <<"% Speed = "
+					<< speed << speed_unit + "/s" << "\033[5G";
+
+				if (progress < 100)
+					cout << flush;
+				else
+					cout << endl;
 			}
-
-			cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " << setprecision(4) << progress <<"% Speed = " <<
-				speed << speed_unit + "/s" << "\033[5G";
-
-			if (progress < 100)
-				cout << flush;
-			else
-				cout << endl;
-
 			mtx.unlock();
 		}
 	}
