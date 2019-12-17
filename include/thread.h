@@ -5,17 +5,17 @@
 
 using namespace std;
 
-class Thread{
+class Thread {
+	public:
+		virtual ~Thread();
+		Thread();
+
+		void start();
+		void join();
 
 	protected:
 		virtual void run() = 0;
 		thread	*threadObject = nullptr;
-
-	public:
-		void start();
-		Thread();
-		virtual ~Thread();
-		void join();
 };
 
 #endif

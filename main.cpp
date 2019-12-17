@@ -1,6 +1,6 @@
-#include <iomanip>
-
 #include <getopt.h>
+
+#include <iomanip>
 
 #include "node.h"
 #include "url_info.h"
@@ -25,26 +25,32 @@ class DownloadMngr : public Node
 	size_t temp_recv_bytes = 0;
 	mutex mtx;
 
-	void on_get_file_stat(size_t node_index, size_t file_size ,addr_struct* addr_data)
+	void on_get_file_stat(size_t node_index, size_t file_size,
+      struct addr_struct* addr_data)
 	{
 		cout << "File size = " << file_size << " Bytes." << endl;
 		file_length = file_size;
 	}
 
-	std::chrono::time_point<std::chrono::system_clock> last_time_sample = std::chrono::system_clock::now();
-	void on_status_changed(int downloader_trd_index, size_t total_trd_len ,size_t received_bytes,
-			addr_struct* addr_data)
+	std::chrono::time_point<std::chrono::system_clock> last_time_sample =
+    std::chrono::system_clock::now();
+	void on_status_changed(int downloader_trd_index, size_t total_trd_len,
+      size_t received_bytes, struct addr_struct* addr_data)
 	{
 		if (received_bytes > 0) {
 			mtx.lock();
 			total_recv_bytes += received_bytes;
-			std::chrono::time_point<std::chrono::system_clock> current_time_sample = std::chrono::system_clock::now();
-			std::chrono::duration<double> elapsed_seconds = current_time_sample - last_time_sample;
-			float progress = (static_cast<float>(total_recv_bytes) / static_cast<float>(file_length)) * 100;
+			std::chrono::time_point<std::chrono::system_clock> current_time_sample =
+        std::chrono::system_clock::now();
+			std::chrono::duration<double> elapsed_seconds = current_time_sample -
+        last_time_sample;
+			float progress = (static_cast<float>(total_recv_bytes) /
+          static_cast<float>(file_length)) * 100;
 
 			if (elapsed_seconds.count() > 0.5 ) {
 				last_time_sample = std::chrono::system_clock::now();
-				float speed = (total_recv_bytes - temp_recv_bytes) / (1024 * elapsed_seconds.count());
+				float speed = (total_recv_bytes - temp_recv_bytes) /
+          (1024 * elapsed_seconds.count());
 				temp_recv_bytes = total_recv_bytes;
 				string speed_unit = "KB";
 
@@ -52,7 +58,8 @@ class DownloadMngr : public Node
 					speed_unit = "MB";
 					speed /= 1024;
 				}
-				cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " << setprecision(4) << progress <<"% Speed = "
+				cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " <<
+          setprecision(4) << progress <<"% Speed = "
 					<< speed << speed_unit + "/s" << "\033[5G";
 
 				if (progress < 100)
@@ -106,7 +113,7 @@ int main (int argc, char* argv[])
 	//******************************************
 
 	URLInfo u_info(link);
-	addr_struct dl_str = u_info.get_download_info();
+	struct addr_struct dl_str = u_info.get_download_info();
 
 	DownloadMngr *nd = new DownloadMngr(dl_str, number_of_connections);
 	nd->start();

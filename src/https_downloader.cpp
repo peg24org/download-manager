@@ -5,6 +5,11 @@
 
 #include "https_downloader.h"
 
+HttpsDownloader::~HttpsDownloader()
+{
+	disconnect();
+}
+
 void HttpsDownloader::connect_to_server()
 {
 	struct sockaddr_in dest_addr;
@@ -38,11 +43,6 @@ void HttpsDownloader::connect_to_server()
 		cerr << "Error creating SSL connection.  err=" << err << endl;
 		exit(1);
 	}
-}
-
-HttpsDownloader::~HttpsDownloader()
-{
-	disconnect();
 }
 
 void HttpsDownloader::disconnect()

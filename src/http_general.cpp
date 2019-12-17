@@ -9,8 +9,9 @@
 void HttpGeneral::downloader_trd()
 {
 	string command_buffer = "GET " + addr_data.file_path_on_server + " " +
-				"HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" + to_string(pos + trd_len) + "\r\n" +
-				"Host:" + addr_data.host_name + ":" + to_string(addr_data.port) + "\r\n\r\n";
+				"HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" +
+        to_string(pos + trd_len) + "\r\n" +	"Host:" + addr_data.host_name +
+        ":" + to_string(addr_data.port) + "\r\n\r\n";
 
 	if ( !sockfd )
 		connect_to_server();
@@ -96,8 +97,9 @@ bool HttpGeneral::check_link(string& redirected_url, size_t& size)
 	bool retval = false;
 
 	// Use GET instead of HEAD, because some servers doesen't suppurt HEAD command.
-	string command_buffer = "GET " + addr_data.file_path_on_server + " HTTP/1.1\r\nHost:" +
-		addr_data.host_name + "\r\n\r\n";
+	string command_buffer =
+    "GET " + addr_data.file_path_on_server + " HTTP/1.1\r\nHost:" +
+    addr_data.host_name + "\r\n\r\n";
 	connect_to_server();
 
 	receive_header.resize(MAX_HTTP_HEADER_LENGTH);
@@ -108,7 +110,8 @@ bool HttpGeneral::check_link(string& redirected_url, size_t& size)
 	char* buffer = new char[CHUNK_SIZE * sizeof(char)];
 	while (true) {
 		size_t number_of_bytes;
-		if (!socket_receive(const_cast<char*>(receive_header.data()), number_of_bytes, MAX_HTTP_HEADER_LENGTH))
+		if (!socket_receive(const_cast<char*>(receive_header.data()),
+          number_of_bytes, MAX_HTTP_HEADER_LENGTH))
 			exit(1);
 		len += number_of_bytes;
 		if (receive_header.find("\r\n\r\n") != string::npos)

@@ -1,8 +1,8 @@
-#include <regex>
-#include <iomanip>
-
 #include <unistd.h>
 #include <sys/stat.h>
+
+#include <regex>
+#include <iomanip>
 
 #include "node.h"
 #include "url_info.h"
@@ -10,7 +10,7 @@
 #include "http_downloader.h"
 #include "https_downloader.h"
 
-Node::Node(addr_struct dwl_str_, int number_of_trds)
+Node::Node(struct addr_struct dwl_str_, int number_of_trds)
 	: dwl_str(dwl_str_)
 	, num_of_trds(number_of_trds)
 {
@@ -18,7 +18,8 @@ Node::Node(addr_struct dwl_str_, int number_of_trds)
 
 void Node::wait()
 {
-	for (map<int, Downloader*>::iterator it = download_threads.begin(); it != download_threads.end(); ++it)
+	for (map<int, Downloader*>::iterator it = download_threads.begin();
+      it != download_threads.end(); ++it)
 		it->second->join();
 }
 
@@ -40,16 +41,19 @@ void Node::run()
 	if (node_data->log_fp) {
 		read_resume_log();
 		node_data->resuming = true;
-		for (map<size_t, size_t>::iterator it = start_positions.begin(); it != start_positions.end(); ++it) {
+		for (map<size_t, size_t>::iterator it = start_positions.begin();
+        it != start_positions.end(); ++it) {
 			if (it->first < start_positions.size() - 1)
-				trds_length[it->first] = start_positions[it->first + 1] - stopped_positions[it->first];
+				trds_length[it->first] = start_positions[it->first + 1] -
+          stopped_positions[it->first];
 			else
 				trds_length[it->first] = file_length - stopped_positions[it->first];
 		}
 	}
 	else {
 		node_data->resuming = false;
-		node_data->log_fp = fopen(("." + node_data->file_name +	".LOG").c_str(), "w");
+		node_data->log_fp =
+      fopen(("." + node_data->file_name +	".LOG").c_str(), "w");
 		for (int i = 0; i < num_of_trds; i++) {
 			size_t len = trd_norm_len;
 			size_t pos = i * trd_norm_len;
@@ -97,7 +101,8 @@ void Node::run()
 
 	wait();
 
-	for (map<int, Downloader*>::iterator it = download_threads.begin(); it != download_threads.end(); ++it)
+	for (map<int, Downloader*>::iterator it = download_threads.begin();
+      it != download_threads.end(); ++it)
 		delete it->second;
 
 	fclose(node_data->fp);
@@ -107,13 +112,15 @@ void Node::run()
 	delete node_data;
 }
 
-void Node::on_get_status(addr_struct* addr_data, int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
-		int stat_flag)
+void Node::on_get_status(struct addr_struct* addr_data,
+    int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
+    int stat_flag)
 {
 	download_threads_it = download_threads.find(downloader_trd_index);
 	if (download_threads_it != download_threads.end()) {
 		total_received_bytes += received_bytes;
-		on_status_changed(downloader_trd_index, total_trd_len, received_bytes, addr_data);
+		on_status_changed(downloader_trd_index, total_trd_len, received_bytes,
+        addr_data);
 	}
 }
 
@@ -131,19 +138,22 @@ void Node::read_resume_log()
 
 	// s:start position, p:stopped position
 	regex *r = new regex("(p)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r); i != sregex_iterator(); ++i) {
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
+      i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		stopped_positions[stoi(m[2])] = stoi(m[3]);
 	}
 	delete r;
 	r = new regex("(s)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r); i != sregex_iterator(); ++i) {
+	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
+      i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		start_positions[stoi(m[2])] = stoi(m[3]);
 	}
 	delete r;
 
-	for (map<size_t, size_t>::iterator it = stopped_positions.begin(); it != stopped_positions.end(); ++it)
+	for (map<size_t, size_t>::iterator it = stopped_positions.begin();
+      it != stopped_positions.end(); ++it)
 		total_received_bytes += (it->second - start_positions[it->first]);
 }
 
@@ -161,10 +171,11 @@ void Node::check_url_details()
 				check_info_downloader = new FtpDownloader(node_data, dwl_str, 0, 0, 0);
 
 		string redirected_url;
-		bool redirection = check_info_downloader->check_link(redirected_url, file_length);
+		bool redirection =
+      check_info_downloader->check_link(redirected_url, file_length);
 		if (redirection) {
 			URLInfo u_info(redirected_url);
-			addr_struct dl_str = u_info.get_download_info();
+			struct addr_struct dl_str = u_info.get_download_info();
 			dwl_str = dl_str;
 			delete check_info_downloader;
 		}

@@ -70,14 +70,16 @@ void FtpDownloader::downloader_trd()
 	open_data_channel();
 	send_ftp_command("LRECL " + to_string(trd_len) + "\r\n", stat, reply);
 	send_ftp_command("REST " + to_string(pos) + "\r\n", stat, reply);
-	send_ftp_command("RETR " + addr_data.file_name_on_server + "\r\n", stat, reply);
+	send_ftp_command("RETR " + addr_data.file_name_on_server + "\r\n", stat,
+      reply);
 	char* buffer = new char[CHUNK_SIZE * sizeof(char)];
 	size_t recieved_bytes = 0;
 	while(recieved_bytes < trd_len){
 		size_t bytes = 0;
 
 		size_t scale = trd_len - recieved_bytes + 1;
-		if (!ftp_data_receive(buffer, bytes, CHUNK_SIZE < scale ? CHUNK_SIZE : scale))
+		if (!ftp_data_receive(buffer, bytes,
+          CHUNK_SIZE < scale ? CHUNK_SIZE : scale))
 			exit(1);
 		write_to_file(pos, bytes, buffer);//n=length
 		pos += bytes;
@@ -164,6 +166,6 @@ bool FtpDownloader::open_data_channel()
 bool FtpDownloader::ftp_data_receive(char* buffer, size_t& received_len,
 		size_t buffer_capacity)
 {
-	return (received_len = recv(data_sockfd, buffer, buffer_capacity, 0)) > 0 ? true
-		: false;
+	return (received_len =
+      recv(data_sockfd, buffer, buffer_capacity, 0)) > 0 ? true : false;
 }

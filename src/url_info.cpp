@@ -1,8 +1,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-#include <string>
 #include <regex>
+#include <string>
 
 #include "url_info.h"
 
@@ -55,7 +55,7 @@ URLInfo::URLInfo(std::string url_param) : url(url_param)
 			encoding_character, " ");
 }
 
-addr_struct URLInfo::get_download_info()
+struct addr_struct URLInfo::get_download_info()
 {
 	return dl_info;
 }
