@@ -6,16 +6,16 @@
 using namespace std;
 
 class Thread {
-	public:
-		virtual ~Thread();
-		Thread();
+  public:
+    virtual ~Thread();
+    Thread();
 
-		void start();
-		void join();
+    void start();
+    void join();
 
-	protected:
-		virtual void run() = 0;
-		thread	*threadObject = nullptr;
+  protected:
+    virtual void run() = 0;
+    thread* threadObject = nullptr;
 };
 
 #endif

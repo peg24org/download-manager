@@ -4,7 +4,7 @@
 
 void Thread::start()
 {
-	threadObject = new std::thread(&Thread::run, this);
+  threadObject = new std::thread(&Thread::run, this);
 }
 
 Thread::Thread()
@@ -13,10 +13,10 @@ Thread::Thread()
 
 Thread::~Thread()
 {
-	delete threadObject;
+  delete threadObject;
 }
 
 void Thread::join()
 {
-	threadObject->join();
+  threadObject->join();
 }
