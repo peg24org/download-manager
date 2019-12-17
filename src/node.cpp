@@ -10,12 +10,6 @@
 #include "http_downloader.h"
 #include "https_downloader.h"
 
-Node::Node(struct addr_struct dwl_str_, int number_of_trds)
-	: dwl_str(dwl_str_)
-	, num_of_trds(number_of_trds)
-{
-}
-
 void Node::wait()
 {
 	for (map<int, Downloader*>::iterator it = download_threads.begin();
@@ -25,7 +19,6 @@ void Node::wait()
 
 void Node::run()
 {
-
 	node_data = new node_struct;
 	node_data->file_name = dwl_str.file_name_on_server;
 	check_url_details();
@@ -38,6 +31,7 @@ void Node::run()
 
 	node_data->node = this;
 	stopped_positions[0] = 0;
+  // If resuming
 	if (node_data->log_fp) {
 		read_resume_log();
 		node_data->resuming = true;
@@ -50,6 +44,7 @@ void Node::run()
 				trds_length[it->first] = file_length - stopped_positions[it->first];
 		}
 	}
+  // If not resuming
 	else {
 		node_data->resuming = false;
 		node_data->log_fp =
@@ -69,18 +64,18 @@ void Node::run()
 	Downloader* dnwl;
 	switch(dwl_str.protocol){
 		case kHttp:
-			if (dwl_str.encrypted ){	
+			if (dwl_str.encrypted ) {
 				for (map<size_t, size_t>::iterator it = stopped_positions.begin();
-						it != stopped_positions.end(); ++it){
+						it != stopped_positions.end(); ++it) {
 					dnwl = new HttpsDownloader(node_data, dwl_str,
 							it->second, trds_length[it->first], it->first);
 					dnwl->start();
 					download_threads[it->first] = dnwl;
 				}
 			}
-			else{
+			else {
 				for (map<size_t, size_t>::iterator it = stopped_positions.begin();
-						it != stopped_positions.end(); ++it){
+						it != stopped_positions.end(); ++it) {
 					dnwl = new HttpDownloader(node_data, dwl_str,it->second,
 							trds_length[it->first], it->first);
 					dnwl->start();
@@ -136,16 +131,16 @@ void Node::read_resume_log()
 	delete buf;
 	node_data->log_buffer_str = buffer;
 
-	// s:start position, p:stopped position
+	// s[i]:start position, p[i]:stopped position
 	regex *r = new regex("(p)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
+	for (sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
       i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		stopped_positions[stoi(m[2])] = stoi(m[3]);
 	}
 	delete r;
 	r = new regex("(s)(\\d+\t)(\\d+\n)");
-	for(sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
+	for (sregex_iterator i = sregex_iterator(buffer.begin(), buffer.end(), *r);
       i != sregex_iterator(); ++i) {
 		smatch m = *i;
 		start_positions[stoi(m[2])] = stoi(m[3]);
@@ -155,6 +150,8 @@ void Node::read_resume_log()
 	for (map<size_t, size_t>::iterator it = stopped_positions.begin();
       it != stopped_positions.end(); ++it)
 		total_received_bytes += (it->second - start_positions[it->first]);
+
+	on_status_changed(-1, file_length, total_received_bytes, &dwl_str);
 }
 
 void Node::check_url_details()
@@ -188,30 +185,31 @@ void Node::check_url_details()
 void Node::check_file_exist()
 {
 	bool create_new_file = true;
-	string temp_file_name = dwl_str.file_name_on_server;
-	string log_file = "." + temp_file_name + ".LOG";
+	string file_name = dwl_str.file_name_on_server;
+	string log_file = "." + file_name + ".LOG";
 
 	int index = 1;
 	while (true){
 		struct stat stat_buf;
 
 		// If both indexed file and log exist
-		if (stat(temp_file_name.c_str(), &stat_buf) == 0 &&
+		if (stat(file_name.c_str(), &stat_buf) == 0 &&
 				stat(log_file.c_str(), &stat_buf) == 0){
 			create_new_file = false;
 			break;
 		}
 
 		// If indexed file not exist
-		if (stat(temp_file_name.c_str(), &stat_buf) != 0)
+		if (stat(file_name.c_str(), &stat_buf) != 0)
 			break;
 
-		temp_file_name = dwl_str.file_name_on_server + "." + to_string(index);
-		log_file = "." + temp_file_name + ".LOG";
+    // None
+		file_name = dwl_str.file_name_on_server + "." + to_string(index);
+		log_file = "." + file_name + ".LOG";
 		++index;
 	}
 
-	node_data->file_name = temp_file_name;
+	node_data->file_name = file_name;
 	if (create_new_file){
 		node_data->fp = fopen(node_data->file_name.c_str(), "wb+");
 		for (size_t i = 0; i < file_length - 1; i++){

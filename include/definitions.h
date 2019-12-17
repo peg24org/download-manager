@@ -19,7 +19,7 @@ enum protocol_type {
   kFtp,
 };
 
-typedef struct {
+struct node_struct{
   FILE* fp;
   FILE* log_fp;
   void* node;
@@ -27,7 +27,7 @@ typedef struct {
   std::string log_buffer_str;
   std::string file_name;
   std::mutex file_mutex;
-} node_struct;
+};
 
 constexpr size_t CHUNK_SIZE = 256 * 1024;
 
