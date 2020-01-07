@@ -11,9 +11,9 @@ URLInfo::URLInfo(std::string url_param) : url(url_param)
   smatch m;
   regex link_pattern("((http://|ftp://|https://)|())(.*?)(/|:(.+?)/)");
 
-  if(regex_search(url, m, link_pattern)){
+  if (regex_search(url, m, link_pattern)) {
     dl_info.host_name = m[4];
-    if(m[6].length() >0)
+    if (m[6].length() > 0)
       dl_info.port = stoi(m[6]);
     dl_info.file_path_on_server = '/'+m.suffix().str();
   }
@@ -25,7 +25,7 @@ URLInfo::URLInfo(std::string url_param) : url(url_param)
 
   regex http_pattern("http:|https:");
   regex ftp_pattern("ftp:");
-  if (regex_search(url, m, http_pattern)){
+  if (regex_search(url, m, http_pattern)) {
     dl_info.protocol = kHttp;
     if(m[0].str()=="http:")
       dl_info.encrypted = false;
@@ -34,7 +34,7 @@ URLInfo::URLInfo(std::string url_param) : url(url_param)
     if (dl_info.port ==0)
       dl_info.port = dl_info.encrypted ? 443 : 80;
   }
-  else if (regex_search(url, m, ftp_pattern)){
+  else if (regex_search(url, m, ftp_pattern)) {
     dl_info.protocol = kFtp;
     if (dl_info.port == 0)
       dl_info.port = 21;

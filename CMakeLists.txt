@@ -8,7 +8,7 @@ endif()
 
 set (Downloader_VERSION_MAJOR 1)
 set (Downloader_VERSION_MINOR 0)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 set(GCC_COVERAGE_COMPILE_FLAGS "-Wall")
 add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
@@ -18,6 +18,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/libs)
 
 include_directories(${PROJECT_SOURCE_DIR} include)
 add_subdirectory(src)
+add_subdirectory(tests)
 
 add_executable(main main.cpp )
 target_link_libraries(main downloader_static pthread ssl crypto)
