@@ -5,12 +5,14 @@
 #include <string>
 
 #include "url_info.h"
-
+#include <iostream>
+using namespace std;
 URLInfo::URLInfo(std::string url_param) : url(url_param)
 {
   smatch m;
   regex link_pattern("((http://|ftp://|https://)|())(.*?)(/|:(.+?)/)");
 
+  // get port
   if (regex_search(url, m, link_pattern)) {
     dl_info.host_name = m[4];
     if (m[6].length() > 0)
