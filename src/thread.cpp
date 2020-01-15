@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "thread.h"
 
 void Thread::start()

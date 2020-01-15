@@ -3,6 +3,8 @@
 #include <arpa/inet.h>
 #include <openssl/err.h>
 
+#include <iostream>
+
 #include "https_downloader.h"
 
 HttpsDownloader::~HttpsDownloader()

@@ -1,6 +1,7 @@
 #include <getopt.h>
 
 #include <iomanip>
+#include <iostream>
 
 #include "node.h"
 #include "url_info.h"

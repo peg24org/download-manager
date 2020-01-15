@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cassert>
 
+#include <iostream>
+
 #include "node.h"
 #include "definitions.h"
 #include "http_general.h"

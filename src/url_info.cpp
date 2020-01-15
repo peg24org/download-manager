@@ -5,8 +5,7 @@
 #include <string>
 
 #include "url_info.h"
-#include <iostream>
-using namespace std;
+
 URLInfo::URLInfo(std::string url_param) : url(url_param)
 {
   smatch m;

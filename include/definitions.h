@@ -2,7 +2,6 @@
 #define _DEFINITIONS_H
 
 #include <mutex>
-#include <iostream>
 
 struct addr_struct{
   int port;
