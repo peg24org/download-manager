@@ -39,7 +39,7 @@ class DownloadMngr : public Node
       size_t received_bytes, struct addr_struct* addr_data)
   {
     if (received_bytes > 0) {
-      mtx.lock();
+      const lock_guard<mutex> lock(mtx);
       total_recv_bytes += received_bytes;
       std::chrono::time_point<std::chrono::system_clock> current_time_sample =
         std::chrono::system_clock::now();
@@ -68,7 +68,6 @@ class DownloadMngr : public Node
         else
           cout << endl;
       }
-      mtx.unlock();
     }
   }
 
@@ -116,9 +115,11 @@ int main (int argc, char* argv[])
   URLInfo u_info(link);
   struct addr_struct dl_str = u_info.get_download_info();
 
-  DownloadMngr *nd = new DownloadMngr(dl_str, number_of_connections);
-  nd->start();
-  nd->join();
+  DownloadMngr nd(dl_str, number_of_connections);
+  nd.start();
+  nd.join();
+
+  cout << endl;
 
   return 0;
 }
