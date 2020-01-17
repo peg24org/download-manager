@@ -39,12 +39,12 @@ void Downloader::run()
 
 void Downloader::write_to_file(size_t pos, size_t len, char* buf)
 {
-  node_data->file_mutex.lock();
+  const lock_guard<mutex> lock(node_data->file_mutex);
+
   assert(node_data->fp);
   fseek(node_data->fp, pos, SEEK_SET);
   fwrite(buf, 1,len, node_data->fp);
   write_log_file(pos);
-  node_data->file_mutex.unlock();
 }
 
 void Downloader::write_log_file(size_t pos)
