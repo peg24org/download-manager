@@ -19,8 +19,6 @@ void Node::wait()
 
 void Node::run()
 {
-  node_data = new node_struct;
-  node_data->file_name = dwl_str.file_name_on_server;
   check_url_details();
   ++node_index;
   on_get_file_stat(node_index, file_length, &dwl_str);
@@ -29,12 +27,13 @@ void Node::run()
 
   check_file_exist();
 
-  node_data->node = this;
+  node_data.node = this;
   stopped_positions[0] = 0;
+
   // If resuming
-  if (node_data->log_fp) {
+  if (node_data.log_fp) {
     read_resume_log();
-    node_data->resuming = true;
+    node_data.resuming = true;
     for (map<size_t, size_t>::iterator it = start_positions.begin();
         it != start_positions.end(); ++it) {
       if (it->first < start_positions.size() - 1)
@@ -46,9 +45,9 @@ void Node::run()
   }
   // If not resuming
   else {
-    node_data->resuming = false;
-    node_data->log_fp =
-      fopen(("." + node_data->file_name +  ".LOG").c_str(), "w");
+    node_data.resuming = false;
+    node_data.log_fp =
+      fopen(("." + node_data.file_name +  ".LOG").c_str(), "w");
     for (int i = 0; i < num_of_trds; i++) {
       size_t len = trd_norm_len;
       size_t pos = i * trd_norm_len;
@@ -67,7 +66,7 @@ void Node::run()
       if (dwl_str.encrypted ) {
         for (map<size_t, size_t>::iterator it = stopped_positions.begin();
             it != stopped_positions.end(); ++it) {
-          dnwl = new HttpsDownloader(node_data, dwl_str,
+          dnwl = new HttpsDownloader(&node_data, dwl_str,
               it->second, trds_length[it->first], it->first);
           dnwl->start();
           download_threads[it->first] = dnwl;
@@ -76,7 +75,7 @@ void Node::run()
       else {
         for (map<size_t, size_t>::iterator it = stopped_positions.begin();
             it != stopped_positions.end(); ++it) {
-          dnwl = new HttpDownloader(node_data, dwl_str,it->second,
+          dnwl = new HttpDownloader(&node_data, dwl_str,it->second,
               trds_length[it->first], it->first);
           dnwl->start();
           download_threads[it->first] = dnwl;
@@ -86,7 +85,7 @@ void Node::run()
     case kFtp:
       for (map<size_t, size_t>::iterator it = stopped_positions.begin();
           it != stopped_positions.end(); ++it){
-        dnwl = new FtpDownloader(node_data, dwl_str,
+        dnwl = new FtpDownloader(&node_data, dwl_str,
             it->second, trds_length[it->first], it->first);
         dnwl->start();
         download_threads[it->first] = dnwl;
@@ -100,11 +99,9 @@ void Node::run()
       it != download_threads.end(); ++it)
     delete it->second;
 
-  fclose(node_data->fp);
-  fclose(node_data->log_fp);
-  remove(("." + node_data->file_name + ".LOG").c_str());
-
-  delete node_data;
+  fclose(node_data.fp);
+  fclose(node_data.log_fp);
+  remove(("." + node_data.file_name + ".LOG").c_str());
 }
 
 void Node::on_get_status(struct addr_struct* addr_data,
@@ -121,15 +118,15 @@ void Node::on_get_status(struct addr_struct* addr_data,
 
 void Node::read_resume_log()
 {
-  fseek(node_data->log_fp, 0, SEEK_END);
-  size_t fsize = ftell(node_data->log_fp);
-  rewind(node_data->log_fp);
+  fseek(node_data.log_fp, 0, SEEK_END);
+  size_t fsize = ftell(node_data.log_fp);
+  rewind(node_data.log_fp);
   char *buf = new char[fsize + 1];
-  fread(buf, fsize, 1, node_data->log_fp);
+  fread(buf, fsize, 1, node_data.log_fp);
   buf[fsize] = 0;
   string buffer = string(buf);
   delete buf;
-  node_data->log_buffer_str = buffer;
+  node_data.log_buffer_str = buffer;
 
   // s[i]:start position, p[i]:stopped position
   regex *r = new regex("(p)(\\d+\t)(\\d+\n)");
@@ -161,11 +158,11 @@ void Node::check_url_details()
   while (true) {
     if (dwl_str.protocol == kHttp)
       if (dwl_str.encrypted)
-        check_info_downloader = new HttpsDownloader(node_data, dwl_str, 0, 0, 0);
+        check_info_downloader = new HttpsDownloader(&node_data, dwl_str, 0, 0, 0);
       else
-        check_info_downloader = new HttpDownloader(node_data, dwl_str, 0, 0, 0);
+        check_info_downloader = new HttpDownloader(&node_data, dwl_str, 0, 0, 0);
     else if (dwl_str.protocol == kFtp)
-        check_info_downloader = new FtpDownloader(node_data, dwl_str, 0, 0, 0);
+        check_info_downloader = new FtpDownloader(&node_data, dwl_str, 0, 0, 0);
 
     string redirected_url;
     bool redirection =
@@ -209,18 +206,18 @@ void Node::check_file_exist()
     ++index;
   }
 
-  node_data->file_name = file_name;
+  node_data.file_name = file_name;
   if (create_new_file){
-    node_data->fp = fopen(node_data->file_name.c_str(), "wb+");
-    for (size_t i = 0; i < file_length - 1; i++){
-      fputc('\0', node_data->fp);
-    }
-    rewind(node_data->fp);
-    node_data->log_fp = nullptr;
+    node_data.fp = fopen(node_data.file_name.c_str(), "wb+");
+    for (size_t i = 0; i < file_length - 1; i++)
+      fputc('\0', node_data.fp);
+
+    rewind(node_data.fp);
+    node_data.log_fp = nullptr;
   }
   else {
-    node_data->fp = fopen(node_data->file_name.c_str(), "rb+");
-    node_data->log_fp   = fopen(log_file.c_str(), "r+");
+    node_data.fp = fopen(node_data.file_name.c_str(), "rb+");
+    node_data.log_fp   = fopen(log_file.c_str(), "r+");
   }
 }
 

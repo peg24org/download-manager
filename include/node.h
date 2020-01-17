@@ -12,6 +12,7 @@ using namespace std;
 class Node:public Thread {
   public:
     Node(struct addr_struct dwl_str_, int number_of_trds) : dwl_str(dwl_str_)
+       , node_data(dwl_str_.file_name_on_server)
        , num_of_trds(number_of_trds)
        , file_length(0)
        , total_received_bytes(0)
@@ -32,8 +33,6 @@ class Node:public Thread {
     void check_url_details();
     void read_resume_log();
 
-    struct node_struct* node_data;
-
     map<int, Downloader*> download_threads;
     map<int, Downloader*>::iterator download_threads_it;
 
@@ -42,6 +41,7 @@ class Node:public Thread {
     map<size_t, size_t> trds_length;
 
     struct addr_struct dwl_str;
+    struct node_struct node_data;
 
     int num_of_trds; 
     size_t file_length;

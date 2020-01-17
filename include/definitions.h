@@ -18,7 +18,13 @@ enum protocol_type {
   kFtp,
 };
 
-struct node_struct{
+struct node_struct {
+  node_struct(const std::string& file_name) :
+    file_name(file_name) {}
+
+  // node_strucu must not be copied
+  node_struct(const node_struct& other) = delete;
+
   FILE* fp;
   FILE* log_fp;
   void* node;
