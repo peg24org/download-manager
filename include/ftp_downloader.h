@@ -6,9 +6,10 @@
 
 class FtpDownloader : public Downloader{
   public:
-  FtpDownloader(node_struct* node_data,  const struct  addr_struct addr_data,
-      size_t pos, size_t trd_length, int index)
-    : Downloader(node_data, addr_data, pos, trd_length, index)
+  FtpDownloader(FileIO& file_io, node_struct* node_data,
+      const struct  addr_struct addr_data, size_t pos, size_t trd_length,
+      int index)
+    : Downloader(file_io, node_data, addr_data, pos, trd_length, index)
     , data_port(0)
     , data_sockfd(0){}
   void connect_to_server() override;

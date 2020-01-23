@@ -25,7 +25,6 @@ struct node_struct {
   // node_strucu must not be copied
   node_struct(const node_struct& other) = delete;
 
-  FILE* fp;
   FILE* log_fp;
   void* node;
   bool resuming;

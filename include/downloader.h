@@ -2,17 +2,20 @@
 #define _DOWNLOADER_H
 
 #include "thread.h"
+#include "file_io.h"
 #include "definitions.h"
 
 using namespace std;
 
 class Downloader : public Thread{
   public:
-    Downloader(node_struct* node_data_info, const struct addr_struct addr_data_info,
-        size_t position, size_t trd_length, int trd_index)
+    Downloader(FileIO& file_io, node_struct* node_data_info,
+        const struct addr_struct addr_data_info, size_t position,
+        size_t trd_length, int trd_index)
     : index(trd_index)
     , trd_len(trd_length)
     , pos(position)
+    , file_io(file_io)
     , node_data(node_data_info)
     , addr_data(addr_data_info) {};
 
@@ -49,6 +52,7 @@ class Downloader : public Thread{
     int index;
     size_t trd_len;  // file size in bytes
     size_t pos;    //fp last position
+    FileIO& file_io;
     node_struct* node_data;
     struct addr_struct addr_data;
 

@@ -4,6 +4,7 @@
 #include <map>
 
 #include "thread.h"
+#include "file_io.h"
 #include "downloader.h"
 #include "definitions.h"
 
@@ -13,6 +14,7 @@ class Node:public Thread {
   public:
     Node(struct addr_struct dwl_str_, int number_of_trds) : dwl_str(dwl_str_)
        , node_data(dwl_str_.file_name_on_server)
+       , file_io(dwl_str_.file_name_on_server)
        , num_of_trds(number_of_trds)
        , file_length(0)
        , total_received_bytes(0)
@@ -42,6 +44,7 @@ class Node:public Thread {
 
     struct addr_struct dwl_str;
     struct node_struct node_data;
+    FileIO file_io;
 
     int num_of_trds; 
     size_t file_length;

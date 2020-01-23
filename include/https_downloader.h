@@ -9,9 +9,10 @@
 class HttpsDownloader:public HttpGeneral {
   public:
   ~HttpsDownloader();
-  HttpsDownloader(node_struct* node_data,  const struct addr_struct addr_data,
-      size_t pos, size_t trd_length,int index)
-    : HttpGeneral(node_data, addr_data, pos, trd_length, index)
+  HttpsDownloader(FileIO& file_io, node_struct* node_data,
+      const struct addr_struct addr_data, size_t pos, size_t trd_length,
+      int index)
+    : HttpGeneral(file_io, node_data, addr_data, pos, trd_length, index)
     , ssl(nullptr){};
   void connect_to_server() override;
 
