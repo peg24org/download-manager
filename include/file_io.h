@@ -1,24 +1,33 @@
 #ifndef FILE_IO_H
 #define FILE_IO_H
 
-#include <string>
-#include <cstdio>
 #include <mutex>
+#include <string>
+#include <fstream>
 
 class FileIO {
   public:
     FileIO(std::string file_name);
-    // Creates new file
-    void create(size_t file_length);
-    // Opens existing file
+    /// Creates new file.
+    void create(size_t file_length = 0);
+    /// Opens existing file.
     void open();
-    // Writes buffer 'buf' in position 'pos'
-    void write(size_t pos, size_t len, char* buf);
+    /**
+     * Writes a buffer in file.
+     * @param position Position of buffer in file
+     * @param length Length of buffer
+     * @param buffer Buffer to write in file
+     */
+    void write(size_t position, size_t length, char* buffer);
+    /** Checks the file exists or not.
+     * @return The file existence checking result
+     */
+    bool check_existence();
 
   private:
-    std::string file_name;
     std::mutex io_mutex;
-    FILE* file_pointer;
+    std::string file_name;
+    std::fstream file_stream;
 };
 
 #endif
