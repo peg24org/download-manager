@@ -4,17 +4,18 @@
 #include <map>
 
 #include "thread.h"
+#include "logger.h"
 #include "file_io.h"
 #include "downloader.h"
 #include "definitions.h"
-
-using namespace std;
 
 class Node:public Thread {
   public:
     Node(struct addr_struct dwl_str_, int number_of_trds) : dwl_str(dwl_str_)
        , node_data(dwl_str_.file_name_on_server)
+       , file_name(dwl_str_.file_name_on_server)
        , file_io(dwl_str_.file_name_on_server)
+       , logger("." + dwl_str_.file_name_on_server + ".LOG")
        , num_of_trds(number_of_trds)
        , file_length(0)
        , total_received_bytes(0)
@@ -30,21 +31,21 @@ class Node:public Thread {
         struct addr_struct* addr_data) {};
 
   private:
+    // <thread index, <start position, length>>
+    using DownloadChunks = std::unordered_map<int, std::pair<size_t, size_t>>;
     void wait();
     void run();
     void check_url_details();
-    void read_resume_log();
 
-    map<int, Downloader*> download_threads;
-    map<int, Downloader*>::iterator download_threads_it;
+    std::map<int, Downloader*> download_threads;
 
-    map<size_t, size_t> start_positions;
-    map<size_t, size_t> stopped_positions;
-    map<size_t, size_t> trds_length;
+    DownloadChunks download_chunks;
 
     struct addr_struct dwl_str;
     struct node_struct node_data;
+    string file_name;
     FileIO file_io;
+    Logger logger;
 
     int num_of_trds; 
     size_t file_length;
@@ -54,7 +55,7 @@ class Node:public Thread {
     static size_t node_index; // index of node
 
     // Checks the downloading file existence and its LOG file.
-    void check_file_exist();
+    bool check_resume();
 };
 
 #endif

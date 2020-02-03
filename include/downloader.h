@@ -2,6 +2,7 @@
 #define _DOWNLOADER_H
 
 #include "thread.h"
+#include "logger.h"
 #include "file_io.h"
 #include "definitions.h"
 
@@ -9,15 +10,17 @@ using namespace std;
 
 class Downloader : public Thread{
   public:
-    Downloader(FileIO& file_io, node_struct* node_data_info,
+    Downloader(FileIO& file_io, Logger& logger ,node_struct* node_data_info,
         const struct addr_struct addr_data_info, size_t position,
         size_t trd_length, int trd_index)
     : index(trd_index)
     , trd_len(trd_length)
     , pos(position)
     , file_io(file_io)
+    , logger(logger)
     , node_data(node_data_info)
-    , addr_data(addr_data_info) {};
+    , addr_data(addr_data_info)
+    {};
 
     void call_node_status_changed(int recieved_bytes, int err_flag = 0);
     void set_index(int value);
@@ -27,7 +30,8 @@ class Downloader : public Thread{
     /**
      * Check the size of file and redirection
      *
-     * @param redirect_url: Will be filled with redirected url if redirection exist.
+     * @param redirect_url: Will be filled with redirected url if redirection
+     *                      exist.
      * @param size: Will be filled with size of file if exist.
      *
      * @return True if redirection detected
@@ -51,8 +55,9 @@ class Downloader : public Thread{
 
     int index;
     size_t trd_len;  // file size in bytes
-    size_t pos;    //fp last position
+    size_t pos;    // Starting position for download
     FileIO& file_io;
+    Logger& logger;
     node_struct* node_data;
     struct addr_struct addr_data;
 

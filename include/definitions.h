@@ -30,7 +30,7 @@ struct node_struct {
   bool resuming;
   std::string log_buffer_str;
   std::string file_name;
-  std::mutex file_mutex;
+  std::mutex node_mutex;
 };
 
 constexpr size_t CHUNK_SIZE = 256 * 1024;

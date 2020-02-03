@@ -15,7 +15,7 @@ void HttpGeneral::downloader_trd()
         to_string(pos + trd_len) + "\r\n" +  "Host:" + addr_data.host_name +
         ":" + to_string(addr_data.port) + "\r\n\r\n";
 
-  if ( !sockfd )
+  if (!sockfd)
     connect_to_server();
 
   if (!socket_send(command_buffer.c_str(), command_buffer.length()))
@@ -39,11 +39,11 @@ void HttpGeneral::downloader_trd()
         bool found = regex_search(recv_buffer, m, e);
         if(found) {
           if(stoi(m[2].str())/100!=2){
-            cerr<< __LINE__ << " Error: "<<m[2]<<" "<<m[3]<<endl;
             exit(1);
           }
         }
         else{
+          // TODO
           cerr<<"Unknown error."<<endl;
           exit(1);
         }

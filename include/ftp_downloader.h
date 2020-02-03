@@ -1,15 +1,17 @@
 #ifndef _FTP_DOWNLOADER_H
 #define _FTP_DOWNLOADER_H
 
-#include "definitions.h"
 #include "node.h"
+#include "logger.h"
+#include "file_io.h"
+#include "definitions.h"
 
 class FtpDownloader : public Downloader{
   public:
-  FtpDownloader(FileIO& file_io, node_struct* node_data,
+  FtpDownloader(FileIO& file_io, Logger& logger ,node_struct* node_data,
       const struct  addr_struct addr_data, size_t pos, size_t trd_length,
       int index)
-    : Downloader(file_io, node_data, addr_data, pos, trd_length, index)
+    : Downloader(file_io, logger, node_data, addr_data, pos, trd_length, index)
     , data_port(0)
     , data_sockfd(0){}
   void connect_to_server() override;

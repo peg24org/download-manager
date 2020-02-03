@@ -16,7 +16,7 @@ void HttpDownloader::connect_to_server()
   dest_addr.sin_addr.s_addr = inet_addr(addr_data.ip.c_str());
   memset(&(dest_addr.sin_zero),'\0',8);
   if( connect(sockfd, (struct sockaddr *)&dest_addr,
-        sizeof(struct sockaddr))< 0) {
+        sizeof(struct sockaddr)) < 0) {
     perror("ERROR connecting");
     exit(1);
   }

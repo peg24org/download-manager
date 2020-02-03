@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h> 
 
+#include <mutex>
 #include <regex>
 #include <cstdlib>
 #include <cassert>
@@ -39,12 +40,15 @@ void Downloader::run()
 
 void Downloader::write_to_file(size_t pos, size_t len, char* buf)
 {
-  file_io.write(pos, len, buf);
-  write_log_file(pos);
+  const lock_guard<mutex> lock(node_data->node_mutex);
+
+  file_io.write(buf, pos, len);
+  logger.write(index, pos + len);
 }
 
 void Downloader::write_log_file(size_t pos)
 {
+
   regex e("(.|\\s)*(p"+to_string(index)+"\t\\d+\n)(.|\\s)*");
   if(node_data->log_buffer_str.length()<1)
     node_data->log_buffer_str = "p" + to_string(index) + "\t" +
@@ -107,7 +111,6 @@ bool Downloader::socket_send(const char* buffer, size_t len)
   }
   return true;
 }
-
 
 bool Downloader::check_error(int len) const
 {

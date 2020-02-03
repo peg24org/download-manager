@@ -7,10 +7,11 @@
 
 class HttpGeneral : public Downloader {
   public:
-  HttpGeneral(FileIO& file_io, node_struct* node_data,
+  HttpGeneral(FileIO& file_io, Logger& logger, node_struct* node_data,
       const struct addr_struct addr_data, size_t pos, size_t trd_length,
       int index)
-    : Downloader(file_io, node_data, addr_data, pos, trd_length, index){}
+    : Downloader(file_io, logger, node_data, addr_data, pos, trd_length, index)
+    {}
   bool check_link(string& redirected_url, size_t& size) override;
 
   protected:

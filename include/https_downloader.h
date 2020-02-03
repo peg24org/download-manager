@@ -3,16 +3,18 @@
 
 #include <openssl/ssl.h>
 
+#include "logger.h"
+#include "file_io.h"
 #include "definitions.h"
 #include "http_general.h"
 
 class HttpsDownloader:public HttpGeneral {
   public:
   ~HttpsDownloader();
-  HttpsDownloader(FileIO& file_io, node_struct* node_data,
+  HttpsDownloader(FileIO& file_io, Logger& logger, node_struct* node_data,
       const struct addr_struct addr_data, size_t pos, size_t trd_length,
       int index)
-    : HttpGeneral(file_io, node_data, addr_data, pos, trd_length, index)
+    : HttpGeneral(file_io,logger ,node_data, addr_data, pos, trd_length, index)
     , ssl(nullptr){};
   void connect_to_server() override;
 
