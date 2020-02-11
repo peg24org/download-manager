@@ -21,6 +21,8 @@ void print_usage (int exit_code)
 
 class DownloadMngr : public Node
 {
+  using Node::Node;
+
   size_t file_length = 0;
   size_t total_recv_bytes = 0;
   size_t temp_recv_bytes = 0;
@@ -29,7 +31,7 @@ class DownloadMngr : public Node
   void on_get_file_stat(size_t node_index, size_t file_size,
       struct addr_struct* addr_data)
   {
-    cout << "File size:" << file_size << " Bytes" << endl;
+    cout << "File size: " << file_size << " Bytes" << endl;
     file_length = file_size;
   }
 
@@ -48,7 +50,10 @@ class DownloadMngr : public Node
       float progress = (static_cast<float>(total_recv_bytes) /
           static_cast<float>(file_length)) * 100;
 
-      if (elapsed_seconds.count() > 0.5 ) {
+      cout << "\r" <<
+        "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
+
+      if (elapsed_seconds.count() > 0.5) {
         last_time_sample = std::chrono::system_clock::now();
         float speed = (total_recv_bytes - temp_recv_bytes) /
           (1024 * elapsed_seconds.count());
@@ -59,19 +64,14 @@ class DownloadMngr : public Node
           speed_unit = "MB";
           speed /= 1024;
         }
-        cout <<"\r\e[K" << flush << "\033[1G"  << "Progress = " <<
-          setprecision(4) << progress <<"% Speed = "
-          << speed << speed_unit + "/s" << "\033[5G";
+        cout << " Speed: " << setw(6) << setprecision(2) << speed <<
+          speed_unit + "/s" << flush;
 
-        if (progress < 100)
-          cout << flush;
-        else
+        if (progress >= 100)
           cout << endl;
       }
     }
   }
-
-  using Node::Node;
 };
 
 int main (int argc, char* argv[])
