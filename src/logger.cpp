@@ -48,10 +48,8 @@ ThreadsLog Logger::get_threads_data()
 
   int thread_index;
   size_t start_byte, end_byte;
-  while(file_contents >> thread_index >> start_byte >> end_byte) {
-    cout << thread_index <<" " << start_byte << " " << end_byte << endl;
+  while(file_contents >> thread_index >> start_byte >> end_byte)
     threads_log[thread_index] = make_pair(start_byte, end_byte);
-  }
 
   return threads_log;
 }
