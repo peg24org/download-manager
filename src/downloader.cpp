@@ -46,33 +46,6 @@ void Downloader::write_to_file(size_t pos, size_t len, char* buf)
   logger.write(index, pos + len);
 }
 
-void Downloader::write_log_file(size_t pos)
-{
-
-  regex e("(.|\\s)*(p"+to_string(index)+"\t\\d+\n)(.|\\s)*");
-  if(node_data->log_buffer_str.length()<1)
-    node_data->log_buffer_str = "p" + to_string(index) + "\t" +
-      to_string(pos) + "\n";
-  else{
-    if (regex_match(node_data->log_buffer_str, e)) {
-      regex re("p"+to_string(index)+"\\t\\d+\\n");
-      node_data->log_buffer_str = regex_replace(node_data->log_buffer_str,
-          re, "p" + to_string(index) + "\t" + to_string(pos) + "\n");
-    }
-    else
-      node_data->log_buffer_str += "p" + to_string(index) + "\t" +
-        to_string(pos) + "\n";
-  }
-
-  rewind(node_data->log_fp);
-  fwrite(node_data->log_buffer_str.c_str(), 1,
-      node_data->log_buffer_str.length(), node_data->log_fp);
-  if (!is_start_pos_written && !node_data->resuming){
-    write_start_pos_log(pos);
-    is_start_pos_written = true;
-  }
-}
-
 void Downloader::write_start_pos_log(size_t start_pos)
 {
   node_data->log_buffer_str += "s" + to_string(index) + "\t" +

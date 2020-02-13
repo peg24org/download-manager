@@ -62,7 +62,6 @@ class Downloader : public Thread{
     struct addr_struct addr_data;
 
     void write_to_file(size_t pos, size_t len, char* buf);
-    void write_log_file(size_t pos);
     void write_start_pos_log(size_t start_pos);
     int  sockfd = 0;
 
