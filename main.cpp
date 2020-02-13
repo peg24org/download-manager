@@ -83,14 +83,16 @@ int main (int argc, char* argv[])
   int next_option;
   const char* const short_options = "hvo:n:";
   const struct option long_options[] = {
-    {"help",  0, NULL, 'h'},
+    {"help",    0, NULL, 'h'},
     {"output",  1, NULL, 'o'},
-    {"verbose",   0, NULL, 'v'},
-    {NULL,    0, NULL,  0 }
+    {"verbose", 0, NULL, 'v'},
+    {NULL,      0, NULL, 0}
   };
   program_name = argv[0];
-  if (argc <2 )
+
+  if (argc < 2)
     print_usage(1);
+
   do {
     next_option = getopt_long (argc, argv, short_options,long_options, NULL);
     switch (next_option) {
@@ -107,9 +109,10 @@ int main (int argc, char* argv[])
         abort ();
     }
   } while (next_option != -1);
-  for (int i = optind; i < argc; ++i) {
+
+  for (int i = optind; i < argc; ++i)
     link = string(argv[i]);
-  }
+
   //******************************************
 
   URLInfo u_info(link);
