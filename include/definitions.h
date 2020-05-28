@@ -18,15 +18,17 @@ enum protocol_type {
   kFtp,
 };
 
+class Node;
+
 struct node_struct {
   node_struct(const std::string& file_name) :
     file_name(file_name) {}
 
-  // node_strucu must not be copied
+  // node_struct must not be copied
   node_struct(const node_struct& other) = delete;
 
   FILE* log_fp;
-  void* node;
+  Node* node;
   bool resuming;
   std::string log_buffer_str;
   std::string file_name;
