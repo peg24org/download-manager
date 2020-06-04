@@ -12,16 +12,21 @@ class HttpGeneral : public Downloader {
       int index)
     : Downloader(file_io, logger, node_data, addr_data, pos, trd_length, index)
     {}
-  bool check_link(string& redirected_url, size_t& size) override;
+  int check_link(string& redirected_url, size_t& file_size) override;
 
   protected:
   size_t get_size();
+  // Different implementation for http and https, HttpsDownloader overrides
+  //  this function
+  virtual bool http_connect();
   string receive_header;
   bool check_redirection(string& redirect_url);
 
   private:
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
+
   void downloader_trd() override;
+  char* get_header_delimiter_position(const char* buffer);
 };
 
 #endif

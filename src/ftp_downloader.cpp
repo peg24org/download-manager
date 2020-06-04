@@ -9,21 +9,6 @@
 
 #include "ftp_downloader.h"
 
-void FtpDownloader::connect_to_server()
-{
-  struct sockaddr_in dest_addr;
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  dest_addr.sin_family = AF_INET;
-  dest_addr.sin_port = htons(addr_data.port);
-  dest_addr.sin_addr.s_addr = inet_addr(addr_data.ip.c_str());
-  memset(&(dest_addr.sin_zero),'\0',8);
-  if( connect(sockfd, (struct sockaddr *)&dest_addr,
-        sizeof(struct sockaddr))< 0) {
-    perror("ERROR connecting");
-    exit(1);
-  }
-}
-
 void FtpDownloader::disconnect()
 {
   if (sockfd != 0) {
@@ -32,9 +17,9 @@ void FtpDownloader::disconnect()
   }
 }
 
-bool FtpDownloader::check_link(string& redirected_url, size_t& size)
+int FtpDownloader::check_link(string& redirected_url, size_t& size)
 {
-  connect_to_server();
+  connection_init();
   ftp_init();
 
   string reply;
@@ -42,7 +27,7 @@ bool FtpDownloader::check_link(string& redirected_url, size_t& size)
   send_ftp_command("SIZE " + addr_data.file_name_on_server + "\r\n", stat,
       value);
   size = stoi(value);
-  return false;
+  return 0;
 }
 
 void FtpDownloader::ftp_init(string username, string password)
@@ -62,7 +47,7 @@ void FtpDownloader::ftp_init(string username, string password)
 
 void FtpDownloader::downloader_trd()
 {
-  connect_to_server();
+  connection_init();
   ftp_init();
 
   string stat;
@@ -149,20 +134,10 @@ bool FtpDownloader::send_ftp_command(const string& command, string& status)
 
 bool FtpDownloader::open_data_channel()
 {
-  struct sockaddr_in dest_addr;
-  data_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  dest_addr.sin_family = AF_INET;
-  dest_addr.sin_port = htons(data_port);
-  dest_addr.sin_addr.s_addr = inet_addr(data_host.c_str());
-  memset(&(dest_addr.sin_zero),'\0',8);
-  if( connect(data_sockfd, (struct sockaddr *)&dest_addr,
-        sizeof(struct sockaddr))< 0) {
-    perror("ERROR connecting");
-    exit(1);
-  }
-  return true;
+  if(connection_init())
+    return true;
+  return false;
 }
-
 
 bool FtpDownloader::ftp_data_receive(char* buffer, size_t& received_len,
     size_t buffer_capacity)

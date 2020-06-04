@@ -43,8 +43,6 @@ void Node::run()
       total_received_bytes +=
         thread_log.second.second - thread_log.second.first;
     }
-
-    on_status_changed(-1, file_length, total_received_bytes, &dwl_str);
   }
   else {  // Not resuming download
     for (int i = 0; i < num_of_trds; i++) {
@@ -55,6 +53,7 @@ void Node::run()
         position = i * trd_norm_len;
       }
       download_chunks[i] = make_pair(position, length);
+      download_chunks_[i].start_pos = position;
       logger.write_first_position(i, position);
     }
   }
@@ -88,24 +87,11 @@ void Node::run()
       }
       break;
   }
-
-  wait();
+  check_state_of_threads();
 
   for (auto it = download_threads.begin(); it != download_threads.end(); ++it)
     delete it->second;
   logger.remove();
-}
-
-void Node::on_get_status(struct addr_struct* addr_data,
-    int downloader_trd_index, size_t total_trd_len, size_t received_bytes,
-    int stat_flag)
-{
-  auto download_threads_it = download_threads.find(downloader_trd_index);
-  if (download_threads_it != download_threads.end()) {
-    total_received_bytes += received_bytes;
-    on_status_changed(downloader_trd_index, total_trd_len, received_bytes,
-        addr_data);
-  }
 }
 
 void Node::check_url_details()
@@ -137,6 +123,58 @@ void Node::check_url_details()
       break;
   }
   delete check_info_downloader;
+}
+
+void Node::check_state_of_threads()
+{
+  while(download_threads.size()) {
+    usleep(callback_refresh_interval * 1000);
+    for(auto thread : download_threads) {
+      StatusStruct status = thread.second->get_status();
+      int index = thread.second->get_index();
+      size_t current_pos = thread.second->get_current_pos();
+      if(status.operation_status == OperationStatus::DOWNLOADING)
+        download_chunks_[index].current_pos = current_pos;
+      else if(status.operation_status == OperationStatus::FINISHED) {
+        download_chunks_[index].current_pos = current_pos;
+        thread.second->join();
+        delete thread.second;
+        download_threads.erase(index);
+        break;
+      }
+      else if(status.operation_status ==
+          OperationStatus::SOCKET_RECV_FUNCTION_ERROR) {
+        size_t length = thread.second->get_trd_len() - current_pos;
+        thread.second->join();
+        delete thread.second;
+        download_threads[index] = 
+          create_downloader(index, length, current_pos);
+        download_threads[index]->start();
+        break;
+      }
+    }   // End of for loop
+    on_data_received(download_chunks_);
+  }   // End of while loop
+}
+
+Downloader* Node::create_downloader(int index, size_t length, size_t position)
+{
+  Downloader* downloader = nullptr;
+  switch(dwl_str.protocol) {
+    case kHttp:
+      if(!dwl_str.encrypted)
+        downloader = new HttpDownloader(file_io, logger, &node_data, dwl_str,
+            position, length, index);
+      else
+        downloader = new HttpsDownloader(file_io, logger, &node_data, dwl_str,
+            position, length, index);
+      break;
+    case kFtp:
+      downloader = new HttpsDownloader(file_io, logger, &node_data, dwl_str,
+          position, length, index);
+  }
+
+  return downloader;
 }
 
 bool Node::check_resume()

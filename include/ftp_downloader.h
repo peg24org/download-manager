@@ -14,9 +14,8 @@ class FtpDownloader : public Downloader{
     : Downloader(file_io, logger, node_data, addr_data, pos, trd_length, index)
     , data_port(0)
     , data_sockfd(0){}
-  void connect_to_server() override;
   void disconnect() override;
-  bool check_link(string& redirect_url, size_t& size) override;
+  int check_link(string& redirect_url, size_t& size) override;
 
   private:
   void downloader_trd() override;

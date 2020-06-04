@@ -1,7 +1,7 @@
 #include <regex>
 #include <cstdlib>
 #include <cassert>
-
+#include <unistd.h>
 #include <iostream>
 
 #include "node.h"
@@ -10,67 +10,62 @@
 
 void HttpGeneral::downloader_trd()
 {
-  string command_buffer = "GET " + addr_data.file_path_on_server + " " +
-        "HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" +
-        to_string(pos + trd_len) + "\r\n" +  "Host:" + addr_data.host_name +
-        ":" + to_string(addr_data.port) + "\r\n\r\n";
+  set_status(OperationStatus::NOT_STARTED);
 
-  if (!sockfd)
-    connect_to_server();
+  string request = "GET " + addr_data.file_path_on_server + " " +
+    "HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" +
+    to_string(pos + trd_len) + "\r\n" +  "Host:" + addr_data.host_name +
+    ":" + to_string(addr_data.port) + "\r\n\r\n";
 
-  if (!socket_send(command_buffer.c_str(), command_buffer.length()))
-    exit(1);
+  bool send_request_result = false;
+  if(http_connect())
+    send_request_result = socket_send(request.c_str(), request.length());
 
-  char* buffer = new char[CHUNK_SIZE * sizeof(char)];
+  unique_ptr<char[]> buffer_unique_ptr =
+    make_unique<char[]>(CHUNK_SIZE * sizeof(char));
+  char* buffer = buffer_unique_ptr.get();
+
   char* header_delimiter_pos = 0;
-  int header_delimiter = 0;
   size_t temp_received_bytes = 0;
-  size_t recieved_bytes = 0;
-  while(recieved_bytes < trd_len){
-    size_t bytes = 0;
-    if (!socket_receive(buffer, bytes, CHUNK_SIZE))
-      exit(1);
-    if(header_delimiter_pos  == 0) {
-      header_delimiter_pos = strstr(buffer,"\r\n\r\n");
-      if(header_delimiter_pos) {
-        string recv_buffer = string(buffer);
-        smatch m;
-        regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
-        bool found = regex_search(recv_buffer, m, e);
-        if(found) {
-          if(stoi(m[2].str())/100!=2){
-            exit(1);
-          }
-        }
-        else{
-          // TODO
-          cerr<<"Unknown error."<<endl;
-          exit(1);
-        }
+  //size_t total_received_bytes = 0;
 
+  while(send_request_result && (total_received_bytes < trd_len)) {
+    size_t bytes = 0;
+    if (!socket_receive(buffer, bytes, CHUNK_SIZE)) {
+      break;
+    }
+    if(!header_delimiter_pos) {
+      header_delimiter_pos = get_header_delimiter_position(buffer);
+      if (header_delimiter_pos){
         // [\r\n\r\n]=4 Bytes
-        header_delimiter = static_cast<int>((header_delimiter_pos -
-              buffer) + 4);
+        const size_t header_delimiter = (header_delimiter_pos - buffer) + 4;
         temp_received_bytes = bytes - header_delimiter;
         write_to_file(pos, temp_received_bytes, buffer
             + header_delimiter);//n=length
         pos += temp_received_bytes;
-        recieved_bytes += temp_received_bytes;
+        total_received_bytes += temp_received_bytes;
+        set_status(OperationStatus::DOWNLOADING);
       }
       else {
         buffer += bytes;
+        header_delimiter_pos = NULL;
         continue;
       }
     }
-    else{
+    else {
       write_to_file(pos, bytes, buffer);//n=length
       pos += bytes;
-      recieved_bytes += bytes;
+      total_received_bytes += bytes;
       temp_received_bytes = bytes;
+      set_status(OperationStatus::DOWNLOADING);
     }
-    call_node_status_changed(temp_received_bytes);
-  }
-  delete[] buffer;
+    call_node_status_changed(temp_received_bytes, get_status());
+  }   // End of while loop
+
+  if(total_received_bytes == trd_len || total_received_bytes == trd_len+1)
+      set_status(OperationStatus::FINISHED);
+
+  call_node_status_changed(temp_received_bytes, get_status());
 }
 
 size_t HttpGeneral::get_size()
@@ -80,6 +75,11 @@ size_t HttpGeneral::get_size()
         size_string))
     return  strtoul(static_cast<const char*>(size_string.c_str()), nullptr, 0);
   return 0;
+}
+
+bool HttpGeneral::http_connect()
+{
+  return connection_init();
 }
 
 bool HttpGeneral::check_redirection(string& redirecting)
@@ -94,40 +94,67 @@ bool HttpGeneral::check_redirection(string& redirecting)
   return false;
 }
 
-bool HttpGeneral::check_link(string& redirected_url, size_t& size)
+int HttpGeneral::check_link(string& redirected_url, size_t& file_size)
 {
-  bool retval = false;
+  int redirect_status = 0;
 
-  // Use GET instead of HEAD, because some servers doesen't suppurt HEAD command.
-  string command_buffer =
+  // Use GET instead of HEAD, because some servers doesn't support HEAD command.
+  string request =
     "GET " + addr_data.file_path_on_server + " HTTP/1.1\r\nHost:" +
     addr_data.host_name + "\r\n\r\n";
-  connect_to_server();
+  if(!http_connect())
+    return -1;
 
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
 
-  if (!socket_send(command_buffer.c_str(), command_buffer.length()))
-    exit(1);
+  if (!socket_send(request.c_str(), request.length()))
+    return -1;    // Report error
+
   size_t len = 0;
-  char* buffer = new char[CHUNK_SIZE * sizeof(char)];
+  unique_ptr<char[]> buffer = make_unique<char[]>(CHUNK_SIZE * sizeof(char));
+
   while (true) {
     size_t number_of_bytes;
     if (!socket_receive(const_cast<char*>(receive_header.data()),
-          number_of_bytes, MAX_HTTP_HEADER_LENGTH))
-      exit(1);
+          number_of_bytes, MAX_HTTP_HEADER_LENGTH)) {
+      return -1;
+    }
     len += number_of_bytes;
     if (receive_header.find("\r\n\r\n") != string::npos)
       break;
   }
 
   if (check_redirection(redirected_url))
-    return true;
+    // Link is redirected
+    return 1;
   else {
-    size = get_size();
-    retval = false;
+    file_size = get_size();
+    // Link is not redirected
+    redirect_status = 0;
   }
 
   disconnect();
-  delete[] buffer;
-  return retval;
+  return redirect_status;
+}
+
+char* HttpGeneral::get_header_delimiter_position(const char* buffer)
+{
+  char* delimiter_pos = const_cast<char*>(strstr(buffer,"\r\n\r\n"));
+  if(delimiter_pos) {
+    string recv_buffer = string(buffer);
+    smatch m;
+    regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
+    bool found = regex_search(recv_buffer, m, e);
+    if(found) {
+      if(stoi(m[2].str())/100 != 2) {
+        set_status(OperationStatus::HTTP_ERROR, stoi(m[2].str()));
+        delimiter_pos = NULL;
+      }
+    }
+    else {
+      set_status(OperationStatus::RESPONSE_ERROR);
+      delimiter_pos = NULL;
+    }
+  }
+  return delimiter_pos;
 }

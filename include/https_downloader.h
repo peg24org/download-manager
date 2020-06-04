@@ -8,7 +8,7 @@
 #include "definitions.h"
 #include "http_general.h"
 
-class HttpsDownloader:public HttpGeneral {
+class HttpsDownloader : public HttpGeneral {
   public:
   ~HttpsDownloader();
   HttpsDownloader(FileIO& file_io, Logger& logger, node_struct* node_data,
@@ -16,13 +16,12 @@ class HttpsDownloader:public HttpGeneral {
       int index)
     : HttpGeneral(file_io,logger ,node_data, addr_data, pos, trd_length, index)
     , ssl(nullptr){};
-  void connect_to_server() override;
 
   private:
   void disconnect() override;
   bool socket_send(const char* buffer, size_t len) override;
-  bool socket_receive(char* buffer, size_t& len, size_t buffer_capacity) override;
   bool check_error(int len) const override;
+  bool http_connect() override;
   SSL *ssl;
 };
 

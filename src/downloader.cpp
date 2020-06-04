@@ -12,10 +12,9 @@
 const string
   Downloader::HTTP_HEADER = "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
 
-void Downloader::call_node_status_changed(int received_bytes, int err_flag)
+void Downloader::call_node_status_changed(int received_bytes,
+    StatusStruct status)
 {
-  static_cast<Node*>(node_data->node)->on_get_status(&addr_data, index, trd_len,
-      received_bytes, 0);
 }
 
 void Downloader::set_index(int value)
@@ -28,9 +27,19 @@ int Downloader::get_index()
   return index;
 }
 
+size_t Downloader::get_current_pos() const
+{
+  return pos;
+}
+
 size_t Downloader::get_trd_len()
 {
   return trd_len;
+}
+
+StatusStruct Downloader::get_status() const
+{
+  return status;
 }
 
 void Downloader::run()
@@ -71,6 +80,34 @@ bool Downloader::regex_search_string(const string& input, const string& pattern)
   return regex_search_string(input, pattern, temp);
 }
 
+bool Downloader::connection_init()
+{
+  // Check if connected before
+  if(sockfd)
+    return true;
+
+  struct sockaddr_in dest_addr;
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if(sockfd < 0) {
+    set_status(OperationStatus::SOCKFD_ERROR, errno);
+    return false;
+  }
+  dest_addr.sin_family = AF_INET;
+  dest_addr.sin_port = htons(addr_data.port);
+  dest_addr.sin_addr.s_addr = inet_addr(addr_data.ip.c_str());
+  memset(&(dest_addr.sin_zero),'\0', sizeof(dest_addr.sin_zero));
+  if(connect(sockfd, (struct sockaddr *)&dest_addr,
+        sizeof(struct sockaddr)) < 0) {
+    set_status(OperationStatus::SOCKET_CONNECT_FUNCTION_ERROR, errno);
+    return false;
+  }
+
+  // Set timeout
+  setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout_interval,
+      sizeof(timeout_interval));
+  return true;
+}
+
 bool Downloader::socket_send(const char* buffer, size_t len)
 {
   size_t sent_bytes = 0;
@@ -79,8 +116,10 @@ bool Downloader::socket_send(const char* buffer, size_t len)
   while (sent_bytes < len) {
     if ((tmp_sent_bytes = send(sockfd, buffer, len, 0)) > 0)
       sent_bytes += tmp_sent_bytes;
-    else
-      check_error(tmp_sent_bytes);
+    else {
+      set_status(OperationStatus::SOCKET_SEND_FUNCTION_ERROR, errno);
+      return false;
+    }
   }
   return true;
 }
@@ -97,6 +136,18 @@ bool Downloader::check_error(int len) const
 bool Downloader::socket_receive(char* buffer, size_t& received_len,
     size_t buffer_capacity)
 {
-  return (received_len =
-      recv(sockfd, buffer, buffer_capacity, 0)) > 0 ? true : false;
+  ssize_t received_bytes = recv(sockfd, buffer, buffer_capacity, 0);
+  if (received_bytes < 0) {
+    set_status(OperationStatus::SOCKET_RECV_FUNCTION_ERROR, errno);
+    return false;
+  }
+  else
+    received_len = received_bytes;
+  return true;
+}
+
+void Downloader::set_status(OperationStatus operation_status, int error_type)
+{
+  status.operation_status = operation_status;
+  status.error_value = error_type;
 }

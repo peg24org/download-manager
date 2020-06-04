@@ -24,53 +24,45 @@ class DownloadMngr : public Node
   using Node::Node;
 
   size_t file_length = 0;
-  size_t total_recv_bytes = 0;
-  size_t temp_recv_bytes = 0;
-  mutex mtx;
+  size_t last_recv_bytes = 0;
+  float speed = 0;
+
+  void on_data_received(const std::map<int, DownloadChunk>& download_chunks)
+  {
+    size_t received_bytes = 0;
+    for (auto chunk : download_chunks)
+      received_bytes += chunk.second.current_pos - chunk.second.start_pos;
+
+    float progress = (static_cast<float>(received_bytes) /
+        static_cast<float>(file_length)) * 100;
+
+    cout << "\r" <<
+      "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
+
+    if(received_bytes != last_recv_bytes)
+      speed = (1000 * (received_bytes - last_recv_bytes)) /
+        (callback_refresh_interval * 1024);
+    last_recv_bytes = received_bytes;
+    string speed_unit = "KB";
+
+    if (speed > 1024) {
+      speed_unit = "MB";
+      speed /= 1024;
+    }
+    cout << " Speed: " << setw(6) << setprecision(2) << speed <<
+      speed_unit + "/s" << flush;
+
+
+    if (progress >= 100)
+      cout << endl;
+    cout << flush;
+  }
 
   void on_get_file_stat(size_t node_index, size_t file_size,
       struct addr_struct* addr_data)
   {
     cout << "File size: " << file_size << " Bytes" << endl;
     file_length = file_size;
-  }
-
-  std::chrono::time_point<std::chrono::system_clock> last_time_sample =
-    std::chrono::system_clock::now();
-  void on_status_changed(int downloader_trd_index, size_t total_trd_len,
-      size_t received_bytes, struct addr_struct* addr_data)
-  {
-    if (received_bytes > 0) {
-      const lock_guard<mutex> lock(mtx);
-      total_recv_bytes += received_bytes;
-      std::chrono::time_point<std::chrono::system_clock> current_time_sample =
-        std::chrono::system_clock::now();
-      std::chrono::duration<double> elapsed_seconds = current_time_sample -
-        last_time_sample;
-      float progress = (static_cast<float>(total_recv_bytes) /
-          static_cast<float>(file_length)) * 100;
-
-      cout << "\r" <<
-        "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
-
-      if (elapsed_seconds.count() > 0.5) {
-        last_time_sample = std::chrono::system_clock::now();
-        float speed = (total_recv_bytes - temp_recv_bytes) /
-          (1024 * elapsed_seconds.count());
-        temp_recv_bytes = total_recv_bytes;
-        string speed_unit = "KB";
-
-        if (speed > 1024) {
-          speed_unit = "MB";
-          speed /= 1024;
-        }
-        cout << " Speed: " << setw(6) << setprecision(2) << speed <<
-          speed_unit + "/s" << flush;
-
-        if (progress >= 100)
-          cout << endl;
-      }
-    }
   }
 };
 
