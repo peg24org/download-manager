@@ -3,89 +3,107 @@
 #include <cassert>
 #include <unistd.h>
 #include <iostream>
+#include <arpa/inet.h>
 
 #include "node.h"
-#include "definitions.h"
 #include "http_general.h"
+
+HttpGeneral::HttpGeneral(const struct DownloadSource& download_source,
+                         const std::vector<int>& socket_descriptors)
+  : Downloader(download_source, socket_descriptors)
+{
+  for (size_t index = 0; index < socket_descriptors.size(); ++index)
+    connections[index].sock_desc = socket_descriptors[index];
+}
+
+HttpGeneral::HttpGeneral(const struct DownloadSource& download_source,
+                         std::vector<int>& socket_descriptors,
+                         std::unique_ptr<Writer> writer,
+                         ChunksCollection& chunks_collection)
+  : Downloader(download_source, socket_descriptors, move(writer),
+               chunks_collection)
+{
+  for (auto chunk : chunks_collection) {
+    connections[chunk.first].chunk = chunk.second;
+    connections[chunk.first].sock_desc = socket_descriptors.at(chunk.first);
+    connections[chunk.first].status = OperationStatus::NOT_STARTED;
+  }
+}
 
 void HttpGeneral::downloader_trd()
 {
-  set_status(OperationStatus::NOT_STARTED);
+  fd_set readfds;
 
-  string request = "GET " + addr_data.file_path_on_server + " " +
-    "HTTP/1.1\r\nRange: bytes=" + to_string(pos) + "-" +
-    to_string(pos + trd_len) + "\r\n" +  "Host:" + addr_data.host_name +
-    ":" + to_string(addr_data.port) + "\r\n\r\n";
+  struct timeval timeout;
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
 
-  bool send_request_result = false;
-  if(http_connect())
-    send_request_result = socket_send(request.c_str(), request.length());
+  static constexpr size_t kBufferLen = 40000;
+  char recv_buffer[kBufferLen];
 
-  unique_ptr<char[]> buffer_unique_ptr =
-    make_unique<char[]>(CHUNK_SIZE * sizeof(char));
-  char* buffer = buffer_unique_ptr.get();
+  size_t total_downloaded_bytes = 0;
 
-  char* header_delimiter_pos = 0;
-  size_t temp_received_bytes = 0;
-  //size_t total_received_bytes = 0;
+  // TODO it should resend request in case of error
+  for (size_t index = 0; index < connections.size(); ++index)
+    send_request(index);
 
-  while(send_request_result && (total_received_bytes < trd_len)) {
-    size_t bytes = 0;
-    if (!socket_receive(buffer, bytes, CHUNK_SIZE)) {
-      break;
+  const size_t kFileSize = writer->get_file_size();
+  while (writer->get_total_written_bytes() < kFileSize) {
+
+    int max_fd = 0;
+    FD_ZERO(&readfds);
+    for (size_t index = 0; index < connections.size(); ++index) {
+      int sock_desc = connections[index].sock_desc;
+      FD_SET(sock_desc, &readfds);
+      max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
     }
-    if(!header_delimiter_pos) {
-      header_delimiter_pos = get_header_delimiter_position(buffer);
-      if (header_delimiter_pos){
-        // [\r\n\r\n]=4 Bytes
-        const size_t header_delimiter = (header_delimiter_pos - buffer) + 4;
-        temp_received_bytes = bytes - header_delimiter;
-        write_to_file(pos, temp_received_bytes, buffer
-            + header_delimiter);//n=length
-        pos += temp_received_bytes;
-        total_received_bytes += temp_received_bytes;
-        set_status(OperationStatus::DOWNLOADING);
-      }
-      else {
-        buffer += bytes;
-        header_delimiter_pos = NULL;
-        continue;
-      }
-    }
-    else {
-      write_to_file(pos, bytes, buffer);//n=length
-      pos += bytes;
-      total_received_bytes += bytes;
-      temp_received_bytes = bytes;
-      set_status(OperationStatus::DOWNLOADING);
-    }
-    call_node_status_changed(temp_received_bytes, get_status());
+
+    int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
+    // TODO: implement sel_retval == 0
+    if (sel_retval < 0)
+      cerr << "Select error occured." << endl;
+    else if (sel_retval > 0) {
+      for (size_t index = 0; index < connections.size(); ++index) {
+        int sock_desc = connections[index].sock_desc;
+        if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+          size_t recvd_bytes = 0;
+          receive_data(connections[index], recv_buffer,  recvd_bytes,
+                       kBufferLen);
+
+          // Skip the header
+          size_t header_offset = 0;
+          if (connections[index].status == OperationStatus::NOT_STARTED) {
+            header_offset = get_header_delimiter_position(recv_buffer) + 4;
+            recvd_bytes -= header_offset;
+          }
+
+          writer->write(recv_buffer+header_offset, recvd_bytes,
+                        connections[index].chunk.current_pos, index);
+          connections[index].chunk.current_pos += recvd_bytes;
+          total_downloaded_bytes += recvd_bytes;
+          connections[index].status = OperationStatus::DOWNLOADING;
+        }
+        //TODO implement retry
+        else {  // the socket timedout
+          connections_status[index] = OperationStatus::TIMEOUT;
+        }
+      }   // End of for loop
+    }   // end of 'else if' condition
   }   // End of while loop
-
-  if(total_received_bytes == trd_len || total_received_bytes == trd_len+1)
-      set_status(OperationStatus::FINISHED);
-
-  call_node_status_changed(temp_received_bytes, get_status());
-}
+}   // End of downloader_trd()
 
 size_t HttpGeneral::get_size()
 {
   string size_string;
   if (regex_search_string(receive_header, "(Content-Length: )(\\d+)",
-        size_string))
+                          size_string))
     return  strtoul(static_cast<const char*>(size_string.c_str()), nullptr, 0);
   return 0;
 }
 
-bool HttpGeneral::http_connect()
-{
-  return connection_init();
-}
-
 bool HttpGeneral::check_redirection(string& redirecting)
 {
-  if (regex_search_string(receive_header, HTTP_HEADER, redirecting))
-  {
+  if (regex_search_string(receive_header, HTTP_HEADER, redirecting)) {
     // Check redirection
     if (regex_search_string(receive_header, "(Location: )(.+)",redirecting))
       return true;
@@ -98,63 +116,72 @@ int HttpGeneral::check_link(string& redirected_url, size_t& file_size)
 {
   int redirect_status = 0;
 
-  // Use GET instead of HEAD, because some servers doesn't support HEAD command.
+  // Use GET instead of HEAD, because some servers doesn't support HEAD
+  //  command.
   string request =
-    "GET " + addr_data.file_path_on_server + " HTTP/1.1\r\nHost:" +
-    addr_data.host_name + "\r\n\r\n";
-  if(!http_connect())
-    return -1;
+    "GET " + download_source.file_path_on_server + " HTTP/1.1\r\nHost: " +
+    download_source.host_name + ":" + to_string(download_source.port) +
+    "\r\n\r\n";
 
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
-
-  if (!socket_send(request.c_str(), request.length()))
-    return -1;    // Report error
+  if (!send_data(connections[0], request.c_str(), request.length()))
+    return -1;
 
   size_t len = 0;
-  unique_ptr<char[]> buffer = make_unique<char[]>(CHUNK_SIZE * sizeof(char));
-
+  unique_ptr<char[]> buffer = make_unique<char[]>(256 * 1024 * sizeof(char));
   while (true) {
     size_t number_of_bytes;
-    if (!socket_receive(const_cast<char*>(receive_header.data()),
-          number_of_bytes, MAX_HTTP_HEADER_LENGTH)) {
+    if (!receive_data(connections[0], const_cast<char*>(receive_header.data()),
+                      number_of_bytes, MAX_HTTP_HEADER_LENGTH))
       return -1;
-    }
     len += number_of_bytes;
-    if (receive_header.find("\r\n\r\n") != string::npos)
+    if (receive_header.find("\r\n\r\n") != string::npos) {
       break;
+    }
   }
 
   if (check_redirection(redirected_url))
     // Link is redirected
-    return 1;
+    redirect_status = 1;
   else {
     file_size = get_size();
     // Link is not redirected
     redirect_status = 0;
   }
 
-  disconnect();
   return redirect_status;
 }
 
-char* HttpGeneral::get_header_delimiter_position(const char* buffer)
+size_t HttpGeneral::get_header_delimiter_position(const char* buffer)
 {
-  char* delimiter_pos = const_cast<char*>(strstr(buffer,"\r\n\r\n"));
-  if(delimiter_pos) {
+  char* pos = const_cast<char*>(strstr(buffer,"\r\n\r\n"));
+  if(pos) {
     string recv_buffer = string(buffer);
     smatch m;
     regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
     bool found = regex_search(recv_buffer, m, e);
     if(found) {
+      // If responst not equal to 200,OK
       if(stoi(m[2].str())/100 != 2) {
-        set_status(OperationStatus::HTTP_ERROR, stoi(m[2].str()));
-        delimiter_pos = NULL;
+        pos = NULL;
       }
     }
     else {
-      set_status(OperationStatus::RESPONSE_ERROR);
-      delimiter_pos = NULL;
+      pos = NULL;
     }
   }
-  return delimiter_pos;
+  return pos - buffer;
+}
+
+void HttpGeneral::send_request(size_t index)
+{
+  string request = "GET " + download_source.file_path_on_server +
+    " " +	"HTTP/1.1\r\nRange: bytes=" +
+    to_string(chunks_collection[index].current_pos) + "-" +
+    to_string(chunks_collection[index].end_pos) + "\r\n" +  "Host:" +
+    download_source.host_name +	":" + to_string(download_source.port) +
+    "\r\n\r\n";
+ 
+  if(!send_data(connections[index], request.c_str(), request.length()))
+    connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
 }

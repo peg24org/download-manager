@@ -5,41 +5,38 @@
 #include <fstream>
 
 class FileIO {
+
   public:
+    ~FileIO();
+
     FileIO(std::string file_name);
+
     /// Creates new file.
-    void create(size_t file_length = 0);
+    virtual void create(size_t file_length = 0);
+
     /// Opens existing file.
-    void open();
+    virtual void open();
+
     /**
-     * Writes a buffer in file.
+     * Writes a buffer in the file.
      *
+     * @param buffer Buffer to write in file
+     * @param length Length of buffer
      * @param position Position of buffer in file
-     * @param length Length of buffer
-     * @param buffer Buffer to write in file
      */
-    void write(const char* buffer, size_t position, size_t length);
-    /**
-     * Writes a buffer in file, previous content is deleted and
-     * replaced by the new one.
-     *
-     * @param length Length of buffer
-     * @param buffer Buffer to write in file
-     */
-    void write(const char* buffer, size_t length);
-    /**
-     * Checks the file exists or not.
-     * @return The file existence checking result, 'true' if file exists.
-     */
-    bool check_existence();
+    virtual void write(const char* buffer, size_t length, size_t position=0);
+
+    virtual bool check_existence();
 
     /**
      * Returns one line of file.
      * @param line_number Line number of file to get
+     * @throws std::runtime_error Thrown if 'open' function is not called
      * @return One line of file
      */
-    std::string get_file_contents();
-    void remove();
+    virtual std::string get_file_contents();
+
+    virtual void remove();
 
   private:
     std::string file_name;

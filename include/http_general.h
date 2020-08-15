@@ -1,32 +1,39 @@
 #ifndef _HTTP_GENERAL_H
 #define _HTTP_GENERAL_H
 
-#include "downloader.h"
-#include "definitions.h"
+#include <vector>
+
 #include "node.h"
+#include "writer.h"
+#include "downloader.h"
 
 class HttpGeneral : public Downloader {
   public:
-  HttpGeneral(FileIO& file_io, Logger& logger, node_struct* node_data,
-      const struct addr_struct addr_data, size_t pos, size_t trd_length,
-      int index)
-    : Downloader(file_io, logger, node_data, addr_data, pos, trd_length, index)
-    {}
+  HttpGeneral(const struct DownloadSource& download_source,
+              const std::vector<int>& socket_descriptors);
+
+  HttpGeneral(const struct DownloadSource& download_source,
+              std::vector<int>& socket_descriptors,
+              std::unique_ptr<Writer> writer,
+              ChunksCollection& chunks_collection);
+
   int check_link(string& redirected_url, size_t& file_size) override;
 
   protected:
-  size_t get_size();
-  // Different implementation for http and https, HttpsDownloader overrides
-  //  this function
-  virtual bool http_connect();
   string receive_header;
+
+	virtual void send_request(size_t index);
+  size_t get_header_delimiter_position(const char* buffer);
+  size_t get_size();
   bool check_redirection(string& redirect_url);
+
+  // Status of connections
+  std::map<size_t, OperationStatus> connections_status;
 
   private:
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
 
   void downloader_trd() override;
-  char* get_header_delimiter_position(const char* buffer);
 };
 
 #endif

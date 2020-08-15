@@ -1,62 +1,101 @@
 #include <netdb.h>
+#include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 
 #include <regex>
 #include <string>
+#include <iostream>
 
 #include "url_info.h"
 
-URLInfo::URLInfo(std::string url_param) : url(url_param)
+URLInfo::URLInfo(const std::string& url): url(url), socket_descriptor(0)
+{
+}
+
+URLInfo::~URLInfo()
+{
+  close(socket_descriptor);
+}
+
+struct DownloadSource URLInfo::get_download_source()
 {
   smatch m;
   regex link_pattern("((http://|ftp://|https://)|())(.*?)(/|:(.+?)/)");
 
-  // get port
   if (regex_search(url, m, link_pattern)) {
-    dl_info.host_name = m[4];
+    download_source.host_name = m[4];
     if (m[6].length() > 0)
-      dl_info.port = stoi(m[6]);
-    dl_info.file_path_on_server = '/'+m.suffix().str();
+      download_source.port = stoi(m[6]);
+    download_source.file_path_on_server = '/' + m.suffix().str();
   }
 
   regex file_name_pattern("(.*?/.+/)(.*)");
 
   if (regex_search(url, m, file_name_pattern))
-    dl_info.file_name_on_server = m[2];
+    download_source.file_name = m[2];
 
   regex http_pattern("http:|https:");
   regex ftp_pattern("ftp:");
   if (regex_search(url, m, http_pattern)) {
-    dl_info.protocol = kHttp;
-    if(m[0].str()=="http:")
-      dl_info.encrypted = false;
-    else if(m[0].str()=="https:")
-      dl_info.encrypted = true;
-    if (dl_info.port ==0)
-      dl_info.port = dl_info.encrypted ? 443 : 80;
+    if(m[0].str()=="http:") {
+      download_source.protocol = Protocol::HTTP;
+      if (download_source.port == 0)
+        download_source.port = 80;
+    }
+    else if(m[0].str()=="https:") {
+      download_source.protocol = Protocol::HTTPS;
+      if (download_source.port == 0)
+        download_source.port = 443;
+    }
   }
   else if (regex_search(url, m, ftp_pattern)) {
-    dl_info.protocol = kFtp;
-    if (dl_info.port == 0)
-      dl_info.port = 21;
+    download_source.protocol = Protocol::FTP;
+    if (download_source.port == 0) {
+      download_source.port = 21;
+    }
   }
 
   struct hostent *server;
-  server = gethostbyname(dl_info.host_name.c_str());
-
+  server = gethostbyname(download_source.host_name.c_str());
   if (!server){
-    fprintf(stderr,"ERROR, no such host\n");
+    cerr << "Error, no such host." << endl;
     exit(0);
   }
 
-  dl_info.ip = string(inet_ntoa(*((struct in_addr*) server->h_addr)));
+  download_source.ip = string(inet_ntoa(*((struct in_addr*) server->h_addr)));
 
   regex encoding_character("%20");
-  dl_info.file_name_on_server = regex_replace(dl_info.file_name_on_server,
-      encoding_character, " ");
+  download_source.file_name =
+    regex_replace(download_source.file_name, encoding_character, " ");
+
+  return download_source;
 }
 
-struct addr_struct URLInfo::get_download_info()
+pair<bool, int> URLInfo::get_socket_descriptor(time_t timeout_interval)
 {
-  return dl_info;
+  get_download_source();
+
+  pair<bool, int> result = make_pair(false, 0);
+
+  socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
+  if(socket_descriptor < 0)
+    return result;
+
+  struct sockaddr_in dest_addr;
+  dest_addr.sin_family = AF_INET;
+  dest_addr.sin_port = htons(download_source.port);
+  dest_addr.sin_addr.s_addr = inet_addr(download_source.ip.c_str());
+  memset(&(dest_addr.sin_zero),'\0', sizeof(dest_addr.sin_zero));
+
+  if (connect(socket_descriptor, (struct sockaddr *)&dest_addr,
+              sizeof(struct sockaddr)) < 0) {
+      return result;
+  }
+  else
+    result.first = true;
+
+  result.second = socket_descriptor;
+  return result;
 }

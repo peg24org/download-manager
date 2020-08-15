@@ -3,26 +3,30 @@
 
 #include <openssl/ssl.h>
 
-#include "logger.h"
 #include "file_io.h"
-#include "definitions.h"
 #include "http_general.h"
 
 class HttpsDownloader : public HttpGeneral {
   public:
   ~HttpsDownloader();
-  HttpsDownloader(FileIO& file_io, Logger& logger, node_struct* node_data,
-      const struct addr_struct addr_data, size_t pos, size_t trd_length,
-      int index)
-    : HttpGeneral(file_io,logger ,node_data, addr_data, pos, trd_length, index)
-    , ssl(nullptr){};
+
+  HttpsDownloader(const struct DownloadSource& download_source,
+                  const std::vector<int>& socket_descriptors);
+
+  HttpsDownloader(const struct DownloadSource& download_source,
+                  std::vector<int>& socket_descriptors,
+                  std::unique_ptr<Writer> writer,
+                  ChunksCollection& chunks_collection);
 
   private:
-  void disconnect() override;
-  bool socket_send(const char* buffer, size_t len) override;
-  bool check_error(int len) const override;
-  bool http_connect() override;
-  SSL *ssl;
+  void ssl_init_sockets();
+  bool receive_data(Connection& connection, char* buffer, size_t& received_len,
+                    size_t buffer_capacity) override;
+  bool send_data(Connection& connection, const char* buffer,
+                 size_t len) override;
+
+  void verify_the_certificate(SSL *ssl);
+  SSL* get_ssl(BIO* bio);
 };
 
 #endif

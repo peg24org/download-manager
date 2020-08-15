@@ -1,14 +1,45 @@
-#include "definitions.h"
+#ifndef _URL_INFO_H
+#define _URL_INFO_H
 
 using namespace std;
+
+enum class Protocol {
+  HTTP,
+  HTTPS,
+  FTP
+};
+struct DownloadSource {
+  DownloadSource() : port(0)
+  {
+  }
+
+  std::string ip;
+  std::string file_path_on_server;  // Including the file name
+  std::string file_name;    // Without path
+  std::string host_name;
+  Protocol protocol;    // Enum protocol type
+  uint16_t port;
+};
 
 class URLInfo
 {
   public:
-  URLInfo(std::string url_param);
-  struct addr_struct get_download_info();
+  ~URLInfo();
+  URLInfo(const std::string& url);
+  struct DownloadSource get_download_source();
+
+  /** Gets socket descriptor
+   *
+   * @return <connecting result, socket descriptor>
+   */
+  std::pair<bool, int>
+    get_socket_descriptor(time_t timeout_interval=DEFAULT_TIMEOUT_SECONDS);
 
   private:
+  constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 5;
   std::string url;
-  struct addr_struct dl_info = {0};
+  struct DownloadSource download_source;
+  int socket_descriptor;
 };
+
+#endif

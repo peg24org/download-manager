@@ -9,76 +9,102 @@
 
 HttpsDownloader::~HttpsDownloader()
 {
-  disconnect();
 }
 
-void HttpsDownloader::disconnect()
+HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
+                                 std::vector<int>& socket_descriptors,
+                                 std::unique_ptr<Writer> writer,
+                                 ChunksCollection& chunks_collection)
+  : HttpGeneral(download_source, socket_descriptors, move(writer),
+                chunks_collection)
 {
-  if (ssl != nullptr){
-    SSL_free(ssl);
-    ssl = nullptr;
-  }
-  if (sockfd != 0){
-    close(sockfd);
-    sockfd = 0;
+  ssl_init_sockets();
+}
+
+HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
+                                 const std::vector<int>& socket_descriptors)
+  : HttpGeneral(download_source, socket_descriptors)
+{
+  ssl_init_sockets();
+}
+
+SSL* HttpsDownloader::get_ssl(BIO* bio)
+{
+  SSL* ssl = nullptr;
+  BIO_get_ssl(bio, &ssl);
+  if (ssl == nullptr)
+    cerr << "Error occured when getting ssl." << endl;
+  return ssl;
+}
+
+void HttpsDownloader::ssl_init_sockets()
+{
+  for (size_t index = 0; index < socket_descriptors.size(); ++index) {
+    SSL_CTX* ctx;
+    ctx = SSL_CTX_new(TLS_client_method());
+    if (SSL_CTX_set_default_verify_paths(ctx) != 1) 
+      cerr << "Error setting up trust store" << endl;
+
+    string host_name = download_source.host_name;
+    uint16_t port = download_source.port; 
+    string destination = host_name + ":" + to_string(port);
+    BIO* bio = BIO_new_connect(destination.c_str());
+    if (BIO_do_connect(bio) <= 0)
+      cerr << "Error in BIO_do_connect" << endl;
+
+    int sock_desc;
+    BIO_get_fd(bio, &sock_desc);
+    BIO* new_bio = BIO_new_ssl(ctx, 1);
+    BIO_push(new_bio, bio);
+
+    SSL_set_tlsext_host_name(get_ssl(new_bio), host_name.c_str());
+    SSL_set1_host(get_ssl(new_bio), host_name.c_str());
+    if (BIO_do_handshake(new_bio) <= 0)
+      cerr << "Error in BIO_do_handshake" << endl;
+
+    verify_the_certificate(get_ssl(new_bio));
+
+    connections[index].bio = new_bio;
+    connections[index].sock_desc = sock_desc;
+    connections[index].ssl = get_ssl(new_bio);
   }
 }
 
-bool HttpsDownloader::socket_send(const char* buffer, size_t len)
+void HttpsDownloader::verify_the_certificate(SSL *ssl)
 {
-  size_t sent_bytes = 0;
-  size_t tmp_sent_bytes = 0;
-  while (sent_bytes < len){
-    if ((tmp_sent_bytes = SSL_write(ssl, buffer, len)) > 0)
-      sent_bytes += tmp_sent_bytes;
-    else {
-      check_error(tmp_sent_bytes);
-      cerr << " Https Err " << endl;
-      return false;
-    }
+  int err = SSL_get_verify_result(ssl);
+  if (err != X509_V_OK) {
+    const char *message = X509_verify_cert_error_string(err);
+    cerr << "Certificate verification error: " << message <<
+      "(" << err << ")" << endl;
   }
-  return true;
+  X509 *cert = SSL_get_peer_certificate(ssl);
+  if (cert == nullptr)
+    cerr << "No certificate was presented by the server." << endl;
+}  
+
+bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
+                                   size_t& received_len, size_t buffer_capacity)
+{
+  bool retval = false;
+
+  int len = SSL_read(connection.ssl, buffer, buffer_capacity);
+  if (len < 0)
+    cerr << "error SSL_read" << endl;
+  else if (len > 0) 
+    retval = true;
+  else 
+    cerr << "empty BIO_read" << endl;
+
+  received_len = len;
+
+  return retval;
 }
 
-bool HttpsDownloader::check_error(int len) const
+bool HttpsDownloader::send_data(Connection& connection, const char* buffer,
+                                size_t len)
 {
-  if (len < 0) {
-    int error_number = SSL_get_error(ssl, len);
-    switch (error_number) {
-      case SSL_ERROR_WANT_WRITE:
-      case SSL_ERROR_WANT_READ:
-        return true;
-      case SSL_ERROR_ZERO_RETURN:
-      case SSL_ERROR_SYSCALL:
-      case SSL_ERROR_SSL:
-      default:
-        return false;
-    }
-  }
-  return true;
-}
-
-bool HttpsDownloader::http_connect()
-{
-  connection_init();
-
-  SSL_library_init();
-  SSLeay_add_ssl_algorithms();
-  SSL_load_error_strings();
-  const SSL_METHOD *meth = TLS_client_method();
-  SSL_CTX *ctx = SSL_CTX_new (meth);
-
-  ssl = SSL_new(ctx);
-
-  if (!ssl)
-    cerr << "Error creating SSL." << endl;
-
-  SSL_set_fd(ssl, sockfd);
-  int error_number = SSL_connect(ssl);
-
-  if (error_number <= 0){
-    set_status(OperationStatus::SSL_ERROR, error_number);
-    return false;
-  }
+  BIO_write(connection.bio, buffer, len);
+  BIO_flush(connection.bio);
   return true;
 }

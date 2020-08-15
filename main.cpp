@@ -23,25 +23,21 @@ class DownloadMngr : public Node
 {
   using Node::Node;
 
-  size_t file_length = 0;
+  size_t file_size = 0;
   size_t last_recv_bytes = 0;
   float speed = 0;
 
-  void on_data_received(const std::map<int, DownloadChunk>& download_chunks)
+  void on_data_received(size_t received_bytes)
   {
-    size_t received_bytes = 0;
-    for (auto chunk : download_chunks)
-      received_bytes += chunk.second.current_pos - chunk.second.start_pos;
-
     float progress = (static_cast<float>(received_bytes) /
-        static_cast<float>(file_length)) * 100;
+                      static_cast<float>(file_size)) * 100;
 
     cout << "\r" <<
       "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
 
-    if(received_bytes != last_recv_bytes)
+    if (received_bytes != last_recv_bytes)
       speed = (1000 * (received_bytes - last_recv_bytes)) /
-        (callback_refresh_interval * 1024);
+              (callback_refresh_interval * 1024);
     last_recv_bytes = received_bytes;
     string speed_unit = "KB";
 
@@ -49,20 +45,20 @@ class DownloadMngr : public Node
       speed_unit = "MB";
       speed /= 1024;
     }
+
     cout << " Speed: " << setw(6) << setprecision(2) << speed <<
       speed_unit + "/s" << flush;
-
 
     if (progress >= 100)
       cout << endl;
     cout << flush;
   }
 
-  void on_get_file_stat(size_t node_index, size_t file_size,
-      struct addr_struct* addr_data)
+  void on_get_file_info(size_t node_index, size_t file_size,
+                        const string& file_name)
   {
     cout << "File size: " << file_size << " Bytes" << endl;
-    file_length = file_size;
+    this->file_size = file_size;
   }
 };
 
@@ -107,14 +103,10 @@ int main (int argc, char* argv[])
 
   //******************************************
 
-  URLInfo u_info(link);
-  struct addr_struct dl_str = u_info.get_download_info();
-
-  DownloadMngr nd(dl_str, number_of_connections);
+  DownloadMngr nd(link, number_of_connections);
   nd.start();
   nd.join();
 
   cout << endl;
-
   return 0;
 }
