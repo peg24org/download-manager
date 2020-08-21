@@ -4,9 +4,9 @@
 #include <openssl/ssl.h>
 
 #include "file_io.h"
-#include "http_general.h"
+#include "http_downloader.h"
 
-class HttpsDownloader : public HttpGeneral {
+class HttpsDownloader : public HttpDownloader {
   public:
   ~HttpsDownloader();
 

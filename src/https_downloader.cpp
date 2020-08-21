@@ -1,11 +1,12 @@
-#include <string.h>
+#include "https_downloader.h"
+
 #include <unistd.h>
+
 #include <arpa/inet.h>
 #include <openssl/err.h>
 
+#include <cstring>
 #include <iostream>
-
-#include "https_downloader.h"
 
 HttpsDownloader::~HttpsDownloader()
 {
@@ -15,15 +16,15 @@ HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
                                  std::vector<int>& socket_descriptors,
                                  std::unique_ptr<Writer> writer,
                                  ChunksCollection& chunks_collection)
-  : HttpGeneral(download_source, socket_descriptors, move(writer),
-                chunks_collection)
+  : HttpDownloader(download_source, socket_descriptors, move(writer),
+                   chunks_collection)
 {
   ssl_init_sockets();
 }
 
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
                                  const std::vector<int>& socket_descriptors)
-  : HttpGeneral(download_source, socket_descriptors)
+  : HttpDownloader(download_source, socket_descriptors)
 {
   ssl_init_sockets();
 }
