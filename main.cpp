@@ -30,13 +30,12 @@ string get_friendly_size_notation(size_t size)
   return friendly_size.str();
 }
 
-void print_usage (int exit_code)
+void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
-  cerr <<" -h --help \n \
-      Display this usage information.\n \
-      -n number of connections\n";
-  exit (exit_code);
+  cerr << "\t-h --help    Display this usage information." << endl
+       << "\t-n number of connections" << endl;
+  exit(exit_code);
 }
 
 class DownloadMngr : public Node
@@ -76,7 +75,7 @@ class DownloadMngr : public Node
   }
 };
 
-int main (int argc, char* argv[])
+int main(int argc, char* argv[])
 {
   short int number_of_connections = 1;
   string link;
@@ -96,19 +95,19 @@ int main (int argc, char* argv[])
     print_usage(1);
 
   do {
-    next_option = getopt_long (argc, argv, short_options,long_options, NULL);
-    switch (next_option) {
+    next_option = getopt_long(argc, argv, short_options,long_options, NULL);
+    switch(next_option) {
       case 'h':
-        print_usage (0);
+        print_usage(0);
       case 'n':
         number_of_connections = stoi(optarg);
         break;
       case '?':
-        print_usage (1);
+        print_usage(1);
       case -1:
         break;
       default:
-        abort ();
+        abort();
     }
   } while (next_option != -1);
 
