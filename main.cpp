@@ -1,7 +1,10 @@
-#include <getopt.h>
+#include <cmath>
 
+#include <sstream>
 #include <iomanip>
 #include <iostream>
+
+#include <getopt.h>
 
 #include "node.h"
 #include "url_info.h"
@@ -9,6 +12,23 @@
 using namespace std;
 
 const char* program_name;
+
+string get_friendly_size_notation(size_t size)
+{
+  stringstream friendly_size;
+
+  friendly_size << setprecision(3);
+  if (size > pow(2, 10) && size < pow(2, 20))    // KB
+    friendly_size << static_cast<float>(size) / pow(2, 10) << " KB";
+  else if (size > pow(2, 20) && size < pow(2, 30))    // MB
+    friendly_size << static_cast<float>(size) / pow(2, 20) << " MB";
+  else if (size > pow(2, 30) && size < pow(2, 40))    // GB
+    friendly_size << static_cast<float>(size) / pow(2, 30) << " GB";
+  else
+    friendly_size << size<< " B";
+
+  return friendly_size.str();
+}
 
 void print_usage (int exit_code)
 {
@@ -25,7 +45,6 @@ class DownloadMngr : public Node
 
   size_t file_size = 0;
   size_t last_recv_bytes = 0;
-  float speed = 0;
 
   void on_data_received(size_t received_bytes)
   {
@@ -35,19 +54,13 @@ class DownloadMngr : public Node
     cout << "\r" <<
       "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
 
+    static const float time_interval = callback_refresh_interval / 1000.0;
+    float speed = 0;
     if (received_bytes != last_recv_bytes)
-      speed = (1000 * (received_bytes - last_recv_bytes)) /
-              (callback_refresh_interval * 1024);
+      speed = (received_bytes - last_recv_bytes) / time_interval;
     last_recv_bytes = received_bytes;
-    string speed_unit = "KB";
 
-    if (speed > 1024) {
-      speed_unit = "MB";
-      speed /= 1024;
-    }
-
-    cout << " Speed: " << setw(6) << setprecision(2) << speed <<
-      speed_unit + "/s" << flush;
+    cout << " Speed: " << setw(6) << get_friendly_size_notation(speed) << "/s";
 
     if (progress >= 100)
       cout << endl;
@@ -57,7 +70,8 @@ class DownloadMngr : public Node
   void on_get_file_info(size_t node_index, size_t file_size,
                         const string& file_name)
   {
-    cout << "File size: " << file_size << " Bytes" << endl;
+    cout << "File size: " << get_friendly_size_notation(file_size)
+         << " Bytes" << endl;
     this->file_size = file_size;
   }
 };
