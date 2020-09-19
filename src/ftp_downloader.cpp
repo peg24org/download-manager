@@ -109,7 +109,7 @@ void FtpDownloader::downloader_trd()
   size_t total_downloaded_bytes = 0;
 
   const size_t kFileSize = writer->get_file_size();
-  cerr << "fsize:" << kFileSize << endl;
+
   while (writer->get_total_written_bytes() < kFileSize) {
 
     int max_fd = 0;
