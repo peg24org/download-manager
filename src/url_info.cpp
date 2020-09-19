@@ -10,13 +10,19 @@
 
 #include "url_info.h"
 
-URLInfo::URLInfo(const std::string& url): url(url), socket_descriptor(0)
+using namespace std;
+
+URLInfo::URLInfo(const string& url) : url(url), socket_descriptor(0)
+{
+}
+
+URLInfo::URLInfo(const std::string& ip, uint16_t port)
+  : download_source(DownloadSource(ip, port)), socket_descriptor(0)
 {
 }
 
 URLInfo::~URLInfo()
 {
-  close(socket_descriptor);
 }
 
 struct DownloadSource URLInfo::get_download_source()
@@ -75,7 +81,8 @@ struct DownloadSource URLInfo::get_download_source()
 
 pair<bool, int> URLInfo::get_socket_descriptor(time_t timeout_interval)
 {
-  get_download_source();
+  if (download_source.port == 0 || download_source.ip == "")
+    get_download_source();
 
   pair<bool, int> result = make_pair(false, 0);
 

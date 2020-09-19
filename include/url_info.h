@@ -9,7 +9,7 @@ enum class Protocol {
   FTP
 };
 struct DownloadSource {
-  DownloadSource() : port(0)
+  DownloadSource(std::string ip = "", uint16_t port = 0) : ip(ip), port(port)
   {
   }
 
@@ -26,6 +26,7 @@ class URLInfo
   public:
   ~URLInfo();
   URLInfo(const std::string& url);
+  URLInfo(const std::string& ip, uint16_t port);
   struct DownloadSource get_download_source();
 
   /** Gets socket descriptor
@@ -38,6 +39,8 @@ class URLInfo
   private:
   constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 5;
   std::string url;
+  std::string ip;
+  uint16_t port;
   struct DownloadSource download_source;
   int socket_descriptor;
 };

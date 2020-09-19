@@ -8,6 +8,7 @@
 
 #include "node.h"
 #include "url_info.h"
+#include "ftp_downloader.h"
 #include "http_downloader.h"
 #include "https_downloader.h"
 
@@ -92,8 +93,8 @@ void Node::check_url()
                                                        socket_descriptors);
         break;
       case Protocol::FTP:
-        //info_downloader =
-         // make_unique<FtpDownloader>(download_source, socket_descriptors);
+        info_downloader =
+          make_unique<FtpDownloader>(download_source, socket_descriptors);
         break;
     }
 
@@ -101,6 +102,7 @@ void Node::check_url()
     string redirected_url;
     if (info_downloader->check_link(redirected_url, file_length)) {
       url = redirected_url;
+      cerr << "File Length:" << file_length << endl;
       url_info = URLInfo(url);
       cout << "Redirected to:" << url << endl;
     }
@@ -150,8 +152,10 @@ void Node::build_downloader(unique_ptr<Writer> writer)
                                                 chunks_collection);
       break;
     case Protocol::FTP:
-      //downloader = make_unique<FtpDownloader>(writer, chunks_collection,
-      //    socket_descriptors);
+      downloader = make_unique<FtpDownloader>(download_source,
+                                              socket_descriptors,
+                                              move(writer),
+                                              chunks_collection);
       break;
   }
 }

@@ -42,6 +42,7 @@ struct Connection {
                  bio(nullptr) {}
 
   int sock_desc;
+  int ftp_data_sock;
   OperationStatus status;
   struct DownloadChunk chunk;
   BIO* bio;
