@@ -17,9 +17,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/libs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/libs)
 
 include_directories(${PROJECT_SOURCE_DIR} include)
+include_directories(${PROJECT_SOURCE_DIR} thread/include)
 add_subdirectory(src)
+add_subdirectory(thread/src)
 
 add_executable(main main.cpp )
-target_link_libraries(main downloader_static pthread ssl crypto)
+target_link_libraries(main thread_static downloader_static pthread ssl crypto)
 
 add_subdirectory(tests)

@@ -2,7 +2,7 @@
 
 Multi threaded download manager written in C++
 
-### Compiling
+### Build
 
 ```
 mkdir build
