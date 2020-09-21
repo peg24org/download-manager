@@ -19,4 +19,4 @@ set (SOURCES ${SOURCES}
   download_state_manager_test.cpp)
 
 add_executable(unit_tests test_utils.h ${SOURCES})
-target_link_libraries(unit_tests pthread gtest gtest_main)
+target_link_libraries(unit_tests gtest gtest_main pthread)

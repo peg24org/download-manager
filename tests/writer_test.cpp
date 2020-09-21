@@ -54,10 +54,13 @@ class WriterTest : public ::testing::Test
 };
 
 TEST_F(WriterTest,
-    retrieved_positon_should_be_same_as_stored_position_using_writer)
+    retrieved_pos_should_be_same_as_stored_pos_plus_strlen_using_writer)
 {
-  EXPECT_EQ(POSITION_0, chunks_collection[INDEX_0].current_pos);
-  EXPECT_EQ(POSITION_1, chunks_collection[INDEX_1].current_pos);
+  constexpr size_t POS_0 = POSITION_0 + strlen(STRING_0);
+  constexpr size_t POS_1 = POSITION_1 + strlen(STRING_1);
+
+  EXPECT_EQ(POS_0, chunks_collection[INDEX_0].current_pos);
+  EXPECT_EQ(POS_1, chunks_collection[INDEX_1].current_pos);
 }
 
 TEST_F(WriterTest,
