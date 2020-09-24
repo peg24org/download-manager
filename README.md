@@ -1,4 +1,4 @@
-# Multi threaded download manager
+# Multi connection download manager
 
 Multi threaded download manager written in C++
 
