@@ -84,8 +84,7 @@ void FtpDownloader::downloader_trd()
     string ip = ip_port_pair.first;
     uint16_t port = ip_port_pair.second;
     open_data_channel(connection, ip, port);
-    size_t chunk_size = chunks_collection[index].end_pos -
-                        chunks_collection[index].current_pos;
+
     send_ftp_command(connection, "REST " +
                      to_string(chunks_collection[index].current_pos) + "\r\n",
                      reply);
@@ -101,8 +100,6 @@ void FtpDownloader::downloader_trd()
 
   static constexpr size_t kBufferLen = 40000;
   char recv_buffer[kBufferLen];
-
-  size_t total_downloaded_bytes = 0;
 
   const size_t kFileSize = writer->get_file_size();
 
@@ -145,7 +142,6 @@ void FtpDownloader::downloader_trd()
                         connections[index].chunk.current_pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
 
-          total_downloaded_bytes += recvd_bytes;
           connections[index].status = OperationStatus::DOWNLOADING;
         }
         //TODO implement retry

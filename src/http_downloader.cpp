@@ -42,8 +42,6 @@ void HttpDownloader::downloader_trd()
   static constexpr size_t kBufferLen = 40000;
   char recv_buffer[kBufferLen];
 
-  size_t total_downloaded_bytes = 0;
-
   // TODO it should resend request in case of error
   for (size_t index = 0; index < connections.size(); ++index)
     send_request(index);
@@ -81,7 +79,6 @@ void HttpDownloader::downloader_trd()
           writer->write(recv_buffer+header_offset, recvd_bytes,
                         connections[index].chunk.current_pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
-          total_downloaded_bytes += recvd_bytes;
           connections[index].status = OperationStatus::DOWNLOADING;
         }
         //TODO implement retry
