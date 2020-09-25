@@ -58,14 +58,12 @@ void FtpDownloader::ftp_init(string username, string password)
     send_ftp_command(connection, "PASS " + password + "\r\n", reply);
     send_ftp_command(connection, "TYPE I\r\n", reply);
     send_ftp_command(connection, "PWD\r\n", reply);
+
     // Get path without file name
-    string path;
-    set_difference(download_source.file_path_on_server.begin(),
-        download_source.file_path_on_server.end(),
-        download_source.file_name.begin(),
-        download_source.file_name.end(),
-        inserter(path, path.begin())
-        );
+    string full_path = download_source.file_path_on_server;
+    string file_name = download_source.file_name;
+    size_t file_name_pos = full_path.find(file_name);
+    string path = full_path.substr(0, file_name_pos);
 
     send_ftp_command(connection, "CWD " + path + "\r\n", reply);
   }
@@ -88,8 +86,6 @@ void FtpDownloader::downloader_trd()
     open_data_channel(connection, ip, port);
     size_t chunk_size = chunks_collection[index].end_pos -
                         chunks_collection[index].current_pos;
-    send_ftp_command(connection, "LRECL " + to_string(chunk_size) + "\r\n",
-                     reply);
     send_ftp_command(connection, "REST " +
                      to_string(chunks_collection[index].current_pos) + "\r\n",
                      reply);
@@ -111,13 +107,17 @@ void FtpDownloader::downloader_trd()
   const size_t kFileSize = writer->get_file_size();
 
   while (writer->get_total_written_bytes() < kFileSize) {
-
     int max_fd = 0;
     FD_ZERO(&readfds);
     for (size_t index = 0; index < connections.size(); ++index) {
-      int sock_desc = connections[index].ftp_data_sock;
-      FD_SET(sock_desc, &readfds);
-      max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
+      size_t current_pos = connections[index].chunk.current_pos;
+      size_t end_pos = connections[index].chunk.end_pos;
+      // Check if chunk is completed
+      if (current_pos < end_pos) {
+        int sock_desc = connections[index].ftp_data_sock;
+        FD_SET(sock_desc, &readfds);
+        max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
+      }
     }
 
     int sel_retval = select(max_fd + 1, &readfds, NULL, NULL, &timeout);
@@ -127,13 +127,24 @@ void FtpDownloader::downloader_trd()
     else if (sel_retval > 0) {
       for (size_t index = 0; index < connections.size(); ++index) {
         int sock_desc = connections[index].ftp_data_sock;
-        if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+        if (FD_ISSET(sock_desc, &readfds)) {  // Read from the socket
           size_t recvd_bytes = 0;
           ftp_receive_data(connections[index], recv_buffer,  recvd_bytes,
                            kBufferLen);
+
+          // Check if received bytes exceeds end position.
+          size_t temp_current_pos = connections[index].chunk.current_pos
+                                    + recvd_bytes;
+          size_t end_pos = connections[index].chunk.end_pos;
+          if (temp_current_pos > end_pos) {
+            size_t delta = temp_current_pos - end_pos - 1;
+            recvd_bytes -= delta;
+          }
+
           writer->write(recv_buffer, recvd_bytes,
                         connections[index].chunk.current_pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
+
           total_downloaded_bytes += recvd_bytes;
           connections[index].status = OperationStatus::DOWNLOADING;
         }
