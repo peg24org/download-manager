@@ -49,15 +49,21 @@ int FtpDownloader::check_link(string& redirected_url, size_t& size)
 
 void FtpDownloader::ftp_init(string username, string password)
 {
+  const vector<string> init_commands = {
+    "",
+    "USER " + username + "\r\n",
+    "PASS " + password + "\r\n",
+    "TYPE I\r\n",
+    "PWD\r\n"
+  };
+
   string reply;
   for (size_t index = 0; index < connections.size(); ++index) {
     Connection& connection = connections[index];
 
-    send_ftp_command(connection, "", reply);
-    send_ftp_command(connection, "USER " + username + "\r\n", reply);
-    send_ftp_command(connection, "PASS " + password + "\r\n", reply);
-    send_ftp_command(connection, "TYPE I\r\n", reply);
-    send_ftp_command(connection, "PWD\r\n", reply);
+    for (const auto& command : init_commands)
+      if (!send_ftp_command(connection, command, reply))
+        cerr << "Error occurred: " << reply << endl;
 
     // Get path without file name
     string full_path = download_source.file_path_on_server;
@@ -65,7 +71,8 @@ void FtpDownloader::ftp_init(string username, string password)
     size_t file_name_pos = full_path.find(file_name);
     string path = full_path.substr(0, file_name_pos);
 
-    send_ftp_command(connection, "CWD " + path + "\r\n", reply);
+    const string kCwdCommand = "CWD " + path + "\r\n";
+    send_ftp_command(connection, kCwdCommand, reply);
   }
 }
 
@@ -80,16 +87,21 @@ void FtpDownloader::downloader_trd()
     pair<string, uint16_t> ip_port_pair;
     if (send_ftp_command(connection, "PASV\r\n", reply))
       ip_port_pair = get_data_ip_port(reply);
+    else
+      cerr << "Error occured: " << reply << endl;
 
     string ip = ip_port_pair.first;
     uint16_t port = ip_port_pair.second;
     open_data_channel(connection, ip, port);
 
-    send_ftp_command(connection, "REST " +
-                     to_string(chunks_collection[index].current_pos) + "\r\n",
-                     reply);
-    send_ftp_command(connection, "RETR " + download_source.file_name + "\r\n",
-                     reply);
+    const size_t kCurrentPos = chunks_collection[index].current_pos;
+    const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
+    if (!send_ftp_command(connection, kRestCommand, reply))
+      cerr << "Error occured: " << reply << endl;
+
+    const string kRetrCommand = "RETR " + download_source.file_name + "\r\n";
+    if (!send_ftp_command(connection, kRetrCommand, reply))
+      cerr << "Error occured: " << reply << endl;
   }
 
   fd_set readfds;
