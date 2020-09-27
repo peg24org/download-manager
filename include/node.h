@@ -11,7 +11,8 @@
 
 class Node : public Thread {
   public:
-    Node(const std::string& url, uint16_t number_of_connections=1);
+    Node(const std::string& url, const std::string& file_name,
+         uint16_t number_of_connections=1);
     virtual void on_get_file_info(size_t node_index, size_t file_size,
                                   const string& file_name) {};
 
@@ -22,22 +23,17 @@ class Node : public Thread {
     virtual void on_data_received(size_t received_bytes) = 0;
 
   private:
-    std::string url;
-    URLInfo url_info;
-    uint16_t number_of_connections;
-    struct DownloadSource download_source;
-
+    void build_downloader(std::unique_ptr<Writer> writer);
     void run();
     void check_url();
     void check_download_state();
+    // Checks the downloading file existence and its LOG file.
+    bool check_resume();
 
     unique_ptr<Downloader> downloader;
-    std::shared_ptr<DownloadStateManager> download_state_manager;
-    void build_downloader(std::unique_ptr<Writer> writer);
-
     ChunksCollection chunks_collection;
+    std::shared_ptr<DownloadStateManager> download_state_manager;
 
-    string file_name;
     shared_ptr<FileIO> file_io;
     unique_ptr<FileIO> stat_file_io;
 
@@ -45,8 +41,11 @@ class Node : public Thread {
     size_t total_received_bytes;
     static size_t node_index; // index of node
 
-    // Checks the downloading file existence and its LOG file.
-    bool check_resume();
+    std::string url;
+    URLInfo url_info;
+    string file_name;
+    uint16_t number_of_connections;
+    struct DownloadSource download_source;
 };
 
 #endif

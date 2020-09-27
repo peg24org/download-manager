@@ -1,6 +1,7 @@
 #ifndef _DOWNLOADER_H
 #define _DOWNLOADER_H
 
+#include <map>
 #include <vector>
 
 #include <openssl/bio.h>

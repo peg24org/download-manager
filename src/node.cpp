@@ -14,9 +14,11 @@
 
 using namespace std;
 
-Node::Node(const string& url, uint16_t number_of_connections)
+Node::Node(const string& url, const string& file_name,
+           uint16_t number_of_connections)
   : url(url)
   , url_info(url)
+  , file_name(file_name)
   , number_of_connections(number_of_connections)
 {
   ++node_index;
@@ -29,9 +31,12 @@ void Node::run()
   on_get_file_info(node_index, file_length, download_source.file_name);
   size_t trd_norm_len = file_length / number_of_connections;
 
-  file_io = make_shared<FileIO>(download_source.file_name);
+  if (file_name.empty())
+    file_name = download_source.file_name;
 
-  stat_file_io = make_unique<FileIO>("." + download_source.file_name + ".stat");
+  file_io = make_shared<FileIO>(file_name);
+
+  stat_file_io = make_unique<FileIO>("." + file_name + ".stat");
 
   download_state_manager =
     make_unique<DownloadStateManager>(move(stat_file_io));
@@ -163,7 +168,7 @@ void Node::build_downloader(unique_ptr<Writer> writer)
 bool Node::check_resume()
 {
   stat_file_io =
-    make_unique<FileIO>("." + download_source.file_name + ".stat");
+    make_unique<FileIO>("." + file_name + ".stat");
 
   if (!(stat_file_io->check_existence()))
     return false;

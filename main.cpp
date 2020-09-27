@@ -34,7 +34,8 @@ void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
   cerr << "\t-h --help    Display this usage information." << endl
-       << "\t-n number of connections" << endl;
+       << "\t-n number of connections" << endl
+       << "\t-o output file name" << endl;
   exit(exit_code);
 }
 
@@ -79,6 +80,7 @@ int main(int argc, char* argv[])
 {
   short int number_of_connections = 1;
   string link;
+  string output_file_name;
 
   //**************** get command line arguments ***************
   int next_option;
@@ -102,6 +104,10 @@ int main(int argc, char* argv[])
       case 'n':
         number_of_connections = stoi(optarg);
         break;
+      case 'o':
+        output_file_name = optarg;
+        cout <<"o name :" << output_file_name << endl;
+        break;
       case '?':
         print_usage(1);
       case -1:
@@ -116,9 +122,9 @@ int main(int argc, char* argv[])
 
   //******************************************
 
-  DownloadMngr nd(link, number_of_connections);
-  nd.start();
-  nd.join();
+  DownloadMngr node(link, output_file_name, number_of_connections);
+  node.start();
+  node.join();
 
   cout << endl;
   return 0;
