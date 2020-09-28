@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 {
   short int number_of_connections = 1;
   string link;
-  string output_file_name;
+  string optional_path;
 
   //**************** get command line arguments ***************
   int next_option;
@@ -105,8 +105,7 @@ int main(int argc, char* argv[])
         number_of_connections = stoi(optarg);
         break;
       case 'o':
-        output_file_name = optarg;
-        cout <<"o name :" << output_file_name << endl;
+        optional_path = optarg;
         break;
       case '?':
         print_usage(1);
@@ -122,7 +121,7 @@ int main(int argc, char* argv[])
 
   //******************************************
 
-  DownloadMngr node(link, output_file_name, number_of_connections);
+  DownloadMngr node(link, optional_path, number_of_connections);
   node.start();
   node.join();
 

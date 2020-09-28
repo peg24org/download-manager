@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 
 #include <cstdio>
+#include <iostream>
 #include <exception>
 #include <streambuf>
 
@@ -13,7 +14,7 @@ FileIO::~FileIO()
   file_stream.close();
 }
 
-FileIO::FileIO(string file_name) : file_name(file_name)
+FileIO::FileIO(string path) : path(path)
 {
 }
 
@@ -23,14 +24,14 @@ void FileIO::open()
   if (!check_existence())
     create(0);
   else
-    file_stream.open(file_name, fstream::in | fstream::out);
+    file_stream.open(path, fstream::in | fstream::out);
 }
 
 void FileIO::create(size_t file_length)
 {
   // TODO: check error
   // Open new file
-  file_stream.open(file_name, fstream::in | fstream::out | fstream::trunc);
+  file_stream.open(path, fstream::in | fstream::out | fstream::trunc);
 
   for (size_t i = 1; i <= file_length; i++)
     file_stream << '\0';
@@ -48,7 +49,24 @@ void FileIO::write(const char* buffer, size_t length, size_t position)
 bool FileIO::check_existence()
 {
   struct stat stat_buf;
-  return stat(file_name.c_str(), &stat_buf) == 0;
+  return stat(path.c_str(), &stat_buf) == 0;
+}
+
+PathType FileIO::check_path_type()
+{
+  PathType type = PathType::UNKNOWN_T;
+  struct stat status;
+  if (stat(path.c_str(), &status) == 0)
+  {
+    if (status.st_mode & S_IFDIR)
+      type = PathType::DIRECTORY_T;
+    else if (status.st_mode & S_IFREG)
+      type = PathType::FILE_T;
+  }
+  else
+    cerr << "Error occured during get path type." << endl;
+
+  return type;
 }
 
 string FileIO::get_file_contents()
@@ -64,5 +82,5 @@ string FileIO::get_file_contents()
 void FileIO::remove()
 {
   file_stream.close();
-  ::remove(file_name.c_str());
+  ::remove(path.c_str());
 }

@@ -4,12 +4,19 @@
 #include <string>
 #include <fstream>
 
+enum class PathType
+{
+  FILE_T,
+  DIRECTORY_T,
+  UNKNOWN_T
+};
+
 class FileIO {
 
   public:
     ~FileIO();
 
-    FileIO(std::string file_name);
+    FileIO(std::string path);
 
     /// Creates new file.
     virtual void create(size_t file_length = 0);
@@ -27,6 +34,7 @@ class FileIO {
     virtual void write(const char* buffer, size_t length, size_t position=0);
 
     virtual bool check_existence();
+    virtual PathType check_path_type();
 
     /**
      * Returns one line of file.
@@ -39,7 +47,7 @@ class FileIO {
     virtual void remove();
 
   private:
-    std::string file_name;
+    std::string path;
     std::fstream file_stream;
 };
 
