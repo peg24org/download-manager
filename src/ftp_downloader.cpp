@@ -10,6 +10,8 @@
 
 #include "node.h"
 
+using namespace std;
+
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
                                const std::vector<int>& socket_descriptors)
   : Downloader(download_source, socket_descriptors)

@@ -8,6 +8,8 @@
 #include <cstring>
 #include <iostream>
 
+using namespace std;
+
 HttpsDownloader::~HttpsDownloader()
 {
 }

@@ -52,7 +52,7 @@ struct Connection {
 
 class Downloader : public Thread {
   public:
-    const static string HTTP_HEADER;
+    const static std::string HTTP_HEADER;
     Downloader(const struct DownloadSource& download_source,
                const std::vector<int>& socket_descriptors);
 
@@ -72,12 +72,14 @@ class Downloader : public Thread {
      * @return 1 if link is redirected otherwise 0, in case of error
      *  it will return -1
      */
-    virtual int check_link(string& redirect_url, size_t& size) = 0;
+    virtual int check_link(std::string& redirect_url, size_t& size) = 0;
 
   protected:
-    bool regex_search_string(const string& input, const string& pattern,
-                             string& output, int pos_of_pattern = 2);
-    bool regex_search_string(const string& input, const string& pattern);
+    bool regex_search_string(const std::string& input,
+                             const std::string& pattern,
+                             std::string& output, int pos_of_pattern = 2);
+    bool regex_search_string(const std::string& input,
+                             const std::string& pattern);
 
     virtual void downloader_trd() = 0;
     

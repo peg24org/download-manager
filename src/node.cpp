@@ -107,7 +107,7 @@ void Node::check_url()
     string redirected_url;
     if (info_downloader->check_link(redirected_url, file_length)) {
       url = redirected_url;
-      cerr << "File Length:" << file_length << endl;
+      cout << "File Length:" << file_length << endl;
       url_info = URLInfo(url);
       cout << "Redirected to:" << url << endl;
     }

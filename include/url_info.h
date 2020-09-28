@@ -1,8 +1,6 @@
 #ifndef _URL_INFO_H
 #define _URL_INFO_H
 
-using namespace std;
-
 enum class Protocol {
   HTTP,
   HTTPS,

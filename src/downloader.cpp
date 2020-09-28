@@ -9,6 +9,8 @@
 #include "node.h"
 #include "downloader.h"
 
+using namespace std;
+
 const string Downloader::HTTP_HEADER =
     "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
 

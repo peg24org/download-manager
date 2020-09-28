@@ -17,15 +17,15 @@ class FtpDownloader : public Downloader {
                  std::unique_ptr<Writer> writer,
                  ChunksCollection& chunks_collection);
 
-  int check_link(string& redirected_url, size_t& file_size) override;
+  int check_link(std::string& redirected_url, size_t& file_size) override;
 
   protected:
-  string receive_header;
+  std::string receive_header;
 
   //virtual void send_request(size_t index);
   size_t get_header_delimiter_position(const char* buffer);
   size_t get_size();
-  bool check_redirection(string& redirect_url);
+  bool check_redirection(std::string& redirect_url);
 
   // Status of connections
   std::map<size_t, OperationStatus> connections_status;
@@ -38,7 +38,8 @@ class FtpDownloader : public Downloader {
   void downloader_trd() override;
   bool send_ftp_command(Connection& connection, const std::string& command,
                         std::string& result);
-  std::vector<string> split_string(const std::string& buffer, char delimiter);
+  std::vector<std::string> split_string(const std::string& buffer,
+                                        char delimiter);
   std::pair<std::string, uint16_t> get_data_ip_port(const std::string& buffer);
   void open_data_channel(Connection& connection, std::string ip, uint16_t port);
   bool ftp_receive_data(Connection& connection, char* buffer, size_t& received_len,

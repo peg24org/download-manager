@@ -17,15 +17,15 @@ class HttpDownloader : public Downloader {
                  std::unique_ptr<Writer> writer,
                  ChunksCollection& chunks_collection);
 
-  int check_link(string& redirected_url, size_t& file_size) override;
+  int check_link(std::string& redirected_url, size_t& file_size) override;
 
   protected:
-  string receive_header;
+  std::string receive_header;
 
   virtual void send_request(size_t index);
   size_t get_header_delimiter_position(const char* buffer);
   size_t get_size();
-  bool check_redirection(string& redirect_url);
+  bool check_redirection(std::string& redirect_url);
 
   // Status of connections
   std::map<size_t, OperationStatus> connections_status;

@@ -14,7 +14,7 @@ class Node : public Thread {
     Node(const std::string& url, const std::string& file_name,
          uint16_t number_of_connections=1);
     virtual void on_get_file_info(size_t node_index, size_t file_size,
-                                  const string& file_name) {};
+                                  const std::string& file_name) {};
 
   protected:
     // callback refresh interval in milliseconds
@@ -30,12 +30,12 @@ class Node : public Thread {
     // Checks the downloading file existence and its LOG file.
     bool check_resume();
 
-    unique_ptr<Downloader> downloader;
+    std::unique_ptr<Downloader> downloader;
     ChunksCollection chunks_collection;
     std::shared_ptr<DownloadStateManager> download_state_manager;
 
-    shared_ptr<FileIO> file_io;
-    unique_ptr<FileIO> stat_file_io;
+    std::shared_ptr<FileIO> file_io;
+    std::unique_ptr<FileIO> stat_file_io;
 
     size_t file_length;
     size_t total_received_bytes;
@@ -43,7 +43,7 @@ class Node : public Thread {
 
     std::string url;
     URLInfo url_info;
-    string file_name;
+    std::string file_name;
     uint16_t number_of_connections;
     struct DownloadSource download_source;
 };
