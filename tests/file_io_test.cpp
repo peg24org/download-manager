@@ -16,14 +16,21 @@ class FileIOTest : public ::testing::Test
 
   virtual void SetUp() override {
     writer.create();
+
+    const string kMkdirCommand = "mkdir " + string(TEST_DIR_PATH);
+    system(kMkdirCommand.c_str());
   }
 
   virtual void TearDown() override {
     writer.remove();
+
+    const string kRemDirCommand = "rm -r " + string(TEST_DIR_PATH);
+    system(kRemDirCommand.c_str());
   }
 
   protected:
     static constexpr char TEST_FILE_NAME[] = "TEST_FILE";
+    static constexpr char TEST_DIR_PATH[] = "TEST_DIR";
     FileIO writer;
     FileIO reader;
 };
@@ -86,4 +93,15 @@ TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_byte)
   string read_sample_substr =
     read_contents.substr(WRITE_POSITION, strlen(SAMPLE_SUBSTRING));
   EXPECT_EQ(SAMPLE_SUBSTRING, read_sample_substr);
+}
+
+TEST_F(FileIOTest, file_path_should_identifed_as_file_t)
+{
+  EXPECT_EQ(PathType::FILE_T, reader.check_path_type());
+}
+
+TEST_F(FileIOTest, dir_path_should_identified_as_dir_t)
+{
+  FileIO file_io(TEST_DIR_PATH);
+  EXPECT_EQ(PathType::DIRECTORY_T, file_io.check_path_type());
 }
