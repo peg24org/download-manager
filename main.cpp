@@ -78,17 +78,19 @@ class DownloadMngr : public Node
 
 int main(int argc, char* argv[])
 {
-  short int number_of_connections = 1;
+  short int number_of_connections{1};
   string link;
   string optional_path;
+  long int timeout{0};
 
   //**************** get command line arguments ***************
   int next_option;
-  const char* const short_options = "hvo:n:";
+  const char* const short_options = "hvo:n:t:";
   const struct option long_options[] = {
     {"help",    0, NULL, 'h'},
     {"output",  1, NULL, 'o'},
     {"verbose", 0, NULL, 'v'},
+    {"timeout", 1, NULL, 't'},
     {NULL,      0, NULL, 0}
   };
   program_name = argv[0];
@@ -107,6 +109,9 @@ int main(int argc, char* argv[])
       case 'o':
         optional_path = optarg;
         break;
+      case 't':
+        timeout = stoi(optarg);
+        break;
       case '?':
         print_usage(1);
       case -1:
@@ -121,9 +126,17 @@ int main(int argc, char* argv[])
 
   //******************************************
 
-  DownloadMngr node(link, optional_path, number_of_connections);
-  node.start();
-  node.join();
+  unique_ptr<DownloadMngr> node = nullptr;
+
+  if (timeout)
+    node = make_unique<DownloadMngr>(link, optional_path,
+                                     number_of_connections, timeout);
+  else
+    node = make_unique<DownloadMngr>(link, optional_path,
+                                     number_of_connections);
+
+  node->start();
+  node->join();
 
   cout << endl;
   return 0;

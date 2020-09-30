@@ -17,9 +17,10 @@ HttpsDownloader::~HttpsDownloader()
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
                                  std::vector<int>& socket_descriptors,
                                  std::unique_ptr<Writer> writer,
-                                 ChunksCollection& chunks_collection)
+                                 ChunksCollection& chunks_collection,
+                                 long int timeout)
   : HttpDownloader(download_source, socket_descriptors, move(writer),
-                   chunks_collection)
+                   chunks_collection, timeout)
 {
   ssl_init_sockets();
 }

@@ -26,12 +26,12 @@ Downloader::Downloader(const struct DownloadSource& download_source,
                        const std::vector<int>& socket_descriptors,
                        std::unique_ptr<Writer> writer,
                        const ChunksCollection& chunks_collection,
-                       time_t timeout_seconds)
+                       long int timeout_seconds)
   : download_source(download_source)
   , writer(move(writer))
   , chunks_collection(chunks_collection)
   , socket_descriptors(socket_descriptors)
-  , timeout_interval({.tv_sec=timeout_seconds, .tv_usec=0})
+  , timeout({.tv_sec=timeout_seconds, .tv_usec=0})
 {
 }
 

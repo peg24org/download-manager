@@ -60,7 +60,7 @@ class Downloader : public Thread {
                const std::vector<int>& socket_descriptors,
                std::unique_ptr<Writer> writer,
                const ChunksCollection& chunks_collection,
-               time_t timeout_interval=DEFAULT_TIMEOUT_SECONDS);
+               long int timeout_seconds);
 
     /**
      * Check the size of file and redirection
@@ -94,11 +94,10 @@ class Downloader : public Thread {
     std::unique_ptr<Writer> writer;
     ChunksCollection chunks_collection;
     std::vector<int> socket_descriptors;
-    struct timeval timeout_interval;
+    struct timeval timeout;
     std::map<size_t, Connection> connections;
 
   private:
-    constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 5;
     static DownloadStateManager* download_state_manager;
 
     void run() override;

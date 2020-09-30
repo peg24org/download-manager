@@ -22,9 +22,10 @@ HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
                                std::vector<int>& socket_descriptors,
                                std::unique_ptr<Writer> writer,
-                               ChunksCollection& chunks_collection)
+                               ChunksCollection& chunks_collection,
+                               long int timeout)
   : Downloader(download_source, socket_descriptors, move(writer),
-               chunks_collection)
+               chunks_collection, timeout)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
@@ -36,10 +37,6 @@ HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
 void HttpDownloader::downloader_trd()
 {
   fd_set readfds;
-
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
 
   static constexpr size_t kBufferLen = 40000;
   char recv_buffer[kBufferLen];
@@ -60,8 +57,8 @@ void HttpDownloader::downloader_trd()
     }
 
     int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
-    // TODO: implement sel_retval == 0
-    if (sel_retval < 0)
+
+    if (sel_retval == -1)
       cerr << "Select error occured." << endl;
     else if (sel_retval > 0) {
       for (size_t index = 0; index < connections.size(); ++index) {
@@ -71,7 +68,7 @@ void HttpDownloader::downloader_trd()
           receive_data(connections[index], recv_buffer,  recvd_bytes,
                        kBufferLen);
 
-          // Skip the header
+          // Skip the HTTP header
           size_t header_offset = 0;
           if (connections[index].status == OperationStatus::NOT_STARTED) {
             header_offset = get_header_delimiter_position(recv_buffer) + 4;
@@ -83,12 +80,11 @@ void HttpDownloader::downloader_trd()
           connections[index].chunk.current_pos += recvd_bytes;
           connections[index].status = OperationStatus::DOWNLOADING;
         }
-        //TODO implement retry
-        else {  // the socket timedout
-          connections_status[index] = OperationStatus::TIMEOUT;
-        }
       }   // End of for loop
-    }   // end of 'else if' condition
+    }   // End of else if
+    else {    // Timeout
+      break;    // Break while loop
+    }   // End of else for timeout
   }   // End of while loop
 }   // End of downloader_trd()
 

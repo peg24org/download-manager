@@ -15,11 +15,12 @@
 using namespace std;
 
 Node::Node(const string& url, const string& optional_path,
-           uint16_t number_of_connections)
+           uint16_t number_of_connections, long int timeout)
   : url(url)
   , url_info(url)
   , optional_path(optional_path)
   , number_of_connections(number_of_connections)
+  , timeout(timeout)
 {
   ++node_index;
 }
@@ -147,19 +148,22 @@ void Node::build_downloader(unique_ptr<Writer> writer)
       downloader = make_unique<HttpDownloader>(download_source,
                                                socket_descriptors,
                                                move(writer),
-                                               chunks_collection);
+                                               chunks_collection,
+                                               timeout);
       break;
     case Protocol::HTTPS:
       downloader = make_unique<HttpsDownloader>(download_source,
                                                 socket_descriptors,
                                                 move(writer),
-                                                chunks_collection);
+                                                chunks_collection,
+                                                timeout);
       break;
     case Protocol::FTP:
       downloader = make_unique<FtpDownloader>(download_source,
                                               socket_descriptors,
                                               move(writer),
-                                              chunks_collection);
+                                              chunks_collection,
+                                              timeout);
       break;
   }
 }

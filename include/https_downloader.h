@@ -16,7 +16,8 @@ class HttpsDownloader : public HttpDownloader {
   HttpsDownloader(const struct DownloadSource& download_source,
                   std::vector<int>& socket_descriptors,
                   std::unique_ptr<Writer> writer,
-                  ChunksCollection& chunks_collection);
+                  ChunksCollection& chunks_collection,
+                  long int timeout);
 
   private:
   void ssl_init_sockets();

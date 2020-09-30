@@ -12,7 +12,8 @@
 class Node : public Thread {
   public:
     Node(const std::string& url, const std::string& optional_path = kCurrDir,
-         uint16_t number_of_connections=1);
+         uint16_t number_of_connections=1,
+         long int timeout=DEFAULT_TIMEOUT_SECONDS);
     virtual void on_get_file_info(size_t node_index, size_t file_size,
                                   const std::string& file_name) {};
 
@@ -24,6 +25,7 @@ class Node : public Thread {
 
   private:
     constexpr static char kCurrDir[] = "./";
+    constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 5;
 
     void build_downloader(std::unique_ptr<Writer> writer);
     void run();
@@ -51,6 +53,7 @@ class Node : public Thread {
     std::string optional_path;
     uint16_t number_of_connections;
     struct DownloadSource download_source;
+    long int timeout;
 };
 
 #endif

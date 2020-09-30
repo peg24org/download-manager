@@ -23,9 +23,10 @@ FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
                                std::vector<int>& socket_descriptors,
                                std::unique_ptr<Writer> writer,
-                               ChunksCollection& chunks_collection)
+                               ChunksCollection& chunks_collection,
+                               long int timeout)
   : Downloader(download_source, socket_descriptors, move(writer),
-               chunks_collection)
+               chunks_collection, timeout)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
@@ -108,10 +109,6 @@ void FtpDownloader::downloader_trd()
 
   fd_set readfds;
 
-  struct timeval timeout;
-  timeout.tv_sec = 10;
-  timeout.tv_usec = 0;
-
   static constexpr size_t kBufferLen = 40000;
   char recv_buffer[kBufferLen];
 
@@ -158,12 +155,11 @@ void FtpDownloader::downloader_trd()
 
           connections[index].status = OperationStatus::DOWNLOADING;
         }
-        //TODO implement retry
-        else {  // the socket timedout
-          connections_status[index] = OperationStatus::TIMEOUT;
-        }
       }   // End of for loop
     }   // end of 'else if' condition
+    else {    // Timeout
+        //TODO implement retry
+    }
   }   // End of while loop
 }   // End of downloader thread
 

@@ -15,7 +15,8 @@ class HttpDownloader : public Downloader {
   HttpDownloader(const struct DownloadSource& download_source,
                  std::vector<int>& socket_descriptors,
                  std::unique_ptr<Writer> writer,
-                 ChunksCollection& chunks_collection);
+                 ChunksCollection& chunks_collection,
+                 long int timeout);
 
   int check_link(std::string& redirected_url, size_t& file_size) override;
 
