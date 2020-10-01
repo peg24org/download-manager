@@ -25,7 +25,7 @@ class Node : public Thread {
 
   private:
     constexpr static char kCurrDir[] = "./";
-    constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 5;
+    constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 10;
 
     void build_downloader(std::unique_ptr<Writer> writer);
     void run();

@@ -34,60 +34,6 @@ HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
   }
 }
 
-void HttpDownloader::downloader_trd()
-{
-  fd_set readfds;
-
-  static constexpr size_t kBufferLen = 40000;
-  char recv_buffer[kBufferLen];
-
-  // TODO it should resend request in case of error
-  for (size_t index = 0; index < connections.size(); ++index)
-    send_request(index);
-
-  const size_t kFileSize = writer->get_file_size();
-  while (writer->get_total_written_bytes() < kFileSize) {
-
-    int max_fd = 0;
-    FD_ZERO(&readfds);
-    for (size_t index = 0; index < connections.size(); ++index) {
-      int sock_desc = connections[index].sock_desc;
-      FD_SET(sock_desc, &readfds);
-      max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
-    }
-
-    int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
-
-    if (sel_retval == -1)
-      cerr << "Select error occured." << endl;
-    else if (sel_retval > 0) {
-      for (size_t index = 0; index < connections.size(); ++index) {
-        int sock_desc = connections[index].sock_desc;
-        if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-          size_t recvd_bytes = 0;
-          receive_data(connections[index], recv_buffer,  recvd_bytes,
-                       kBufferLen);
-
-          // Skip the HTTP header
-          size_t header_offset = 0;
-          if (connections[index].status == OperationStatus::NOT_STARTED) {
-            header_offset = get_header_delimiter_position(recv_buffer) + 4;
-            recvd_bytes -= header_offset;
-          }
-
-          writer->write(recv_buffer+header_offset, recvd_bytes,
-                        connections[index].chunk.current_pos, index);
-          connections[index].chunk.current_pos += recvd_bytes;
-          connections[index].status = OperationStatus::DOWNLOADING;
-        }
-      }   // End of for loop
-    }   // End of else if
-    else {    // Timeout
-      break;    // Break while loop
-    }   // End of else for timeout
-  }   // End of while loop
-}   // End of downloader_trd()
-
 size_t HttpDownloader::get_size()
 {
   string size_string;
@@ -169,15 +115,53 @@ size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
   return pos - buffer;
 }
 
-void HttpDownloader::send_request(size_t index)
+void HttpDownloader::send_request()
 {
-  string request = "GET " + download_source.file_path_on_server +
-    " " +	"HTTP/1.1\r\nRange: bytes=" +
-    to_string(chunks_collection[index].current_pos) + "-" +
-    to_string(chunks_collection[index].end_pos) + "\r\n" +  "Host:" +
-    download_source.host_name +	":" + to_string(download_source.port) +
-    "\r\n\r\n";
+  for (size_t index = 0; index < connections.size(); ++index) {
+    string request = "GET " + download_source.file_path_on_server +
+      " " +	"HTTP/1.1\r\nRange: bytes=" +
+      to_string(chunks_collection[index].current_pos) + "-" +
+      to_string(chunks_collection[index].end_pos) + "\r\n" +  "Host:" +
+      download_source.host_name +	":" + to_string(download_source.port) +
+      "\r\n\r\n";
+    if(!send_data(connections[index], request.c_str(), request.length()))
+      connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
+  }
+}
 
-  if(!send_data(connections[index], request.c_str(), request.length()))
-    connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
+int HttpDownloader::set_descriptors()
+{
+  int max_fd = 0;
+
+  FD_ZERO(&readfds);
+  for (size_t index = 0; index < connections.size(); ++index) {
+    int sock_desc = connections[index].sock_desc;
+    FD_SET(sock_desc, &readfds);
+    max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
+  }
+
+  return max_fd;
+}
+
+size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
+                                               size_t buffer_capacity)
+{
+  size_t recvd_bytes = 0;
+  int sock_desc = connections[index].sock_desc;
+
+  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+    receive_data(connections[index], buffer,  recvd_bytes,
+                 buffer_capacity);
+
+    // Skip the HTTP header
+    if (connections[index].status == OperationStatus::NOT_STARTED) {
+      buffer_offset = get_header_delimiter_position(buffer) + 4;
+      recvd_bytes -= buffer_offset;
+      connections[index].status = OperationStatus::DOWNLOADING;
+    }
+    else
+      buffer_offset = 0;
+  }
+
+  return recvd_bytes;
 }

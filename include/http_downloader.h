@@ -23,7 +23,9 @@ class HttpDownloader : public Downloader {
   protected:
   std::string receive_header;
 
-  virtual void send_request(size_t index);
+  void send_request() override;
+  size_t receive_from_connection(size_t index, char* buffer,
+                                 size_t buffer_capacity) override;
   size_t get_header_delimiter_position(const char* buffer);
   size_t get_size();
   bool check_redirection(std::string& redirect_url);
@@ -33,8 +35,7 @@ class HttpDownloader : public Downloader {
 
   private:
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
-
-  void downloader_trd() override;
+  int set_descriptors() override;
 };
 
 #endif

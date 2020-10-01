@@ -81,13 +81,18 @@ class Downloader : public Thread {
     bool regex_search_string(const std::string& input,
                              const std::string& pattern);
 
-    virtual void downloader_trd() = 0;
-    
+    void run() override;
     virtual bool receive_data(Connection& connection, char* buffer,
                               size_t& received_len, size_t buffer_capacity);
 
     virtual bool send_data(Connection& connection, const char* buffer,
                            size_t len);
+
+    virtual void send_request() = 0;
+    // Return max_fd
+    virtual int set_descriptors() = 0;
+    virtual size_t receive_from_connection(size_t index, char* buffer,
+                                           size_t buffer_capacity) = 0;
 
     struct DownloadSource download_source;
 
@@ -96,11 +101,11 @@ class Downloader : public Thread {
     std::vector<int> socket_descriptors;
     struct timeval timeout;
     std::map<size_t, Connection> connections;
+    fd_set readfds;
+    size_t buffer_offset;
 
   private:
     static DownloadStateManager* download_state_manager;
-
-    void run() override;
 };
 
 #endif
