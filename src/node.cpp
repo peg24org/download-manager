@@ -65,7 +65,7 @@ void Node::run()
   unique_ptr<Writer> writer = make_unique<Writer>(file_io,
                                                   download_state_manager);
 
-  build_downloader(move(writer));
+  downloader = make_downloader(move(writer));
 
   downloader->start();
 
@@ -76,32 +76,7 @@ void Node::run()
 void Node::check_url()
 {
   while (true) {
-    unique_ptr<Downloader> info_downloader;
-
-    vector<int> socket_descriptors;
-    pair<bool, int> result = url_info.get_socket_descriptor();
-    if (result.first)
-      socket_descriptors.push_back(result.second);
-    else {
-      cerr << "Connection error" << endl;
-      exit(1);
-    }
-
-    download_source = url_info.get_download_source();
-    switch (download_source.protocol) {
-      case Protocol::HTTP:
-        info_downloader = make_unique<HttpDownloader>(download_source,
-                                                      socket_descriptors);
-        break;
-      case Protocol::HTTPS:
-        info_downloader = make_unique<HttpsDownloader>(download_source,
-                                                       socket_descriptors);
-        break;
-      case Protocol::FTP:
-        info_downloader =
-          make_unique<FtpDownloader>(download_source, socket_descriptors);
-        break;
-    }
+    unique_ptr<Downloader> info_downloader = make_downloader();
 
     // Check if redirected
     string redirected_url;
@@ -114,8 +89,6 @@ void Node::check_url()
     else{
       break;
     }
-    for (int sock: socket_descriptors)
-      close(sock);
   }
 }
 
@@ -132,8 +105,10 @@ void Node::check_download_state()
   download_state_manager->remove_stat_file();
 }
 
-void Node::build_downloader(unique_ptr<Writer> writer)
+unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
 {
+  unique_ptr<Downloader> downloader_obj;
+
   vector<int> socket_descriptors;
   for (int i = 0; i < number_of_connections; ++i) {
     pair<bool, int> result = url_info.get_socket_descriptor();
@@ -145,27 +120,60 @@ void Node::build_downloader(unique_ptr<Writer> writer)
 
   switch(download_source.protocol) {
     case Protocol::HTTP:
-      downloader = make_unique<HttpDownloader>(download_source,
-                                               socket_descriptors,
-                                               move(writer),
-                                               chunks_collection,
-                                               timeout);
+      downloader_obj = make_unique<HttpDownloader>(download_source,
+                                                   socket_descriptors,
+                                                   move(writer),
+                                                   chunks_collection,
+                                                   timeout);
       break;
     case Protocol::HTTPS:
-      downloader = make_unique<HttpsDownloader>(download_source,
-                                                socket_descriptors,
-                                                move(writer),
-                                                chunks_collection,
-                                                timeout);
+      downloader_obj = make_unique<HttpsDownloader>(download_source,
+                                                    socket_descriptors,
+                                                    move(writer),
+                                                    chunks_collection,
+                                                    timeout);
       break;
     case Protocol::FTP:
-      downloader = make_unique<FtpDownloader>(download_source,
-                                              socket_descriptors,
-                                              move(writer),
-                                              chunks_collection,
-                                              timeout);
+      downloader_obj = make_unique<FtpDownloader>(download_source,
+                                                  socket_descriptors,
+                                                  move(writer),
+                                                  chunks_collection,
+                                                  timeout);
       break;
   }
+
+  return downloader_obj;
+}
+
+std::unique_ptr<Downloader> Node::make_downloader()
+{
+  vector<int> socket_descriptors;
+  pair<bool, int> result = url_info.get_socket_descriptor();
+  if (result.first)
+    socket_descriptors.push_back(result.second);
+  else {
+    cerr << "Connection error" << endl;
+    exit(1);
+  }
+
+  download_source = url_info.get_download_source();
+  unique_ptr<Downloader> downloader_obj;
+  switch (download_source.protocol) {
+    case Protocol::HTTP:
+      downloader_obj = make_unique<HttpDownloader>(download_source,
+                                                   socket_descriptors);
+      break;
+    case Protocol::HTTPS:
+      downloader_obj = make_unique<HttpsDownloader>(download_source,
+                                                    socket_descriptors);
+      break;
+    case Protocol::FTP:
+      downloader_obj = make_unique<FtpDownloader>(download_source,
+                                                  socket_descriptors);
+      break;
+  }
+
+  return downloader_obj;
 }
 
 bool Node::check_resume()
