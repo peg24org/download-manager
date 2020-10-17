@@ -9,17 +9,14 @@ enum class Protocol {
   FTP
 };
 
-struct DownloadSource {
-  DownloadSource(std::string ip = "", uint16_t port = 0) : ip(ip), port(port)
-  {
-  }
-
+struct DownloadSource
+{
   std::string ip;
   std::string file_path;  // Including the file name
   std::string file_name;    // Without path
   std::string host_name;
   Protocol protocol;    // Enum protocol type
-  uint16_t port;
+  uint16_t port{0};
 };
 
 // Url operations class.

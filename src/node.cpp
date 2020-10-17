@@ -110,12 +110,6 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
   unique_ptr<Downloader> downloader_obj;
 
   vector<int> socket_descriptors;
- // for (int i = 0; i < number_of_connections; ++i) {
- //   if (result.first)
- //     socket_descriptors.push_back(result.second);
- //   else
- //     cerr << "Error occurred when building downloader." << endl;
- // }
 
   switch(download_source.protocol) {
     case Protocol::HTTP:
@@ -149,19 +143,11 @@ std::unique_ptr<Downloader> Node::make_downloader()
   vector<int> socket_descriptors;
   SocketOps socket_ops(url_ops.get_ip(), url_ops.get_port());
 
- // socket_descriptors.push_back(socket_ops.get_socket_descriptor());
- // if (result.first)
- //   socket_descriptors.push_back(result.second);
- // else {
- //   cerr << "Connection error...." << endl;
- //   //exit(1);
- // }
-
   unique_ptr<Downloader> downloader_obj;
 
   download_source.ip = url_ops.get_ip();
   download_source.port = url_ops.get_port();
-  download_source.protocol = Protocol::HTTP;//url_ops.get_protocol();
+  download_source.protocol = url_ops.get_protocol();
   download_source.host_name = url_ops.get_hostname();
   download_source.file_path = url_ops.get_path();
   download_source.file_name = url_ops.get_file_name();

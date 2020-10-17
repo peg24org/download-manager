@@ -14,8 +14,6 @@ using namespace std;
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
   : Downloader(download_source)
 {
-//  for (size_t index = 0; index < socket_descriptors.size(); ++index)
-//    connections[index].sock_desc = socket_descriptors[index];
 }
 
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,

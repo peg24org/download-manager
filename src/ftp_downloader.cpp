@@ -15,8 +15,6 @@ using namespace std;
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source)
   : Downloader(download_source)
 {
-//  for (size_t index = 0; index < socket_descriptors.size(); ++index)
-//    connections[index].sock_desc = socket_descriptors[index];
 }
 
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
@@ -29,7 +27,6 @@ FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
-    //connections[chunk.first].sock_desc = socket_descriptors.at(chunk.first);
     connections[chunk.first].status = OperationStatus::NOT_STARTED;
   }
 }
