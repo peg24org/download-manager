@@ -10,14 +10,13 @@ class HttpsDownloader : public HttpDownloader {
   public:
   ~HttpsDownloader();
 
-  HttpsDownloader(const struct DownloadSource& download_source,
-                  const std::vector<int>& socket_descriptors);
+  HttpsDownloader(const struct DownloadSource& download_source);
 
   HttpsDownloader(const struct DownloadSource& download_source,
-                  std::vector<int>& socket_descriptors,
                   std::unique_ptr<Writer> writer,
                   ChunksCollection& chunks_collection,
-                  long int timeout);
+                  long int timeout,
+                  int number_of_connections=1);
 
   private:
   void ssl_init_sockets();

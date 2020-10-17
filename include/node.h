@@ -5,7 +5,7 @@
 
 #include "thread.h"
 #include "file_io.h"
-#include "url_info.h"
+#include "url_ops.h"
 #include "downloader.h"
 #include "download_state_manager.h"
 
@@ -50,7 +50,7 @@ class Node : public Thread {
     static size_t node_index; // index of node
 
     std::string url;
-    URLInfo url_info;
+    UrlOps url_ops;
     std::string file_path;
     std::string optional_path;
     uint16_t number_of_connections;

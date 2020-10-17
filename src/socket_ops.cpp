@@ -24,7 +24,7 @@ bool SocketOps::connect()
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(port);
     dest_addr.sin_addr.s_addr = inet_addr(ip.c_str());
-    memset(&(dest_addr.sin_zero),'\0', sizeof(dest_addr.sin_zero));
+    memset(&(dest_addr.sin_zero), '\0', sizeof(dest_addr.sin_zero));
 
     socklen_t addr_len = sizeof(struct sockaddr);
     struct sockaddr* address = reinterpret_cast<struct sockaddr*>(&dest_addr);

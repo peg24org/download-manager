@@ -12,25 +12,24 @@
 
 using namespace std;
 
-FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
-                               const std::vector<int>& socket_descriptors)
-  : Downloader(download_source, socket_descriptors)
+FtpDownloader::FtpDownloader(const struct DownloadSource& download_source)
+  : Downloader(download_source)
 {
-  for (size_t index = 0; index < socket_descriptors.size(); ++index)
-    connections[index].sock_desc = socket_descriptors[index];
+//  for (size_t index = 0; index < socket_descriptors.size(); ++index)
+//    connections[index].sock_desc = socket_descriptors[index];
 }
 
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
-                               std::vector<int>& socket_descriptors,
-                               std::unique_ptr<Writer> writer,
-                               ChunksCollection& chunks_collection,
-                               long int timeout)
-  : Downloader(download_source, socket_descriptors, move(writer),
-               chunks_collection, timeout)
+                             std::unique_ptr<Writer> writer,
+                             ChunksCollection& chunks_collection,
+                             long int timeout,
+                             int number_of_connections)
+  : Downloader(download_source, move(writer), chunks_collection, timeout,
+               number_of_connections)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
-    connections[chunk.first].sock_desc = socket_descriptors.at(chunk.first);
+    //connections[chunk.first].sock_desc = socket_descriptors.at(chunk.first);
     connections[chunk.first].status = OperationStatus::NOT_STARTED;
   }
 }
@@ -69,7 +68,7 @@ void FtpDownloader::ftp_init(string username, string password)
         cerr << "Error occurred: " << reply << endl;
 
     // Get path without file name
-    string full_path = download_source.file_path_on_server;
+    string full_path = download_source.file_path;
     string file_name = download_source.file_name;
     size_t file_name_pos = full_path.find(file_name);
     string path = full_path.substr(0, file_name_pos);
@@ -144,10 +143,10 @@ pair<string, uint16_t> FtpDownloader::get_data_ip_port(const string& buffer)
 void FtpDownloader::open_data_channel(Connection& connection, string ip,
                                       uint16_t port)
 {
-  URLInfo url_info(ip, port);
-  pair<bool, int> result = url_info.get_socket_descriptor();
-  if (result.first)
-    connection.ftp_data_sock = result.second;
+//  URLInfo url_info(ip, port);
+//  pair<bool, int> result = url_info.get_socket_descriptor();
+//  if (result.first)
+//    connection.ftp_data_sock = result.second;
 }
 
 bool FtpDownloader::ftp_receive_data(Connection& connection, char* buffer,
@@ -173,7 +172,7 @@ void FtpDownloader::send_request()
     if (send_ftp_command(connection, "PASV\r\n", reply))
       ip_port_pair = get_data_ip_port(reply);
     else
-      cerr << "Error occured: " << reply << endl;
+      cerr << "Error occurred: " << reply << endl;
 
     string ip = ip_port_pair.first;
     uint16_t port = ip_port_pair.second;
@@ -182,11 +181,11 @@ void FtpDownloader::send_request()
     const size_t kCurrentPos = chunks_collection[index].current_pos;
     const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
     if (!send_ftp_command(connection, kRestCommand, reply))
-      cerr << "Error occured: " << reply << endl;
+      cerr << "Error occurred: " << reply << endl;
 
     const string kRetrCommand = "RETR " + download_source.file_name + "\r\n";
     if (!send_ftp_command(connection, kRetrCommand, reply))
-      cerr << "Error occured: " << reply << endl;
+      cerr << "Error occurred: " << reply << endl;
   }
 }
 

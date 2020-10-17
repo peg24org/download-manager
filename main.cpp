@@ -7,7 +7,6 @@
 #include <getopt.h>
 
 #include "node.h"
-#include "url_info.h"
 
 using namespace std;
 

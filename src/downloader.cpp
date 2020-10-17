@@ -16,28 +16,29 @@ const string Downloader::HTTP_HEADER =
 
 DownloadStateManager* Downloader::download_state_manager = nullptr;
 
-Downloader::Downloader(const struct DownloadSource& download_source,
-                       const vector<int>& socket_descriptors)
-  : download_source(download_source) , socket_descriptors(socket_descriptors)
+Downloader::Downloader(const struct DownloadSource& download_source)
+  : download_source(download_source),
+    number_of_connections(1)
 {
 }
 
 Downloader::Downloader(const struct DownloadSource& download_source,
-                       const std::vector<int>& socket_descriptors,
                        std::unique_ptr<Writer> writer,
                        const ChunksCollection& chunks_collection,
-                       long int timeout_seconds)
+                       long int timeout_seconds,
+                       int number_of_connections)
   : download_source(download_source)
   , writer(move(writer))
   , chunks_collection(chunks_collection)
-  , socket_descriptors(socket_descriptors)
   , timeout({.tv_sec=timeout_seconds, .tv_usec=0})
   , buffer_offset(0)
+  , number_of_connections(number_of_connections)
 {
 }
 
 void Downloader::run()
 {
+  init_connections();
   send_request();
 
   static constexpr size_t kBufferLen = 40000;
@@ -50,7 +51,7 @@ void Downloader::run()
 
     int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
     if (sel_retval == -1)
-      cerr << "Select error occured." << endl;
+      cerr << "Select error occurred." << endl;
     else if (sel_retval > 0) {
       for (size_t index = 0; index < connections.size(); ++index) {
         size_t recvd_bytes = receive_from_connection(index, recv_buffer,
@@ -88,11 +89,13 @@ bool Downloader::regex_search_string(const string& input, const string& pattern)
 bool Downloader::receive_data(Connection& connection, char* buffer,
                               size_t& received_len, size_t buffer_capacity)
 {
-  received_len = recv(connection.sock_desc, buffer, buffer_capacity,0);
+  received_len = recv(connection.socket_ops->get_socket_descriptor(),
+                      buffer, buffer_capacity, 0);
   if (received_len < 0) {
     connection.status = OperationStatus::SOCKET_RECV_ERROR;
     return false;
   }
+
   return true;
 }
 
@@ -102,11 +105,25 @@ bool Downloader::send_data(Connection& connection, const char* buffer,
   size_t sent_bytes = 0;
   size_t tmp_sent_bytes = 0;
 
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
   while (sent_bytes < len) {
-    if ((tmp_sent_bytes = send(connection.sock_desc, buffer, len, 0)) > 0)
+    if ((tmp_sent_bytes = send(sock_desc, buffer, len, 0)) > 0)
       sent_bytes += tmp_sent_bytes;
     else
       return false;
   }
+  return true;
+}
+
+bool Downloader::init_connections()
+{
+  // TODO handle errors.
+  for (int index = 0; index < number_of_connections; ++index) {
+    unique_ptr<SocketOps> socket_ops = make_unique<SocketOps>(
+        download_source.ip, download_source.port);
+    socket_ops->connect();
+    connections[index].socket_ops = move(socket_ops);
+  }
+
   return true;
 }

@@ -8,8 +8,8 @@
 
 #include "thread.h"
 #include "writer.h"
-#include "url_info.h"
 #include "file_io.h"
+#include "socket_ops.h"
 #include "download_state_manager.h"
 
 enum class OperationStatus {
@@ -18,7 +18,6 @@ enum class OperationStatus {
   DOWNLOADING,
   FINISHED,
   TIMEOUT,
-  NO_ERROR,
   HTTP_ERROR,
   HTTP_SEL_ERROR,
   FTP_ERROR,
@@ -30,17 +29,11 @@ enum class OperationStatus {
   SOCKET_CONNECT_ERROR
 };
 
-struct StatusStruct {
-  StatusStruct(): operation_status(OperationStatus::NOT_STARTED),
-                  error_value(0) {}
-
-  OperationStatus operation_status;
-  int error_value;
-};
-
 struct Connection {
   Connection() : sock_desc(0), status(OperationStatus::NOT_STARTED),
-                 bio(nullptr) {}
+                 bio(nullptr)
+  {
+  }
 
   int sock_desc;
   int ftp_data_sock;
@@ -48,19 +41,22 @@ struct Connection {
   struct DownloadChunk chunk;
   BIO* bio;
   SSL* ssl;
+  // Used for http, https and ftp command channel.
+  std::unique_ptr<SocketOps> socket_ops;
+  // Used for ftp media channel.
+  std::unique_ptr<SocketOps> ftp_media_socket_ops;
 };
 
 class Downloader : public Thread {
   public:
     const static std::string HTTP_HEADER;
-    Downloader(const struct DownloadSource& download_source,
-               const std::vector<int>& socket_descriptors);
+    Downloader(const struct DownloadSource& download_source);
 
     Downloader(const struct DownloadSource& download_source,
-               const std::vector<int>& socket_descriptors,
                std::unique_ptr<Writer> writer,
                const ChunksCollection& chunks_collection,
-               long int timeout_seconds);
+               long int timeout_seconds,
+               int number_of_connections=1);
 
     /**
      * Check the size of file and redirection
@@ -93,16 +89,17 @@ class Downloader : public Thread {
     virtual int set_descriptors() = 0;
     virtual size_t receive_from_connection(size_t index, char* buffer,
                                            size_t buffer_capacity) = 0;
+    virtual bool init_connections();
 
     struct DownloadSource download_source;
 
     std::unique_ptr<Writer> writer;
     ChunksCollection chunks_collection;
-    std::vector<int> socket_descriptors;
     struct timeval timeout;
     std::map<size_t, Connection> connections;
     fd_set readfds;
     size_t buffer_offset;
+    int number_of_connections;
 
   private:
     static DownloadStateManager* download_state_manager;

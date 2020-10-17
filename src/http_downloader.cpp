@@ -11,25 +11,23 @@
 
 using namespace std;
 
-HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
-                               const std::vector<int>& socket_descriptors)
-  : Downloader(download_source, socket_descriptors)
+HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
+  : Downloader(download_source)
 {
-  for (size_t index = 0; index < socket_descriptors.size(); ++index)
-    connections[index].sock_desc = socket_descriptors[index];
+//  for (size_t index = 0; index < socket_descriptors.size(); ++index)
+//    connections[index].sock_desc = socket_descriptors[index];
 }
 
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
-                               std::vector<int>& socket_descriptors,
                                std::unique_ptr<Writer> writer,
                                ChunksCollection& chunks_collection,
-                               long int timeout)
-  : Downloader(download_source, socket_descriptors, move(writer),
-               chunks_collection, timeout)
+                               long int timeout,
+                               int number_of_connections)
+  : Downloader(download_source, move(writer), chunks_collection, timeout,
+               number_of_connections)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
-    connections[chunk.first].sock_desc = socket_descriptors.at(chunk.first);
     connections[chunk.first].status = OperationStatus::NOT_STARTED;
   }
 }
@@ -58,12 +56,13 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
 {
   int redirect_status = 0;
 
+  init_connections();
   // Use GET instead of HEAD, because some servers doesn't support HEAD
   //  command.
   string request =
-    "GET " + download_source.file_path_on_server + " HTTP/1.1\r\nHost: " +
-    download_source.host_name + ":" + to_string(download_source.port) +
-    "\r\n\r\n";
+    "GET " + download_source.file_path + download_source.file_name +
+    " HTTP/1.1\r\nHost: " + download_source.host_name + ":" +
+    to_string(download_source.port) + "\r\n\r\n";
 
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
   if (!send_data(connections[0], request.c_str(), request.length()))
@@ -103,7 +102,7 @@ size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
     regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
     bool found = regex_search(recv_buffer, m, e);
     if(found) {
-      // If responst not equal to 200,OK
+      // If response not equal to 200,OK
       if(stoi(m[2].str())/100 != 2) {
         pos = NULL;
       }
@@ -118,8 +117,8 @@ size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
 void HttpDownloader::send_request()
 {
   for (size_t index = 0; index < connections.size(); ++index) {
-    string request = "GET " + download_source.file_path_on_server +
-      " " +	"HTTP/1.1\r\nRange: bytes=" +
+    string request = "GET " + download_source.file_path + "/" +
+      download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
       to_string(chunks_collection[index].current_pos) + "-" +
       to_string(chunks_collection[index].end_pos) + "\r\n" +  "Host:" +
       download_source.host_name +	":" + to_string(download_source.port) +
@@ -135,7 +134,7 @@ int HttpDownloader::set_descriptors()
 
   FD_ZERO(&readfds);
   for (size_t index = 0; index < connections.size(); ++index) {
-    int sock_desc = connections[index].sock_desc;
+    int sock_desc = connections[index].socket_ops->get_socket_descriptor();
     FD_SET(sock_desc, &readfds);
     max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
   }
@@ -147,7 +146,7 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
                                                size_t buffer_capacity)
 {
   size_t recvd_bytes = 0;
-  int sock_desc = connections[index].sock_desc;
+  int sock_desc = connections[index].socket_ops->get_socket_descriptor();
 
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
     receive_data(connections[index], buffer,  recvd_bytes,

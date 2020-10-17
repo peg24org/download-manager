@@ -32,12 +32,16 @@ string UrlOps::get_hostname() const
 string UrlOps::get_path() const
 {
   smatch matched;
-  regex link_pattern(R"X((\w)(/.+/)(\w+))X");
+  regex link_pattern(R"X(([a-z|0-9])(/[a-z|0-9].+))X");
 
   if (!regex_search(url, matched, link_pattern))
     throw invalid_argument("invalid url");
 
-  return matched[2];
+  string full_path = matched[2];
+  size_t last_slash_pos = full_path.find_last_of('/');
+  string path = full_path.substr(0, last_slash_pos + 1);
+
+  return path;
 }
 
 string UrlOps::get_file_name() const
@@ -60,22 +64,22 @@ string UrlOps::get_ip() const
   return string(inet_ntoa(*((struct in_addr*) server->h_addr)));
 }
 
-Protocol UrlOps::get_protocol() const
+Protocol_ UrlOps::get_protocol() const
 {
   smatch matched;
   regex link_pattern(R"X((\w+)(://))X");
 
   if (!regex_search(url, matched, link_pattern))
     throw invalid_argument("invalid url");
-  Protocol protocol;
+  Protocol_ protocol;
 
   string protocol_str = matched[1];
   if (protocol_str == "http")
-    protocol = Protocol::HTTP;
+    protocol = Protocol_::HTTP;
   else if (protocol_str == "https")
-    protocol = Protocol::HTTPS;
+    protocol = Protocol_::HTTPS;
   else if (protocol_str == "ftp")
-    protocol = Protocol::FTP;
+    protocol = Protocol_::FTP;
   else
     throw invalid_argument("invalid protocol");
 
@@ -91,15 +95,15 @@ uint16_t UrlOps::get_port() const
   if (regex_search(url, matched, link_pattern))
     port = stoi(matched[2]);
   else {
-    Protocol protocol = get_protocol();
+    Protocol_ protocol = get_protocol();
     switch (protocol) {
-      case Protocol::HTTP:
+      case Protocol_::HTTP:
         port = 80;
         break;
-      case Protocol::HTTPS:
+      case Protocol_::HTTPS:
         port = 443;
         break;
-      case Protocol::FTP:
+      case Protocol_::FTP:
         port = 21;
         break;
       default:

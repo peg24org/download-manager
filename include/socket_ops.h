@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "url_ops.h"
+
 // Socket operations class.
 class SocketOps
 {
@@ -19,13 +21,13 @@ class SocketOps
      * Connects to 'ip' and 'port' specified in c-tor.
      * @return True if connecting is successful.
      */
-     bool connect();
+     virtual bool connect();
 
     /**
      *  Disconnects socket from 'ip' and 'port'.
      *  @return True if disconnecting is successful.
      */
-    bool disconnect();
+    virtual bool disconnect();
 
     /**
      *  Gets the socket descriptor for send/recv.
@@ -33,7 +35,7 @@ class SocketOps
      */
     int get_socket_descriptor() const noexcept;
 
-  private:
+  protected:
     int socket_descriptor;
     const std::string ip;
     const uint16_t port;

@@ -64,7 +64,7 @@ PathType FileIO::check_path_type()
       type = PathType::FILE_T;
   }
   else
-    cerr << "Error occured during get path type." << endl;
+    cerr << "Error occurred during get path type." << endl;
 
   return type;
 }

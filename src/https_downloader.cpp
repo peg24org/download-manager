@@ -14,20 +14,19 @@ HttpsDownloader::~HttpsDownloader()
 {
 }
 
-HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
-                                 std::vector<int>& socket_descriptors,
-                                 std::unique_ptr<Writer> writer,
-                                 ChunksCollection& chunks_collection,
-                                 long int timeout)
-  : HttpDownloader(download_source, socket_descriptors, move(writer),
-                   chunks_collection, timeout)
+HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source)
+  : HttpDownloader(download_source)
 {
   ssl_init_sockets();
 }
 
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
-                                 const std::vector<int>& socket_descriptors)
-  : HttpDownloader(download_source, socket_descriptors)
+                                 std::unique_ptr<Writer> writer,
+                                 ChunksCollection& chunks_collection,
+                                 long int timeout,
+                                 int number_of_connections)
+  : HttpDownloader(download_source, move(writer),
+                   chunks_collection, timeout, number_of_connections)
 {
   ssl_init_sockets();
 }
@@ -37,13 +36,14 @@ SSL* HttpsDownloader::get_ssl(BIO* bio)
   SSL* ssl = nullptr;
   BIO_get_ssl(bio, &ssl);
   if (ssl == nullptr)
-    cerr << "Error occured when getting ssl." << endl;
+    cerr << "Error occurred when getting ssl." << endl;
   return ssl;
 }
 
 void HttpsDownloader::ssl_init_sockets()
 {
-  for (size_t index = 0; index < socket_descriptors.size(); ++index) {
+  //for (size_t index = 0; index < socket_descriptors.size(); ++index) {
+  for (size_t index = 0; index < number_of_connections; ++index) {
     SSL_CTX* ctx;
     ctx = SSL_CTX_new(TLS_client_method());
     if (SSL_CTX_set_default_verify_paths(ctx) != 1) 

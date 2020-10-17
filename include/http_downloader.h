@@ -9,14 +9,13 @@
 
 class HttpDownloader : public Downloader {
   public:
-  HttpDownloader(const struct DownloadSource& download_source,
-                 const std::vector<int>& socket_descriptors);
+  HttpDownloader(const struct DownloadSource& download_source);
 
   HttpDownloader(const struct DownloadSource& download_source,
-                 std::vector<int>& socket_descriptors,
                  std::unique_ptr<Writer> writer,
                  ChunksCollection& chunks_collection,
-                 long int timeout);
+                 long int timeout,
+                 int number_of_connections=1);
 
   int check_link(std::string& redirected_url, size_t& file_size) override;
 
