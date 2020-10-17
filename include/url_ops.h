@@ -8,6 +8,7 @@ enum class Protocol {
   HTTPS,
   FTP
 };
+
 struct DownloadSource {
   DownloadSource(std::string ip = "", uint16_t port = 0) : ip(ip), port(port)
   {
@@ -19,12 +20,6 @@ struct DownloadSource {
   std::string host_name;
   Protocol protocol;    // Enum protocol type
   uint16_t port;
-};
-
-enum class Protocol_ {
-  HTTP,
-  HTTPS,
-  FTP
 };
 
 // Url operations class.
@@ -50,7 +45,7 @@ class UrlOps
     std::string get_ip() const;
 
     // @return Protocol of url.
-    Protocol_ get_protocol() const;
+    Protocol get_protocol() const;
 
     // @return Port of url.
     uint16_t get_port() const;

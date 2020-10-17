@@ -64,22 +64,22 @@ string UrlOps::get_ip() const
   return string(inet_ntoa(*((struct in_addr*) server->h_addr)));
 }
 
-Protocol_ UrlOps::get_protocol() const
+Protocol UrlOps::get_protocol() const
 {
   smatch matched;
   regex link_pattern(R"X((\w+)(://))X");
 
   if (!regex_search(url, matched, link_pattern))
     throw invalid_argument("invalid url");
-  Protocol_ protocol;
+  Protocol protocol;
 
   string protocol_str = matched[1];
   if (protocol_str == "http")
-    protocol = Protocol_::HTTP;
+    protocol = Protocol::HTTP;
   else if (protocol_str == "https")
-    protocol = Protocol_::HTTPS;
+    protocol = Protocol::HTTPS;
   else if (protocol_str == "ftp")
-    protocol = Protocol_::FTP;
+    protocol = Protocol::FTP;
   else
     throw invalid_argument("invalid protocol");
 
@@ -95,15 +95,15 @@ uint16_t UrlOps::get_port() const
   if (regex_search(url, matched, link_pattern))
     port = stoi(matched[2]);
   else {
-    Protocol_ protocol = get_protocol();
+    Protocol protocol = get_protocol();
     switch (protocol) {
-      case Protocol_::HTTP:
+      case Protocol::HTTP:
         port = 80;
         break;
-      case Protocol_::HTTPS:
+      case Protocol::HTTPS:
         port = 443;
         break;
-      case Protocol_::FTP:
+      case Protocol::FTP:
         port = 21;
         break;
       default:
