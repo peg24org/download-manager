@@ -86,9 +86,8 @@ void Node::check_url()
       url_ops = UrlOps(url);
       cout << "Redirected to:" << url << endl;
     }
-    else{
+    else
       break;
-    }
   }
 }
 

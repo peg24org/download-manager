@@ -32,10 +32,10 @@ class HttpsSocketOps : public SocketOps
     SSL* get_ssl() const;
 
   private:
-    SSL* get_ssl(BIO* bio); //const
+    SSL* retrieve_ssl(BIO* bio);
+
     BIO* bio;
     SSL* ssl;
-    int sock_desc{0};
     SSL_CTX* ctx{nullptr};
     X509 *cert{nullptr};
 };

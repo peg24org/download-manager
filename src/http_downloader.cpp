@@ -129,8 +129,8 @@ void HttpDownloader::send_request()
 int HttpDownloader::set_descriptors()
 {
   int max_fd = 0;
-
   FD_ZERO(&readfds);
+
   for (size_t index = 0; index < connections.size(); ++index) {
     int sock_desc = connections[index].socket_ops->get_socket_descriptor();
     FD_SET(sock_desc, &readfds);
@@ -147,8 +147,7 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
   int sock_desc = connections[index].socket_ops->get_socket_descriptor();
 
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-    receive_data(connections[index], buffer,  recvd_bytes,
-                 buffer_capacity);
+    receive_data(connections[index], buffer,  recvd_bytes, buffer_capacity);
 
     // Skip the HTTP header
     if (connections[index].status == OperationStatus::NOT_STARTED) {

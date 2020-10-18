@@ -8,6 +8,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "https_socket_ops.h"
+
 using namespace std;
 
 HttpsDownloader::~HttpsDownloader()
@@ -17,7 +19,6 @@ HttpsDownloader::~HttpsDownloader()
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source)
   : HttpDownloader(download_source)
 {
-  ssl_init_sockets();
 }
 
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
@@ -28,7 +29,6 @@ HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
   : HttpDownloader(download_source, move(writer),
                    chunks_collection, timeout, number_of_connections)
 {
-  ssl_init_sockets();
 }
 
 SSL* HttpsDownloader::get_ssl(BIO* bio)
@@ -40,59 +40,31 @@ SSL* HttpsDownloader::get_ssl(BIO* bio)
   return ssl;
 }
 
-void HttpsDownloader::ssl_init_sockets()
+bool HttpsDownloader::init_connections()
 {
-  //for (size_t index = 0; index < socket_descriptors.size(); ++index) {
-  for (size_t index = 0; index < number_of_connections; ++index) {
-    SSL_CTX* ctx;
-    ctx = SSL_CTX_new(TLS_client_method());
-    if (SSL_CTX_set_default_verify_paths(ctx) != 1) 
-      cerr << "Error setting up trust store" << endl;
-
-    string host_name = download_source.host_name;
-    uint16_t port = download_source.port; 
-    string destination = host_name + ":" + to_string(port);
-    BIO* bio = BIO_new_connect(destination.c_str());
-    if (BIO_do_connect(bio) <= 0)
-      cerr << "Error in BIO_do_connect" << endl;
-
-    int sock_desc;
-    BIO_get_fd(bio, &sock_desc);
-    BIO* new_bio = BIO_new_ssl(ctx, 1);
-    BIO_push(new_bio, bio);
-
-    SSL_set_tlsext_host_name(get_ssl(new_bio), host_name.c_str());
-    SSL_set1_host(get_ssl(new_bio), host_name.c_str());
-    if (BIO_do_handshake(new_bio) <= 0)
-      cerr << "Error in BIO_do_handshake" << endl;
-
-    verify_the_certificate(get_ssl(new_bio));
-
-    connections[index].bio = new_bio;
-    connections[index].sock_desc = sock_desc;
-    connections[index].ssl = get_ssl(new_bio);
+  for (int index = 0; index < number_of_connections; ++index) {
+    string& host = download_source.host_name;
+    uint16_t port = download_source.port;
+    unique_ptr<SocketOps> socket_ops = make_unique<HttpsSocketOps>(host, port);
+    socket_ops->connect();
+    connections[index].socket_ops = move(socket_ops);
   }
+
+  //TODO: handle errors.
+  return true;
 }
 
-void HttpsDownloader::verify_the_certificate(SSL *ssl)
-{
-  int err = SSL_get_verify_result(ssl);
-  if (err != X509_V_OK) {
-    const char *message = X509_verify_cert_error_string(err);
-    cerr << "Certificate verification error: " << message <<
-      "(" << err << ")" << endl;
-  }
-  X509 *cert = SSL_get_peer_certificate(ssl);
-  if (cert == nullptr)
-    cerr << "No certificate was presented by the server." << endl;
-}  
 
 bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
-                                   size_t& received_len, size_t buffer_capacity)
+                                   size_t& received_len,
+                                   size_t buffer_capacity)
 {
   bool retval = false;
 
-  int len = SSL_read(connection.ssl, buffer, buffer_capacity);
+  SSL* ssl = dynamic_cast<HttpsSocketOps*>(
+      connection.socket_ops.get())->get_ssl();
+
+  int len = SSL_read(ssl, buffer, buffer_capacity);
   if (len < 0)
     cerr << "error SSL_read" << endl;
   else if (len > 0) 
@@ -108,7 +80,11 @@ bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
 bool HttpsDownloader::send_data(Connection& connection, const char* buffer,
                                 size_t len)
 {
-  BIO_write(connection.bio, buffer, len);
-  BIO_flush(connection.bio);
+  BIO* bio = dynamic_cast<HttpsSocketOps*>(
+      connection.socket_ops.get())->get_bio();
+
+  BIO_write(bio, buffer, len);
+  BIO_flush(bio);
+
   return true;
 }
