@@ -21,7 +21,7 @@ UrlOps::UrlOps(const string& url) : url(url)
 string UrlOps::get_hostname() const
 {
   smatch matched;
-  regex link_pattern(R"X((//)((\w|\.)+))X");
+  regex link_pattern(R"X((//)([\w|\-|\.]+))X");
 
   if (!regex_search(url, matched, link_pattern))
     throw invalid_argument("invalid url");
