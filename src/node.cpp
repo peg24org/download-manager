@@ -81,10 +81,7 @@ void Node::check_url()
     string redirected_url;
     if (info_downloader->check_link(redirected_url, file_length)) {
       url = redirected_url;
-      cout << "File Length:" << file_length << endl;
-      // TODO: support redirect to path.
       url_ops = UrlOps(url);
-      cout << "Redirected to:" << url << endl;
     }
     else
       break;

@@ -41,13 +41,20 @@ size_t HttpDownloader::get_size()
 
 bool HttpDownloader::check_redirection(string& redirecting)
 {
+  bool result = false;
   if (regex_search_string(receive_header, HTTP_HEADER, redirecting)) {
     // Check redirection
-    if (regex_search_string(receive_header, "(Location: )(.+)",redirecting))
-      return true;
-    return false;
+    if (regex_search_string(receive_header, "(Location: )(.+)",redirecting)) {
+      result = true;
+      // Check if redirecting to path instead of URL, then create new URL.
+      if (!regex_match(receive_header, regex("http.*://"))) {
+        const Protocol& protocol = download_source.protocol;
+        string prefix = protocol == Protocol::HTTP ? "http://" : "https://";
+        redirecting = prefix + download_source.host_name + redirecting;
+      }
+    }
   }
-  return false;
+  return result;
 }
 
 int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
@@ -56,7 +63,7 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
 
   init_connections();
   // Use GET instead of HEAD, because some servers doesn't support HEAD
-  //  command.
+  // command.
   string request =
     "GET " + download_source.file_path + download_source.file_name +
     " HTTP/1.1\r\nHost: " + download_source.host_name + ":" +
@@ -66,14 +73,11 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
   if (!send_data(connections[0], request.c_str(), request.length()))
     return -1;
 
-  size_t len = 0;
-  unique_ptr<char[]> buffer = make_unique<char[]>(256 * 1024 * sizeof(char));
   while (true) {
     size_t number_of_bytes;
     if (!receive_data(connections[0], const_cast<char*>(receive_header.data()),
                       number_of_bytes, MAX_HTTP_HEADER_LENGTH))
       return -1;
-    len += number_of_bytes;
     if (receive_header.find("\r\n\r\n") != string::npos) {
       break;
     }
