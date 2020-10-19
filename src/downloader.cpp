@@ -119,6 +119,7 @@ bool Downloader::init_connections()
 {
   // TODO handle errors.
   for (int index = 0; index < number_of_connections; ++index) {
+
     unique_ptr<SocketOps> socket_ops = make_unique<SocketOps>(
         download_source.ip, download_source.port);
     socket_ops->connect();

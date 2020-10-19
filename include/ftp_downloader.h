@@ -37,6 +37,9 @@ class FtpDownloader : public Downloader {
                 std::string password="anonymous");
   bool send_ftp_command(Connection& connection, const std::string& command,
                         std::string& result);
+
+  virtual bool receive_data(Connection& connection, char* buffer,
+                            size_t& recv_len, size_t buffer_capacity) override;
   void send_request() override;
   int set_descriptors() override;
   size_t receive_from_connection(size_t index, char* buffer,
@@ -44,9 +47,10 @@ class FtpDownloader : public Downloader {
   std::vector<std::string> split_string(const std::string& buffer,
                                         char delimiter);
   std::pair<std::string, uint16_t> get_data_ip_port(const std::string& buffer);
-  void open_data_channel(Connection& connection, std::string ip, uint16_t port);
-  bool ftp_receive_data(Connection& connection, char* buffer, size_t& received_len,
-                    size_t buffer_capacity);
+  void open_data_channel(Connection& connection, const std::string& ip,
+                         uint16_t port);
+  bool ftp_receive_data(Connection& connection, char* buffer,
+                        size_t& received_len, size_t buffer_capacity);
 };
 
 #endif
