@@ -25,12 +25,12 @@ Downloader::Downloader(const struct DownloadSource& download_source)
 Downloader::Downloader(const struct DownloadSource& download_source,
                        std::unique_ptr<Writer> writer,
                        const ChunksCollection& chunks_collection,
-                       long int timeout_seconds,
+                       time_t timeout_seconds,
                        int number_of_connections)
   : download_source(download_source)
   , writer(move(writer))
   , chunks_collection(chunks_collection)
-  , timeout({.tv_sec=timeout_seconds, .tv_usec=0})
+  , timeout_seconds(timeout_seconds)
   , buffer_offset(0)
   , number_of_connections(number_of_connections)
 {
@@ -46,7 +46,7 @@ void Downloader::run()
   const size_t kFileSize = writer->get_file_size();
 
   while (writer->get_total_written_bytes() < kFileSize) {
-
+    struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
     int max_fd = set_descriptors();
 
     int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
@@ -54,11 +54,11 @@ void Downloader::run()
       cerr << "Select error occurred." << endl;
     else if (sel_retval > 0) {
       for (size_t index = 0; index < connections.size(); ++index) {
-        size_t recvd_bytes = receive_from_connection(index, recv_buffer,
-                                                     kBufferLen);
+        size_t recvd_bytes = 0;
+        recvd_bytes = receive_from_connection(index, recv_buffer, kBufferLen);
         if (recvd_bytes) {
-          writer->write(recv_buffer+buffer_offset, recvd_bytes,
-                        connections[index].chunk.current_pos, index);
+          size_t pos = connections[index].chunk.current_pos;
+          writer->write(recv_buffer+buffer_offset, recvd_bytes, pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
         }
       }   // End of for loop

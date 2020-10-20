@@ -55,7 +55,7 @@ class Downloader : public Thread {
     Downloader(const struct DownloadSource& download_source,
                std::unique_ptr<Writer> writer,
                const ChunksCollection& chunks_collection,
-               long int timeout_seconds,
+               time_t timeout_seconds,
                int number_of_connections=1);
 
     /**
@@ -95,7 +95,7 @@ class Downloader : public Thread {
 
     std::unique_ptr<Writer> writer;
     ChunksCollection chunks_collection;
-    struct timeval timeout;
+    time_t timeout_seconds;
     std::map<size_t, Connection> connections;
     fd_set readfds;
     size_t buffer_offset;

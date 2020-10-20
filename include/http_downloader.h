@@ -14,7 +14,7 @@ class HttpDownloader : public Downloader {
   HttpDownloader(const struct DownloadSource& download_source,
                  std::unique_ptr<Writer> writer,
                  ChunksCollection& chunks_collection,
-                 long int timeout,
+                 time_t timeout_seconds,
                  int number_of_connections=1);
 
   int check_link(std::string& redirected_url, size_t& file_size) override;
