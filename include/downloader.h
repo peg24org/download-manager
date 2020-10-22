@@ -44,6 +44,7 @@ struct Connection {
   std::unique_ptr<SocketOps> socket_ops;
   // Used for ftp media channel.
   std::unique_ptr<SocketOps> ftp_media_socket_ops;
+  std::chrono::steady_clock::time_point last_recv_time_point;
 };
 
 class Downloader : public Thread {
@@ -84,11 +85,15 @@ class Downloader : public Thread {
                            size_t len);
 
     virtual void send_request() = 0;
+    virtual void send_request(Connection& connection) {};
     // Return max_fd
     virtual int set_descriptors() = 0;
     virtual size_t receive_from_connection(size_t index, char* buffer,
                                            size_t buffer_capacity) = 0;
     virtual bool init_connections();
+    virtual std::vector<int> check_timeout();
+    // Retry download in connections
+    virtual void retry(const std::vector<int>& connection_indices);
 
     struct DownloadSource download_source;
 

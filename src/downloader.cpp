@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
-#include <sys/socket.h> 
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <mutex>
 #include <regex>
@@ -10,6 +11,7 @@
 #include "downloader.h"
 
 using namespace std;
+using namespace std::chrono;
 
 const string Downloader::HTTP_HEADER =
     "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
@@ -60,12 +62,17 @@ void Downloader::run()
           size_t pos = connections[index].chunk.current_pos;
           writer->write(recv_buffer+buffer_offset, recvd_bytes, pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
+          connections[index].last_recv_time_point = steady_clock::now();
         }
       }   // End of for loop
     }   // End of else if
     else {    // Timeout
-      break;    // Break while loop
+      // TODO: handle this
     }   // End of else for timeout
+    // Check each connection for timeout
+    vector<int> timeout_indices = check_timeout();
+    if (timeout_indices.size() > 0)
+      retry(timeout_indices);
   }   // End of while loop
 }   // End of downloader thread run()
 
@@ -89,14 +96,18 @@ bool Downloader::regex_search_string(const string& input, const string& pattern)
 bool Downloader::receive_data(Connection& connection, char* buffer,
                               size_t& received_len, size_t buffer_capacity)
 {
-  received_len = recv(connection.socket_ops->get_socket_descriptor(),
-                      buffer, buffer_capacity, 0);
-  if (received_len < 0) {
+  bool result = true;
+  int64_t recv_len = recv(connection.socket_ops->get_socket_descriptor(),
+                          buffer, buffer_capacity, 0);
+  if (recv_len >= 0)
+    received_len = recv_len;
+  else {
     connection.status = OperationStatus::SOCKET_RECV_ERROR;
-    return false;
+    result = false;
+    received_len = 0;
   }
 
-  return true;
+  return result;
 }
 
 bool Downloader::send_data(Connection& connection, const char* buffer,
@@ -127,4 +138,32 @@ bool Downloader::init_connections()
   }
 
   return true;
+}
+
+vector<int> Downloader::check_timeout()
+{
+  vector<int> result;
+  for (auto& connection_it : connections) {
+    Connection& connection = connection_it.second;
+    steady_clock::time_point now = steady_clock::now();
+    duration<double> time_span =
+      duration_cast<duration<double>>(now - connection.last_recv_time_point);
+    if (time_span.count() > timeout_seconds)
+      // Timeout index
+      result.push_back(connection_it.first);
+  }
+
+  return result;
+}
+
+void Downloader::retry(const vector<int>& connection_indices)
+{
+  for (const int index : connection_indices) {
+    Connection& connection = connections[index];
+    connection.status = OperationStatus::NOT_STARTED;
+    connection.socket_ops = make_unique<SocketOps>(download_source.ip,
+        download_source.port);
+    connection.socket_ops->connect();
+    send_request(connection);
+  }
 }

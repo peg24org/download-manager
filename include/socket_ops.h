@@ -9,6 +9,7 @@
 class SocketOps
 {
   public:
+    virtual ~SocketOps();
     /**
      *  The c-tor.
      *

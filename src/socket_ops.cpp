@@ -9,6 +9,11 @@
 
 using namespace std;
 
+SocketOps::~SocketOps()
+{
+  close(socket_descriptor);
+}
+
 SocketOps::SocketOps(const string& ip, uint16_t port)
   : socket_descriptor(0), ip(ip), port(port)
 {

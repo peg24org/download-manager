@@ -119,15 +119,38 @@ size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
 void HttpDownloader::send_request()
 {
   for (size_t index = 0; index < connections.size(); ++index) {
+    Connection& connection = connections[index];
+    const string port = to_string(download_source.port);
+    const string host_name = download_source.host_name;
+    string current_pos;
+    if (connection.chunk.current_pos > 0)
+      current_pos = to_string(connections[index].chunk.current_pos);
+    else
+      current_pos = to_string(connections[index].chunk.current_pos);
     string request = "GET " + download_source.file_path + "/" +
       download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
-      to_string(chunks_collection[index].current_pos) + "-" +
-      to_string(chunks_collection[index].end_pos) + "\r\n" +  "Host:" +
-      download_source.host_name +	":" + to_string(download_source.port) +
-      "\r\n\r\n";
-    if(!send_data(connections[index], request.c_str(), request.length()))
+      current_pos + "-" +
+      to_string(connection.chunk.end_pos) + "\r\n" +  "Host:" +
+      host_name +	":" + port + "\r\n\r\n";
+    if(!send_data(connection, request.c_str(), request.length()))
       connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
   }
+}
+
+void HttpDownloader::send_request(Connection& connection)
+{
+  const string port = to_string(download_source.port);
+  const string host_name = download_source.host_name;
+  string current_pos = to_string(connection.chunk.current_pos);
+
+  string request = "GET " + download_source.file_path + "/" +
+    download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
+    current_pos + "-" +
+    to_string(connection.chunk.end_pos) + "\r\n" +  "Host:" +
+    host_name +	":" + port + "\r\n\r\n";
+
+  if(!send_data(connection, request.c_str(), request.length()))
+    connection.status = OperationStatus::SOCKET_SEND_ERROR;
 }
 
 int HttpDownloader::set_descriptors()
@@ -154,7 +177,8 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
     receive_data(connections[index], buffer,  recvd_bytes, buffer_capacity);
 
     // Skip the HTTP header
-    if (connections[index].status == OperationStatus::NOT_STARTED) {
+    if (connections[index].status == OperationStatus::NOT_STARTED
+        && recvd_bytes > 0) {
       buffer_offset = get_header_delimiter_position(buffer) + 4;
       recvd_bytes -= buffer_offset;
       connections[index].status = OperationStatus::DOWNLOADING;

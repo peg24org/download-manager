@@ -23,6 +23,7 @@ class HttpDownloader : public Downloader {
   std::string receive_header;
 
   void send_request() override;
+  void send_request(Connection& connection) override;
   size_t receive_from_connection(size_t index, char* buffer,
                                  size_t buffer_capacity) override;
   size_t get_header_delimiter_position(const char* buffer);

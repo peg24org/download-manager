@@ -105,7 +105,7 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
 {
   unique_ptr<Downloader> downloader_obj;
 
-  vector<int> socket_descriptors;
+  //vector<int> socket_descriptors;
 
   switch(download_source.protocol) {
     case Protocol::HTTP:
@@ -136,8 +136,8 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
 
 std::unique_ptr<Downloader> Node::make_downloader()
 {
-  vector<int> socket_descriptors;
-  SocketOps socket_ops(url_ops.get_ip(), url_ops.get_port());
+  //vector<int> socket_descriptors;
+  //SocketOps socket_ops(url_ops.get_ip(), url_ops.get_port());
 
   unique_ptr<Downloader> downloader_obj;
 
