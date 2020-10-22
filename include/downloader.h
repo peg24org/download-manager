@@ -30,13 +30,12 @@ enum class OperationStatus {
 };
 
 struct Connection {
-  Connection() : sock_desc(0), status(OperationStatus::NOT_STARTED),
-                 bio(nullptr)
+  Connection() : status(OperationStatus::NOT_STARTED),
+    bio(nullptr),
+    ssl(nullptr)
   {
   }
 
-  int sock_desc;
-  int ftp_data_sock;
   OperationStatus status;
   struct DownloadChunk chunk;
   BIO* bio;
