@@ -79,11 +79,16 @@ void Node::check_url()
 
     // Check if redirected
     string redirected_url;
-    if (info_downloader->check_link(redirected_url, file_length)) {
+    int check_link = info_downloader->check_link(redirected_url, file_length);
+    if (check_link > 0) {   // Redirected
       url = redirected_url;
       url_ops = UrlOps(url);
     }
-    else
+    else if (check_link < 0) {
+      cerr << "Could not connect." << endl << "Exiting." << endl;
+      exit(1);
+    }
+    else  // Not redirected.
       break;
   }
 }

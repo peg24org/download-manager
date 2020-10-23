@@ -61,7 +61,8 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
 {
   int redirect_status = 0;
 
-  init_connections();
+  if (!init_connections())
+    return -1;
   // Use GET instead of HEAD, because some servers doesn't support HEAD
   // command.
   string request =

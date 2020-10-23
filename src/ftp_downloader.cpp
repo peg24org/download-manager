@@ -33,7 +33,8 @@ FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
 
 int FtpDownloader::check_link(string& redirected_url, size_t& size)
 {
-  init_connections();
+  if (!init_connections())
+    return -1;
   ftp_init();
 
   string reply;
