@@ -42,12 +42,13 @@ size_t HttpDownloader::get_size()
 bool HttpDownloader::check_redirection(string& redirecting)
 {
   bool result = false;
-  if (regex_search_string(receive_header, HTTP_HEADER, redirecting)) {
+  // Check header
+  if (regex_search_string(receive_header, HTTP_HEADER)) {
     // Check redirection
     if (regex_search_string(receive_header, "(Location: )(.+)",redirecting)) {
       result = true;
       // Check if redirecting to path instead of URL, then create new URL.
-      if (!regex_match(receive_header, regex("http.*://"))) {
+      if (!regex_search_string(receive_header, "http.*://")) {
         const Protocol& protocol = download_source.protocol;
         string prefix = protocol == Protocol::HTTP ? "http://" : "https://";
         redirecting = prefix + download_source.host_name + redirecting;
