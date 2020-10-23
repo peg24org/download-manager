@@ -54,7 +54,6 @@ bool HttpsDownloader::init_connections()
   return true;
 }
 
-
 bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
                                    size_t& received_len,
                                    size_t buffer_capacity)

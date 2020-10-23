@@ -128,16 +128,18 @@ bool Downloader::send_data(Connection& connection, const char* buffer,
 
 bool Downloader::init_connections()
 {
-  // TODO handle errors.
-  for (int index = 0; index < number_of_connections; ++index) {
+  bool result = true;
+  for (int index = 0; index < number_of_connections; ++index)
+    result &= init_connection(connections[index]);
+  return result;
+}
 
-    unique_ptr<SocketOps> socket_ops = make_unique<SocketOps>(
-        download_source.ip, download_source.port);
-    socket_ops->connect();
-    connections[index].socket_ops = move(socket_ops);
-  }
-
-  return true;
+bool Downloader::init_connection(Connection& connection)
+{
+  const string& ip = download_source.ip;
+  const uint16_t port = download_source.port;
+  connection.socket_ops = make_unique<SocketOps>(ip, port);
+  return connection.socket_ops->connect();
 }
 
 vector<int> Downloader::check_timeout()

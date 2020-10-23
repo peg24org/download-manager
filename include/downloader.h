@@ -91,6 +91,7 @@ class Downloader : public Thread {
     virtual size_t receive_from_connection(size_t index, char* buffer,
                                            size_t buffer_capacity) = 0;
     virtual bool init_connections();
+    virtual bool init_connection(Connection& connection);
     virtual std::vector<int> check_timeout();
     // Retry download in connections
     virtual void retry(const std::vector<int>& connection_indices);
