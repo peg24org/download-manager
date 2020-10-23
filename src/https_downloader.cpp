@@ -40,20 +40,6 @@ SSL* HttpsDownloader::get_ssl(BIO* bio)
   return ssl;
 }
 
-bool HttpsDownloader::init_connections()
-{
-  for (int index = 0; index < number_of_connections; ++index) {
-    string& host = download_source.host_name;
-    uint16_t port = download_source.port;
-    unique_ptr<SocketOps> socket_ops = make_unique<HttpsSocketOps>(host, port);
-    socket_ops->connect();
-    connections[index].socket_ops = move(socket_ops);
-  }
-
-  //TODO: handle errors.
-  return true;
-}
-
 bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
                                    size_t& received_len,
                                    size_t buffer_capacity)
@@ -86,4 +72,13 @@ bool HttpsDownloader::send_data(Connection& connection, const char* buffer,
   BIO_flush(bio);
 
   return true;
+}
+
+bool HttpsDownloader::init_connection(Connection& connection)
+{
+    string& host = download_source.host_name;
+    uint16_t port = download_source.port;
+
+    connection.socket_ops = make_unique<HttpsSocketOps>(host, port);
+    return connection.socket_ops->connect();
 }
