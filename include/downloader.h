@@ -32,7 +32,8 @@ enum class OperationStatus {
 struct Connection {
   Connection() : status(OperationStatus::NOT_STARTED),
     bio(nullptr),
-    ssl(nullptr)
+    ssl(nullptr),
+    last_recv_time_point(std::chrono::steady_clock::now())
   {
   }
 
