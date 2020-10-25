@@ -15,8 +15,7 @@ using namespace std;
 
 Node::Node(const string& url, const string& optional_path,
            uint16_t number_of_connections, long int timeout)
-  : url(url)
-  , url_ops(url)
+  : url_ops(url)
   , optional_path(optional_path)
   , number_of_connections(number_of_connections)
   , timeout(timeout)
@@ -80,10 +79,8 @@ void Node::check_url()
     // Check if redirected
     string redirected_url;
     int check_link = info_downloader->check_link(redirected_url, file_length);
-    if (check_link > 0) {   // Redirected
-      url = redirected_url;
-      url_ops = UrlOps(url);
-    }
+    if (check_link > 0)   // Redirected
+      url_ops = UrlOps(redirected_url);
     else if (check_link < 0) {
       cerr << "Could not connect." << endl << "Exiting." << endl;
       exit(1);
@@ -137,16 +134,23 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
   return downloader_obj;
 }
 
+DownloadSource Node::make_download_source(const UrlOps& url_ops) const
+{
+  return {
+    .ip = url_ops.get_ip(),
+    .file_path = url_ops.get_path(),
+    .file_name = url_ops.get_file_name(),
+    .host_name = url_ops.get_hostname(),
+    .protocol = url_ops.get_protocol(),
+    .port = url_ops.get_port()
+  };
+}
+
 std::unique_ptr<Downloader> Node::make_downloader()
 {
   unique_ptr<Downloader> downloader_obj;
 
-  download_source.ip = url_ops.get_ip();
-  download_source.port = url_ops.get_port();
-  download_source.protocol = url_ops.get_protocol();
-  download_source.host_name = url_ops.get_hostname();
-  download_source.file_path = url_ops.get_path();
-  download_source.file_name = url_ops.get_file_name();
+  download_source = make_download_source(url_ops);
 
   switch (download_source.protocol) {
     case Protocol::HTTP:

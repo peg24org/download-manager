@@ -33,6 +33,7 @@ class Node : public Thread {
     void run();
     void check_url();
     void check_download_state();
+    DownloadSource make_download_source(const UrlOps& url_ops) const;
     // Checks the downloading file existence and its LOG file.
     bool check_resume();
     std::string get_output_path(const std::string& optional_path,
@@ -49,7 +50,6 @@ class Node : public Thread {
     size_t total_received_bytes;
     static size_t node_index; // index of node
 
-    std::string url;
     UrlOps url_ops;
     std::string file_path;
     std::string optional_path;
