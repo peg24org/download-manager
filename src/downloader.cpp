@@ -136,10 +136,25 @@ bool Downloader::init_connections()
 
 bool Downloader::init_connection(Connection& connection)
 {
-  const string& ip = download_source.ip;
-  const uint16_t port = download_source.port;
-  connection.socket_ops = make_unique<SocketOps>(ip, port);
-  return connection.socket_ops->connect();
+  int result;
+  if (!download_source.proxy_ip.empty()) {
+    connection.socket_ops = make_unique<SocketOps>(download_source.proxy_ip,
+                                                   download_source.proxy_port);
+    result = connection.socket_ops->connect();
+    // TODO: handle return result.
+    int socket_descriptor = connection.socket_ops->get_socket_descriptor();
+    connection.http_proxy = make_unique<HttpProxy>(download_source.host_name,
+                                                   download_source.port);
+    connection.http_proxy->connect(socket_descriptor);
+  }
+  else {
+    connection.socket_ops = make_unique<SocketOps>(download_source.ip,
+                                                   download_source.port);
+    result = connection.socket_ops->connect();
+  }
+
+
+  return result;
 }
 
 vector<int> Downloader::check_timeout()

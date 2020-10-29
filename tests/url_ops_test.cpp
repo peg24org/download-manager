@@ -100,14 +100,22 @@ TEST_P(UrlOpsTest, url_ops_should_return_right_values)
     ASSERT_EQ(expected_file_name, url_ops.get_file_name());
 }
 
-TEST(UrlOpsExceptionTest, ing_writer)
+TEST(UrlOpsExceptionTest, url_ops_should_throw_exception_with_invalid_url)
 {
   constexpr char kInvalidUrl[] = "invalid url";
-  UrlOps invalid_url_ops(kInvalidUrl);
-  EXPECT_THROW(invalid_url_ops.get_hostname(), invalid_argument);
-  EXPECT_THROW(invalid_url_ops.get_path(), invalid_argument);
-  EXPECT_THROW(invalid_url_ops.get_file_name(), invalid_argument);
-  EXPECT_THROW(invalid_url_ops.get_protocol(), invalid_argument);
-  EXPECT_THROW(invalid_url_ops.get_port(), invalid_argument);
-  EXPECT_THROW(invalid_url_ops.get_ip(), invalid_argument);
+  EXPECT_THROW(UrlOps invalid_url_ops(kInvalidUrl), invalid_argument);
+}
+
+TEST(UrlOpsProxyTest, after_set_proxy_url_ops_should_return_its_url_and_port)
+{
+  constexpr char kUrl[] = "http://example.com/dir/subdir/file.dat";
+  constexpr char kProxyUrl[] = "http://localhost:8080";
+  constexpr char kExpectedIp[] = "127.0.0.1";
+  constexpr uint16_t kExpectedPort = 8080;
+
+  UrlOps url_ops(kUrl);
+  url_ops.set_proxy(kProxyUrl);
+
+  EXPECT_EQ(url_ops.get_proxy_port(), kExpectedPort);
+  EXPECT_EQ(url_ops.get_proxy_ip(), kExpectedIp);
 }

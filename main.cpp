@@ -81,15 +81,17 @@ int main(int argc, char* argv[])
   string link;
   string optional_path;
   long int timeout{0};
+  string proxy_url;
 
   //**************** get command line arguments ***************
   int next_option;
-  const char* const short_options = "hvo:n:t:";
+  const char* const short_options = "hvo:n:t:p:";
   const struct option long_options[] = {
     {"help",    0, NULL, 'h'},
     {"output",  1, NULL, 'o'},
     {"verbose", 0, NULL, 'v'},
     {"timeout", 1, NULL, 't'},
+    {"proxy",   1, NULL, 'p'},  // host:ip
     {NULL,      0, NULL, 0}
   };
   program_name = argv[0];
@@ -110,6 +112,9 @@ int main(int argc, char* argv[])
         break;
       case 't':
         timeout = stoi(optarg);
+        break;
+      case 'p':
+        proxy_url = optarg;
         break;
       case '?':
         print_usage(1);
@@ -134,6 +139,8 @@ int main(int argc, char* argv[])
     node = make_unique<DownloadMngr>(link, optional_path,
                                      number_of_connections);
 
+  if (!proxy_url.empty())
+    node->set_proxy(proxy_url);
   node->start();
   node->join();
 

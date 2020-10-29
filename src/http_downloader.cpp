@@ -115,6 +115,8 @@ size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
       pos = NULL;
     }
   }
+  if (pos == NULL)
+    return 0;
   return pos - buffer;
 }
 
@@ -177,8 +179,6 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
 
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
     receive_data(connections[index], buffer,  recvd_bytes, buffer_capacity);
-
-    // Skip the HTTP header
     if (connections[index].status == OperationStatus::NOT_STARTED
         && recvd_bytes > 0) {
       buffer_offset = get_header_delimiter_position(buffer) + 4;

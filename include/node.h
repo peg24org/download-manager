@@ -17,6 +17,8 @@ class Node : public Thread {
     virtual void on_get_file_info(size_t node_index, size_t file_size,
                                   const std::string& file_name) {};
 
+    // Set proxy if proxy_url is not empty.
+    void set_proxy(std::string proxy_url);
   protected:
     // callback refresh interval in milliseconds
     size_t callback_refresh_interval = 500;
@@ -33,7 +35,7 @@ class Node : public Thread {
     void run();
     void check_url();
     void check_download_state();
-    DownloadSource make_download_source(const UrlOps& url_ops) const;
+    DownloadSource make_download_source(UrlOps& url_ops);
     // Checks the downloading file existence and its LOG file.
     bool check_resume();
     std::string get_output_path(const std::string& optional_path,
@@ -56,6 +58,8 @@ class Node : public Thread {
     uint16_t number_of_connections;
     struct DownloadSource download_source;
     long int timeout;
+
+    std::string proxy_url;
 };
 
 #endif

@@ -6,6 +6,7 @@
 
 #include <openssl/bio.h>
 
+#include "http_proxy.h"
 #include "thread.h"
 #include "writer.h"
 #include "file_io.h"
@@ -30,10 +31,11 @@ enum class OperationStatus {
 };
 
 struct Connection {
-  Connection() : status(OperationStatus::NOT_STARTED),
-    bio(nullptr),
-    ssl(nullptr),
-    last_recv_time_point(std::chrono::steady_clock::now())
+  Connection() : status(OperationStatus::NOT_STARTED)
+    , bio(nullptr)
+    , ssl(nullptr)
+    , last_recv_time_point(std::chrono::steady_clock::now())
+    , http_proxy(nullptr)
   {
   }
 
@@ -46,6 +48,8 @@ struct Connection {
   // Used for ftp media channel.
   std::unique_ptr<SocketOps> ftp_media_socket_ops;
   std::chrono::steady_clock::time_point last_recv_time_point;
+
+  std::unique_ptr<HttpProxy> http_proxy;
 };
 
 class Downloader : public Thread {
@@ -70,6 +74,7 @@ class Downloader : public Thread {
      *  it will return -1
      */
     virtual int check_link(std::string& redirect_url, size_t& size) = 0;
+    void use_http_proxy(std::string proxy_host, uint16_t proxy_port);
 
   protected:
     bool regex_search_string(const std::string& input,

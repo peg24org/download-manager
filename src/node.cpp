@@ -134,19 +134,23 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
   return downloader_obj;
 }
 
-DownloadSource Node::make_download_source(const UrlOps& url_ops) const
+DownloadSource Node::make_download_source(UrlOps& url_ops)
 {
+  url_ops.set_proxy(proxy_url);
+
   return {
     .ip = url_ops.get_ip(),
     .file_path = url_ops.get_path(),
     .file_name = url_ops.get_file_name(),
     .host_name = url_ops.get_hostname(),
     .protocol = url_ops.get_protocol(),
-    .port = url_ops.get_port()
+    .port = url_ops.get_port(),
+    .proxy_ip = url_ops.get_proxy_ip(),
+    .proxy_port = url_ops.get_proxy_port()
   };
 }
 
-std::unique_ptr<Downloader> Node::make_downloader()
+unique_ptr<Downloader> Node::make_downloader()
 {
   unique_ptr<Downloader> downloader_obj;
 
@@ -208,5 +212,11 @@ string Node::get_output_path(const string& optional_path,
 
   return path;
 }
+
+void Node::set_proxy(string proxy_url)
+{
+  this->proxy_url = proxy_url;
+}
+
 
 size_t Node::node_index = 0;

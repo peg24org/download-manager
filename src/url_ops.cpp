@@ -14,19 +14,18 @@
 
 using namespace std;
 
-UrlOps::UrlOps(const string& url) : url(url)
+UrlOps::UrlOps(const string& url)
+  : url(url)
+  , host(get_url_hostname(url))
+  , port(get_url_port(url))
+  , proxy_host("")
+  , proxy_port(0)
 {
 }
 
 string UrlOps::get_hostname() const
 {
-  smatch matched;
-  regex link_pattern(R"X((//)([\w|\-|\.]+))X");
-
-  if (!regex_search(url, matched, link_pattern))
-    throw invalid_argument("invalid url");
-
-  return matched[2];
+  return host;
 }
 
 string UrlOps::get_path() const
@@ -88,6 +87,22 @@ Protocol UrlOps::get_protocol() const
 
 uint16_t UrlOps::get_port() const
 {
+  return port;
+}
+
+string UrlOps::get_url_hostname(const string& url) const
+{
+  smatch matched;
+  regex link_pattern(R"X((//)([\w|\-|\.]+))X");
+
+  if (!regex_search(url, matched, link_pattern))
+    throw invalid_argument("invalid url");
+
+  return matched[2];
+}
+
+uint16_t UrlOps::get_url_port(const string& url) const
+{
   uint16_t port;
   smatch matched;
   regex link_pattern(R"X((:)(\d+))X");
@@ -112,4 +127,35 @@ uint16_t UrlOps::get_port() const
   }
 
   return port;
+}
+
+string UrlOps::get_host_ip(const string& hostname) const
+{
+  struct hostent *server;
+  server = gethostbyname(hostname.c_str());
+  if (!server)
+    throw runtime_error("cannot get ip.");
+  return string(inet_ntoa(*((struct in_addr*) server->h_addr)));
+}
+
+void UrlOps::set_proxy(const string& proxy_url)
+{
+  if (!proxy_url.empty()) {
+    proxy_host = get_url_hostname(proxy_url);
+    proxy_port = get_url_port(proxy_url);
+  }
+  else {
+    proxy_host = "";
+    proxy_port = 0;
+  }
+}
+
+uint16_t UrlOps::get_proxy_port() const
+{
+  return proxy_port;
+}
+
+string UrlOps::get_proxy_ip() const
+{
+  return !proxy_host.empty() ? get_host_ip(proxy_host) : "";
 }

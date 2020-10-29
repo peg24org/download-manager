@@ -1,5 +1,5 @@
-#ifndef _URL_OPS_H
-#define _URL_OPS_H
+#ifndef URL_OPS_H
+#define URL_OPS_H
 
 #include <string>
 
@@ -17,6 +17,9 @@ struct DownloadSource
   std::string host_name;
   Protocol protocol;    // Enum protocol type
   uint16_t port{0};
+
+  std::string proxy_ip;
+  uint16_t proxy_port{0};
 };
 
 // Url operations class.
@@ -47,7 +50,20 @@ class UrlOps
     // @return Port of url.
     uint16_t get_port() const;
 
+    void set_proxy(const std::string& proxy_url);
+    uint16_t get_proxy_port() const;
+    std::string get_proxy_ip() const;
+
   private:
+    std::string get_url_hostname(const std::string& url) const;
+    uint16_t get_url_port(const std::string& url) const;
+    std::string get_host_ip(const std::string& hostname) const;
+
     std::string url;
+    std::string host;
+    uint16_t port;
+    std::string proxy_host;
+    uint16_t proxy_port;
 };
+
 #endif
