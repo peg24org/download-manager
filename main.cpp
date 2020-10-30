@@ -33,8 +33,10 @@ void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
   cerr << "\t-h --help    Display this usage information." << endl
-       << "\t-n number of connections" << endl
-       << "\t-o output file name" << endl;
+       << "\t-n           number of connections" << endl
+       << "\t-o           output file name" << endl
+       << "\t-p --proxy   proxy address" << endl
+       << "\t-t --timeout timeout interval" << endl;
   exit(exit_code);
 }
 
