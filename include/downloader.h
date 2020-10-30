@@ -48,6 +48,7 @@ struct Connection {
   // Used for ftp media channel.
   std::unique_ptr<SocketOps> ftp_media_socket_ops;
   std::chrono::steady_clock::time_point last_recv_time_point;
+  std::string temp_http_header;
 
   std::unique_ptr<HttpProxy> http_proxy;
 };
@@ -109,7 +110,6 @@ class Downloader : public Thread {
     time_t timeout_seconds;
     std::map<size_t, Connection> connections;
     fd_set readfds;
-    size_t buffer_offset;
     int number_of_connections;
 
   private:

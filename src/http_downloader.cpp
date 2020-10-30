@@ -61,7 +61,6 @@ bool HttpDownloader::check_redirection(string& redirecting)
 int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
 {
   int redirect_status = 0;
-
   if (!init_connections())
     return -1;
   // Use GET instead of HEAD, because some servers doesn't support HEAD
@@ -70,7 +69,6 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
     "GET " + download_source.file_path + download_source.file_name +
     " HTTP/1.1\r\nHost: " + download_source.host_name + ":" +
     to_string(download_source.port) + "\r\n\r\n";
-
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
   if (!send_data(connections[0], request.c_str(), request.length()))
     return -1;
@@ -181,12 +179,18 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
     receive_data(connections[index], buffer,  recvd_bytes, buffer_capacity);
     if (connections[index].status == OperationStatus::NOT_STARTED
         && recvd_bytes > 0) {
-      buffer_offset = get_header_delimiter_position(buffer) + 4;
-      recvd_bytes -= buffer_offset;
+      connections[index].temp_http_header += buffer;
+      const char* buffer_data = connections[index].temp_http_header.data();
+      size_t delimiter = get_header_delimiter_position(buffer_data);
+      if (delimiter == 0)
+        return 0;
+      constexpr uint16_t kLineFeedLength = 4; // Length of \r\n\r\n
+      recvd_bytes = connections[index].temp_http_header.length() - delimiter -
+                    kLineFeedLength;
+      memcpy(buffer, buffer_data + delimiter + kLineFeedLength, recvd_bytes);
       connections[index].status = OperationStatus::DOWNLOADING;
+      connections[index].temp_http_header.clear();
     }
-    else
-      buffer_offset = 0;
   }
 
   return recvd_bytes;

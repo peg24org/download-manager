@@ -33,7 +33,6 @@ Downloader::Downloader(const struct DownloadSource& download_source,
   , writer(move(writer))
   , chunks_collection(chunks_collection)
   , timeout_seconds(timeout_seconds)
-  , buffer_offset(0)
   , number_of_connections(number_of_connections)
 {
 }
@@ -60,7 +59,7 @@ void Downloader::run()
         recvd_bytes = receive_from_connection(index, recv_buffer, kBufferLen);
         if (recvd_bytes) {
           size_t pos = connections[index].chunk.current_pos;
-          writer->write(recv_buffer+buffer_offset, recvd_bytes, pos, index);
+          writer->write(recv_buffer, recvd_bytes, pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
           connections[index].last_recv_time_point = steady_clock::now();
         }
@@ -99,6 +98,7 @@ bool Downloader::receive_data(Connection& connection, char* buffer,
   bool result = true;
   int64_t recv_len = recv(connection.socket_ops->get_socket_descriptor(),
                           buffer, buffer_capacity, 0);
+
   if (recv_len >= 0)
     received_len = recv_len;
   else {
