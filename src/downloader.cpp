@@ -153,6 +153,7 @@ bool Downloader::init_connection(Connection& connection)
     result = connection.socket_ops->connect();
   }
 
+  connection.status = OperationStatus::NOT_STARTED;
 
   return result;
 }
@@ -178,6 +179,7 @@ void Downloader::retry(const vector<int>& connection_indices)
   for (const int index : connection_indices) {
     Connection& connection = connections[index];
     connection.status = OperationStatus::NOT_STARTED;
+    printf("retry\n");
     init_connection(connection);
     send_request(connection);
   }

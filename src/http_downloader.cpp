@@ -95,27 +95,16 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
   return redirect_status;
 }
 
-size_t HttpDownloader::get_header_delimiter_position(const char* buffer)
+size_t HttpDownloader::get_header_terminator_pos(const string& buffer) const
 {
-  char* pos = const_cast<char*>(strstr(buffer,"\r\n\r\n"));
-  if(pos) {
-    string recv_buffer = string(buffer);
-    smatch m;
-    regex e("(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)");
-    bool found = regex_search(recv_buffer, m, e);
-    if(found) {
-      // If response not equal to 200,OK
-      if(stoi(m[2].str())/100 != 2) {
-        pos = NULL;
-      }
-    }
-    else {
-      pos = NULL;
-    }
-  }
-  if (pos == NULL)
-    return 0;
-  return pos - buffer;
+  size_t terminator_pos = 0;
+  const string kHeaderTerminator = "\r\n\r\n";
+  terminator_pos = buffer.find(kHeaderTerminator);
+
+  if (terminator_pos != string::npos)
+    terminator_pos += 4;
+
+  return terminator_pos;
 }
 
 void HttpDownloader::send_request()
@@ -172,24 +161,23 @@ int HttpDownloader::set_descriptors()
 size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
                                                size_t buffer_capacity)
 {
+  Connection& connection = connections[index];
   size_t recvd_bytes = 0;
-  int sock_desc = connections[index].socket_ops->get_socket_descriptor();
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
 
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-    receive_data(connections[index], buffer,  recvd_bytes, buffer_capacity);
-    if (connections[index].status == OperationStatus::NOT_STARTED
-        && recvd_bytes > 0) {
-      connections[index].temp_http_header += buffer;
-      const char* buffer_data = connections[index].temp_http_header.data();
-      size_t delimiter = get_header_delimiter_position(buffer_data);
-      if (delimiter == 0)
+    receive_data(connection, buffer,  recvd_bytes, buffer_capacity);
+    if (connection.status == OperationStatus::NOT_STARTED && recvd_bytes > 0) {
+      string& http_header = connection.temp_http_header;
+      http_header += string(buffer, recvd_bytes);
+      size_t header_terminator_pos = get_header_terminator_pos(http_header);
+      if (header_terminator_pos == 0)
         return 0;
-      constexpr uint16_t kLineFeedLength = 4; // Length of \r\n\r\n
-      recvd_bytes = connections[index].temp_http_header.length() - delimiter -
-                    kLineFeedLength;
-      memcpy(buffer, buffer_data + delimiter + kLineFeedLength, recvd_bytes);
-      connections[index].status = OperationStatus::DOWNLOADING;
-      connections[index].temp_http_header.clear();
+      const char* kData = http_header.data();
+      recvd_bytes = http_header.length() - header_terminator_pos;
+      memcpy(buffer, kData + header_terminator_pos, recvd_bytes);
+      connection.status = OperationStatus::DOWNLOADING;
+      http_header.clear();
     }
   }
 
