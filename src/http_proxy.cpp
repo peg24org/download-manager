@@ -18,7 +18,6 @@ int HttpProxy::connect(int socket_desc)
 {
   size_t sent_bytes = 0;
   size_t tmp_sent_bytes = 0;
-  size_t len;
 
   while (sent_bytes < kHttpRequest.length()) {
     tmp_sent_bytes = send(socket_desc, kHttpRequest.c_str(),
@@ -28,15 +27,14 @@ int HttpProxy::connect(int socket_desc)
     //TODO : handle else
   }
 
-  size_t received_len = 0;
-  char recv_buffer[10000];
+  constexpr uint16_t kTempLen = 10000;
+  char temp_buffer[kTempLen];
+  string buffer;
   while (true) {
-    int64_t recv_len = recv(socket_desc, recv_buffer, 10000, 0);
-    if (recv_len >= 0)
-      received_len = recv_len;
-    if (strstr(recv_buffer, "\r\n\r\n"))
+    int64_t recv_len = recv(socket_desc, temp_buffer, kTempLen, 0);
+    buffer += string(temp_buffer, recv_len);
+    if (buffer.find("\r\n\r\n") != string::npos)
       break;
-    // TODO: handle else
   }
 
   return 0;

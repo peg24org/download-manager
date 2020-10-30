@@ -171,7 +171,7 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
       string& http_header = connection.temp_http_header;
       http_header += string(buffer, recvd_bytes);
       size_t header_terminator_pos = get_header_terminator_pos(http_header);
-      if (header_terminator_pos == 0)
+      if (header_terminator_pos == string::npos)
         return 0;
       const char* kData = http_header.data();
       recvd_bytes = http_header.length() - header_terminator_pos;
