@@ -8,6 +8,9 @@
 using namespace std;
 using namespace testing;
 
+constexpr char kInvalidUrl[] = "invalid url";
+constexpr char kValidUrl[] = "ftp://example.com/dir/subdir/file.dat";
+
 // <url> <file name> <port> <host name> <path> <protocol>
 using TestPrams = tuple<string, string, uint16_t, string, string, Protocol>;
 
@@ -102,20 +105,24 @@ TEST_P(UrlOpsTest, url_ops_should_return_right_values)
 
 TEST(UrlOpsExceptionTest, url_ops_should_throw_exception_with_invalid_url)
 {
-  constexpr char kInvalidUrl[] = "invalid url";
   EXPECT_THROW(UrlOps invalid_url_ops(kInvalidUrl), invalid_argument);
 }
 
 TEST(UrlOpsProxyTest, after_set_proxy_url_ops_should_return_its_url_and_port)
 {
-  constexpr char kUrl[] = "http://example.com/dir/subdir/file.dat";
   constexpr char kProxyUrl[] = "http://localhost:8080";
   constexpr char kExpectedIp[] = "127.0.0.1";
   constexpr uint16_t kExpectedPort = 8080;
 
-  UrlOps url_ops(kUrl);
+  UrlOps url_ops(kValidUrl);
   url_ops.set_proxy(kProxyUrl);
 
   EXPECT_EQ(url_ops.get_proxy_port(), kExpectedPort);
   EXPECT_EQ(url_ops.get_proxy_ip(), kExpectedIp);
+}
+
+TEST(UrlOpsProxyTest, url_ops_should_throw_exception_if_proxy_is_invalid)
+{
+  UrlOps url_ops(kValidUrl);
+  EXPECT_THROW(url_ops.set_proxy(kInvalidUrl), invalid_argument);
 }
