@@ -136,7 +136,8 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
 
 DownloadSource Node::make_download_source(UrlOps& url_ops)
 {
-  url_ops.set_proxy(proxy_url);
+  if (!proxy_url.empty())
+    url_ops.set_proxy(proxy_url);
 
   return {
     .ip = url_ops.get_ip(),

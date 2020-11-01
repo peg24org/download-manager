@@ -69,6 +69,8 @@ string UrlOps::get_host_ip(const string& hostname) const
 
 void UrlOps::set_proxy(const string& proxy_url)
 {
+  if (proxy_url.empty())
+    throw invalid_argument("invalid proxy url");
   UrlParameters parsed_url = parse_url(proxy_url + "/");
   proxy_host = get<2>(parsed_url);
   proxy_port = get<3>(parsed_url);
