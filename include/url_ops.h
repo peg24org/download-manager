@@ -78,7 +78,7 @@ class UrlOps
     static const std::map<const std::string, uint16_t> kStandardPorts;
     static const std::map<const std::string, Protocol> kStandardProtocols;
 
-    UrlParameters parse_url(const std::string& url);
+    UrlParameters parse_url(const std::string& url, bool proxy=false);
 
     std::string get_host_ip(const std::string& hostname) const;
 

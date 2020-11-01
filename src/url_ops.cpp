@@ -84,7 +84,7 @@ string UrlOps::get_proxy_ip() const
   return !proxy_host.empty() ? get_host_ip(proxy_host) : "";
 }
 
-UrlOps::UrlParameters UrlOps::parse_url(const std::string& url)
+UrlOps::UrlParameters UrlOps::parse_url(const std::string& url, bool proxy)
 {
   Protocol protocol;
   size_t protocol_pos = url.find("://");
@@ -96,8 +96,7 @@ UrlOps::UrlParameters UrlOps::parse_url(const std::string& url)
     protocol_str = url.substr(0, protocol_pos);
     auto it = kStandardProtocols.find(protocol_str);
     if (it != kStandardProtocols.end())
-      protocol = it->second
-        ;
+      protocol = it->second;
     else
       throw invalid_argument("unknown protocol");
   }
@@ -122,6 +121,8 @@ UrlOps::UrlParameters UrlOps::parse_url(const std::string& url)
       throw invalid_argument("unknown protocol");
   }
 
+  if (proxy)
+    return make_tuple("_", "_", host_name, port, protocol);
   string host_name = url_.substr(0, colon_pos);
   string file_path = url_.substr(first_slash, last_slash-first_slash+1);
   string file_name = url_.substr(last_slash+1);
