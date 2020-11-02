@@ -45,20 +45,19 @@ class DownloadStateManager
 
     /**
      * Retrieves saved download state from file.
-		 * It used when download resumes.
+     * It used when download resumes.
      *
      * @return Download chunks collection
      */
     ChunksCollection get_download_chunks();
-
-		/**
-		 * Gets chunks collection in downloading state.
-		 *
+    /**
+     * Gets chunks collection in downloading state.
+     *
      * @return Download chunks collection
-		 */
-		ChunksCollection get_chunks_collection() const;
+     */
+    ChunksCollection get_chunks_collection() const;
 
-		size_t get_file_size() const;
+    size_t get_file_size() const;
 
     size_t get_total_written_bytes() const;
 
@@ -73,7 +72,7 @@ class DownloadStateManager
 
     ChunksCollection chunks_collection;
     size_t file_size;
-		mutable std::mutex chunks_collection_mutex;
+    mutable std::mutex chunks_collection_mutex;
 };
 
 #endif
