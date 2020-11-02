@@ -20,7 +20,7 @@ void DownloadStateManager::set_initial_state(const ChunksCollection&
 
 void DownloadStateManager::update(size_t index, size_t current_pos)
 {
-	lock_guard<mutex> guard(chunks_collection_mutex);
+  lock_guard<mutex> guard(chunks_collection_mutex);
   chunks_collection[index].current_pos = current_pos;
   store();
 }
@@ -44,14 +44,14 @@ void DownloadStateManager::store()
 
 ChunksCollection DownloadStateManager::get_download_chunks()
 {
-	retrieve();
+  retrieve();
   return chunks_collection;
 }
 
 ChunksCollection DownloadStateManager::get_chunks_collection() const
 {
-	lock_guard<mutex> guard(chunks_collection_mutex);
-	return chunks_collection;
+  lock_guard<mutex> guard(chunks_collection_mutex);
+  return chunks_collection;
 }
 
 void DownloadStateManager::retrieve()
@@ -70,7 +70,7 @@ void DownloadStateManager::retrieve()
 
 size_t DownloadStateManager::get_file_size() const
 {
-	return file_size;
+  return file_size;
 }
 
 size_t DownloadStateManager::get_total_written_bytes() const

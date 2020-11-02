@@ -12,7 +12,7 @@ class Writer
   Writer(std::shared_ptr<FileIO> file_io,
       std::shared_ptr<DownloadStateManager> download_state_manager);
   void write(const char* buffer, size_t length, size_t position, size_t index);
-	size_t get_file_size() const;
+  size_t get_file_size() const;
   size_t get_total_written_bytes() const;
 
   private:

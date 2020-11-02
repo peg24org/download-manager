@@ -67,8 +67,8 @@ void Node::run()
 
   downloader->start();
 
-	check_download_state();
-	downloader->join();
+  check_download_state();
+  downloader->join();
 }
 
 void Node::check_url()
