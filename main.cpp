@@ -18,11 +18,11 @@ string get_friendly_size_notation(size_t size)
 
   friendly_size << setprecision(3);
   if (size > pow(2, 10) && size < pow(2, 20))    // KB
-    friendly_size << static_cast<float>(size) / pow(2, 10) << " KB";
+    friendly_size << fixed << static_cast<float>(size) / pow(2, 10) << " KB";
   else if (size > pow(2, 20) && size < pow(2, 30))    // MB
-    friendly_size << static_cast<float>(size) / pow(2, 20) << " MB";
+    friendly_size << fixed << static_cast<float>(size) / pow(2, 20) << " MB";
   else if (size > pow(2, 30) && size < pow(2, 40))    // GB
-    friendly_size << static_cast<float>(size) / pow(2, 30) << " GB";
+    friendly_size << fixed << static_cast<float>(size) / pow(2, 30) << " GB";
   else
     friendly_size << size<< " B";
 
