@@ -12,7 +12,7 @@ class DownloadStateManagerTest : public ::testing::Test
   public:
   DownloadStateManagerTest() : file_io(make_unique<FileIOMock>()) {}
   virtual void SetUp() {
-    srand(time(NULL));
+    srand(time(nullptr));
     for (size_t i = 0; i < NUMBER_OF_CHUNKS; ++i)
       chunks_collection[i] = {
         .start_pos = static_cast<size_t>(rand()),

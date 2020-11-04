@@ -50,7 +50,7 @@ void Downloader::run()
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
     int max_fd = set_descriptors();
 
-    int sel_retval = select(max_fd+1, &readfds, NULL, NULL, &timeout);
+    int sel_retval = select(max_fd+1, &readfds, nullptr, nullptr, &timeout);
     if (sel_retval == -1)
       cerr << "Select error occurred." << endl;
     else if (sel_retval > 0) {

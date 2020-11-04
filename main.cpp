@@ -61,7 +61,7 @@ class DownloadMngr : public Node
       speed = (received_bytes - last_recv_bytes) / time_interval;
     last_recv_bytes = received_bytes;
 
-    cout << " Speed: " << setw(8) << get_friendly_size_notation(speed) << "/s";
+    cout << " Speed: " << setw(10) << get_friendly_size_notation(speed) << "/s";
 
     if (progress >= 100)
       cout << endl;
@@ -89,12 +89,12 @@ int main(int argc, char* argv[])
   int next_option;
   const char* const short_options = "hvo:n:t:p:";
   const struct option long_options[] = {
-    {"help",    0, NULL, 'h'},
-    {"output",  1, NULL, 'o'},
-    {"verbose", 0, NULL, 'v'},
-    {"timeout", 1, NULL, 't'},
-    {"proxy",   1, NULL, 'p'},  // host:ip
-    {NULL,      0, NULL, 0}
+    {"help",    0, nullptr, 'h'},
+    {"output",  1, nullptr, 'o'},
+    {"verbose", 0, nullptr, 'v'},
+    {"timeout", 1, nullptr, 't'},
+    {"proxy",   1, nullptr, 'p'},  // host:ip
+    {nullptr,      0, nullptr, 0}
   };
   program_name = argv[0];
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     print_usage(1);
 
   do {
-    next_option = getopt_long(argc, argv, short_options,long_options, NULL);
+    next_option = getopt_long(argc, argv, short_options,long_options, nullptr);
     switch(next_option) {
       case 'h':
         print_usage(0);
