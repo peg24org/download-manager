@@ -71,8 +71,7 @@ class DownloadMngr : public Node
   void on_get_file_info(size_t node_index, size_t file_size,
                         const string& file_name)
   {
-    cout << "File size: " << get_friendly_size_notation(file_size)
-         << " Bytes" << endl;
+    cout << "File size: " << get_friendly_size_notation(file_size) << endl;
     this->file_size = file_size;
   }
 };
