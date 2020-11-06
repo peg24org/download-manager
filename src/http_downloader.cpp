@@ -65,10 +65,15 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
     return -1;
   // Use GET instead of HEAD, because some servers doesn't support HEAD
   // command.
-  string request =
-    "GET " + download_source.file_path + download_source.file_name +
-    " HTTP/1.1\r\nHost: " + download_source.host_name + ":" +
-    to_string(download_source.port) + "\r\n\r\n";
+  string request = "GET " + download_source.file_path +
+    download_source.file_name + " HTTP/1.1\r\n" +
+    "User-Agent: no_name_yet!\r\n" +
+    "Accept: */*\r\n" +
+    "Accept-Encoding: identity\r\n"
+    + "Host: " + download_source.host_name + ":" +
+    to_string(download_source.port) + "\r\n" +
+    "Connection: Keep-Alive\r\n\r\n";
+
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
   if (!send_data(connections[0], request.c_str(), request.length()))
     return -1;
@@ -121,8 +126,12 @@ void HttpDownloader::send_request()
     string request = "GET " + download_source.file_path + "/" +
       download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
       current_pos + "-" +
-      to_string(connection.chunk.end_pos) + "\r\n" +  "Host:" +
-      host_name +	":" + port + "\r\n\r\n";
+      to_string(connection.chunk.end_pos) + "\r\n" +
+      "User-Agent: no_name_yet!\r\n" +
+      "Accept: */*\r\n" +
+      "Accept-Encoding: identity\r\n" +
+      "Host:" + host_name + ":" + port + "\r\n" +
+      "Connection: Keep-Alive\r\n\r\n";
     if(!send_data(connection, request.c_str(), request.length()))
       connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
   }
