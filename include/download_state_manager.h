@@ -1,5 +1,5 @@
-#ifndef DOWNLOAD_STATE_H
-#define DOWNLOAD_STATE_H
+#ifndef _DOWNLOAD_STATE_H
+#define _DOWNLOAD_STATE_H
 
 #include <mutex>
 #include <memory>

@@ -1,5 +1,5 @@
-#ifndef HTTP_PROXY_H
-#define HTTP_PROXY_H
+#ifndef _HTTP_PROXY_H
+#define _HTTP_PROXY_H
 
 #include <string>
 

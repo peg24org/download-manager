@@ -1,5 +1,5 @@
-#ifndef URL_OPS_H
-#define URL_OPS_H
+#ifndef _URL_OPS_H
+#define _URL_OPS_H
 
 #include <map>
 #include <string>
