@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include <memory>
+
+#include <gtest/gtest.h>
 
 #include "file_io.h"
 #include "test_utils.h"
