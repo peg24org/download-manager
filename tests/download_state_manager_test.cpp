@@ -11,7 +11,7 @@ using namespace std;
 class DownloadStateManagerTest : public ::testing::Test
 {
   public:
-  DownloadStateManagerTest() : file_io(make_unique<FileIOMock>()) {}
+  DownloadStateManagerTest() : file_io(make_unique<StatFileIOMock>()) {}
   virtual void SetUp() {
     srand(time(nullptr));
     for (size_t i = 0; i < NUMBER_OF_CHUNKS; ++i)

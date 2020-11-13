@@ -2,6 +2,7 @@
 #define _TEST_UTILS_H
 
 #include <memory>
+#include <vector>
 #include <exception>
 
 #include "file_io.h"
@@ -10,20 +11,29 @@ class FileIOMock : public FileIO
 {
   public:
     FileIOMock() : FileIO("NEVER_CREATING_FILE_NAME"), file_opened(false) {}
-    void create(size_t file_length = 0) override;
+    virtual void create(size_t file_length = 0) override;
     void open() override;
     void write(const char* buffer, size_t length, size_t position=0) override;
-    std::string get_file_contents() override;
+    char* get_file_buffer();
 
-    void remove() override;
-
-  private:
+  protected:
     std::string file_contents;
     bool file_opened;
+
+  private:
+    std::unique_ptr<char[]> file_buffer;
 };
 
-std::unique_ptr<char[]> get_random_buffer(size_t length);
+class StatFileIOMock : public FileIOMock
+{
+  public:
+    using FileIOMock::FileIOMock;
+    void write(const char* buffer, size_t length, size_t position=0) override;
+    std::string get_file_contents() override;
+};
 
-bool buffer_cmp(char* buffer_1, char* buffer_2, size_t len);
+std::unique_ptr<char[]> get_random_buffer(size_t length, char start_char=0,
+                                          char end_char=255);
+std::string get_random_string(size_t length);
 
 #endif

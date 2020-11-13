@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "file_io.h"
+#include "test_utils.h"
 
 using namespace std;
 
@@ -64,7 +65,7 @@ TEST_F(FileIOTest, file_should_not_be_exist_after_calling_remove_function)
   EXPECT_FALSE(reader.check_existence());
 }
 
-TEST_F(FileIOTest, retrieved_file_contents_should_be_same_as_written_contents)
+TEST_F(FileIOTest, retrieved_file_contents_should_be_same_as_written_contents_0)
 {
   static constexpr size_t SIZE_OF_SAMPLE_STRING = 3000;
   const string SAMPLE_STRING(SIZE_OF_SAMPLE_STRING, 'x');
@@ -77,13 +78,28 @@ TEST_F(FileIOTest, retrieved_file_contents_should_be_same_as_written_contents)
   EXPECT_EQ(SAMPLE_STRING, read_string);
 }
 
-TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_byte)
+TEST_F(FileIOTest, retrieved_file_contents_should_be_same_as_written_contents_1)
+{
+  static constexpr size_t kSizeOfTestBuffer = 3000;
+  unique_ptr<char[]> random_buffer = get_random_buffer(kSizeOfTestBuffer);
+  Buffer test_buffer;
+  test_buffer.length = kSizeOfTestBuffer;
+  memcpy(test_buffer, random_buffer.get(), kSizeOfTestBuffer);
+
+  writer.write(test_buffer);
+
+  reader.open();
+  string read_string = reader.get_file_contents();
+  EXPECT_EQ(kSizeOfTestBuffer, read_string.length());
+  EXPECT_EQ(0, strncmp(test_buffer, read_string.c_str(), kSizeOfTestBuffer));
+}
+
+TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_bytes_0)
 {
   static constexpr char SAMPLE_SUBSTRING[] = "sample sub-string...";
   static constexpr size_t SIZE_OF_SAMPLE_STRING = 1000;
   const string SAMPLE_STRING(SIZE_OF_SAMPLE_STRING, 'x');
 
-  writer.write(SAMPLE_STRING.c_str(), SAMPLE_STRING.length());
   static constexpr size_t WRITE_POSITION = 100;
   writer.write(SAMPLE_STRING.c_str(), SAMPLE_STRING.length());
   writer.write(SAMPLE_SUBSTRING, strlen(SAMPLE_SUBSTRING),WRITE_POSITION);
@@ -93,6 +109,26 @@ TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_byte)
   string read_sample_substr =
     read_contents.substr(WRITE_POSITION, strlen(SAMPLE_SUBSTRING));
   EXPECT_EQ(SAMPLE_SUBSTRING, read_sample_substr);
+}
+
+TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_bytes_1)
+{
+  static constexpr size_t kSizeOfTestBuffer = 1000;
+  static constexpr size_t kWritePosition = 100;
+  unique_ptr<char[]> random_buffer = get_random_buffer(kSizeOfTestBuffer);
+
+  Buffer test_buffer;
+  memcpy(test_buffer, random_buffer.get(), kSizeOfTestBuffer);
+  test_buffer.length = kWritePosition;
+  writer.write(test_buffer);
+  writer.write(test_buffer, kWritePosition);
+
+  reader.open();
+  string read_contents = reader.get_file_contents();
+  string read_sample_substr =
+    read_contents.substr(kWritePosition, test_buffer.length);
+  const char* read_sample = read_sample_substr.c_str();
+  EXPECT_EQ(0, strncmp(test_buffer, read_sample, test_buffer.length));
 }
 
 TEST_F(FileIOTest, file_path_should_identifed_as_file_t)

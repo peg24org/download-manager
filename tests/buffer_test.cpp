@@ -22,7 +22,7 @@ TEST_F(BufferTest, buffer_should_able_treat_like_raw_buffer)
   memcpy(buffer, data, kLen);
   buffer.length = kLen;
 
-  EXPECT_TRUE(buffer_cmp(data, buffer, kLen));
+  EXPECT_EQ(0, strncmp(data, buffer, kLen));
 }
 
 TEST_F(BufferTest, capasity_setter_should_set_values_correctly)
@@ -42,7 +42,7 @@ TEST_F(BufferTest, buffer_after_resizing_should_have_correct_amount_of_storage)
   unique_ptr<char[]> test_data = get_random_buffer(kTestBufferSize);
   memcpy(buffer, test_data.get(), kTestBufferSize);
 
-  EXPECT_TRUE(buffer_cmp(test_data.get(), buffer, kTestBufferSize));
+  EXPECT_EQ(0, strncmp(test_data.get(), buffer, kTestBufferSize));
 }
 
 TEST_F(BufferTest, contents_of_two_buffer_should_be_same_after_copy)
@@ -54,7 +54,7 @@ TEST_F(BufferTest, contents_of_two_buffer_should_be_same_after_copy)
   Buffer buffer_1;
   buffer_1 = buffer;
 
-  EXPECT_TRUE(buffer_cmp(buffer, buffer_1, buffer.kDefaultCapacity));
+  EXPECT_EQ(0, strncmp(buffer, buffer_1, buffer.kDefaultCapacity));
 }
 
 TEST_F(BufferTest, parameters_should_be_same_using_copy_assignment)
@@ -69,7 +69,7 @@ TEST_F(BufferTest, parameters_should_be_same_using_copy_assignment)
 
   EXPECT_EQ(buffer_1.capacity(), buffer.capacity());
   EXPECT_EQ(buffer_1.length, buffer.length);
-  EXPECT_TRUE(buffer_cmp(buffer, buffer_1, buffer.kDefaultCapacity));
+  EXPECT_EQ(0, strncmp(buffer, buffer_1, buffer.kDefaultCapacity));
 }
 
 TEST_F(BufferTest, parameters_should_be_same_using_copy_constructor)
@@ -82,5 +82,5 @@ TEST_F(BufferTest, parameters_should_be_same_using_copy_constructor)
 
   EXPECT_EQ(buffer_1.length, buffer.length);
   EXPECT_EQ(buffer_1.capacity(), buffer.capacity());
-  EXPECT_TRUE(buffer_cmp(buffer, buffer_1, buffer.kDefaultCapacity));
+  EXPECT_EQ(0, strncmp(buffer, buffer_1, buffer.kDefaultCapacity));
 }

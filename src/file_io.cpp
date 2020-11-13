@@ -46,6 +46,11 @@ void FileIO::write(const char* buffer, size_t length, size_t position)
   file_stream.flush();
 }
 
+void FileIO::write(const Buffer& buffer, size_t position)
+{
+  write(const_cast<Buffer&>(buffer), buffer.length, position);
+}
+
 bool FileIO::check_existence()
 {
   struct stat stat_buf;

@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 
+#include "buffer.h"
+
 enum class PathType
 {
   FILE_T,
@@ -32,6 +34,14 @@ class FileIO {
      * @param position Position of buffer in file
      */
     virtual void write(const char* buffer, size_t length, size_t position=0);
+
+    /**
+     * Writes a buffer in the file.
+     *
+     * @param buffer Buffer to write in file
+     * @param position Position of buffer in file
+     */
+    virtual void write(const Buffer& buffer, size_t position=0);
 
     virtual bool check_existence();
     virtual PathType check_path_type();
