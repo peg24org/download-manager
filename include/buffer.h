@@ -8,10 +8,18 @@ class Buffer
   public:
     // C-tor.
     Buffer(size_t capacity = kDefaultCapacity);
+
     // Copy C-tor.
     Buffer(const Buffer& src);
 
+    // Move C-tor
+    Buffer(Buffer&& src) noexcept;
+
+    // Copy assignment
     Buffer& operator=(const Buffer& src);
+
+    // Move assignment
+    Buffer& operator=(Buffer&& src) noexcept;
     /**
      * Char* cast operator overloading.
      *

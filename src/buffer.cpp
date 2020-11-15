@@ -1,7 +1,8 @@
 #include "buffer.h"
 
-#include <iostream>
+#include <utility>
 #include <cstring>
+#include <algorithm>
 
 using namespace std;
 
@@ -16,12 +17,29 @@ Buffer::Buffer(const Buffer& src) : length(src.length)
   memcpy(buffer.get(), src.buffer.get(), length);
 }
 
+Buffer::Buffer(Buffer&& src) noexcept
+  : length(src.length)
+  , buffer_capacity(src.buffer_capacity)
+  , buffer(exchange(src.buffer, nullptr))
+{
+}
+
 Buffer& Buffer::operator=(const Buffer& src)
 {
   length = src.length;
   if (src.length > this->buffer_capacity)
     allocate(src.buffer_capacity);
   memcpy(buffer.get(), src.buffer.get(), length);
+
+  return *this;
+}
+
+Buffer& Buffer::operator=(Buffer&& src) noexcept
+{
+  swap(this->buffer, src.buffer);
+  src.buffer = nullptr;
+  this->length = src.length;
+  this->buffer_capacity = src.buffer_capacity;
 
   return *this;
 }
