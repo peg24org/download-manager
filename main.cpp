@@ -62,6 +62,8 @@ class DownloadMngr : public Node
     last_recv_bytes = received_bytes;
 
     cout << " Speed: " << setw(10) << get_friendly_size_notation(speed) << "/s";
+    cout << "\tReceived: " << setw(10) <<
+            get_friendly_size_notation(received_bytes);
 
     if (progress >= 100)
       cout << endl;
