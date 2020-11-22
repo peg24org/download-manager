@@ -1,11 +1,13 @@
 #include "http_downloader.h"
 
+#include <unistd.h>
+#include <arpa/inet.h>
+
 #include <regex>
 #include <cstdlib>
 #include <cassert>
-#include <unistd.h>
+#include <sstream>
 #include <iostream>
-#include <arpa/inet.h>
 
 #include "node.h"
 
@@ -56,6 +58,23 @@ bool HttpDownloader::check_redirection(string& redirecting)
     }
   }
   return result;
+}
+
+HttpDownloader::HttpStatus HttpDownloader::get_http_status(const char* buffer, size_t range)
+{
+  int status;
+  size_t line_length = 0;
+  const char* end_of_line = strstr(buffer, "\r\n");
+  if (end_of_line == nullptr)
+    return HttpStatus::NONE;
+
+  line_length = end_of_line - buffer;
+  string line(buffer, line_length);
+  stringstream line_stream(line);;
+  string http_version;
+  line_stream >> http_version >> status;
+
+  return static_cast<HttpStatus>(status);
 }
 
 int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
@@ -171,11 +190,16 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
     receive_data(connection, buffer,  recvd_bytes, buffer_capacity);
     if (connection.status == OperationStatus::NOT_STARTED && recvd_bytes > 0) {
+      HttpDownloader::HttpStatus status = get_http_status(buffer, recvd_bytes);
+      if (status != HttpStatus::PARTIAL_CONTENT)
+        return 0;
+
       string& http_header = connection.temp_http_header;
       http_header += string(buffer, recvd_bytes);
       size_t header_terminator_pos = get_header_terminator_pos(http_header);
       if (header_terminator_pos == string::npos)
         return 0;
+
       const char* kData = http_header.data();
       recvd_bytes = http_header.length() - header_terminator_pos;
       memcpy(buffer, kData + header_terminator_pos, recvd_bytes);

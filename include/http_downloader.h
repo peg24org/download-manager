@@ -20,6 +20,17 @@ class HttpDownloader : public Downloader {
   int check_link(std::string& redirected_url, size_t& file_size) override;
 
   protected:
+
+  enum class HttpStatus {
+    NONE = 0,
+    OK = 200,
+    PARTIAL_CONTENT = 206,
+    BAD_REQUEST = 400,
+    FORBIDDEN = 403,
+    NOT_FOUND = 404,
+    RANGE_NOT_SATICFIABLE = 416
+  };
+
   std::string receive_header;
 
   bool send_requests() override;
@@ -29,6 +40,9 @@ class HttpDownloader : public Downloader {
   size_t get_header_terminator_pos(const std::string& buffer) const;
   size_t get_size();
   bool check_redirection(std::string& redirect_url);
+
+  // Parse the first line
+  HttpStatus get_http_status(const char* buffer, size_t range);
 
   // Status of connections
   std::map<size_t, OperationStatus> connections_status;
