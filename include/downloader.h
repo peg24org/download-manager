@@ -91,8 +91,8 @@ class Downloader : public Thread {
     virtual bool send_data(Connection& connection, const char* buffer,
                            size_t len);
 
-    virtual void send_request() = 0;
-    virtual void send_request(Connection& connection) {};
+    virtual bool send_requests() = 0;
+    virtual bool send_request(Connection& connection) {return false;};
     // Return max_fd
     virtual int set_descriptors() = 0;
     virtual size_t receive_from_connection(size_t index, char* buffer,

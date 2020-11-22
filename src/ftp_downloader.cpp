@@ -144,7 +144,7 @@ void FtpDownloader::open_data_channel(Connection& connection, const string& ip,
   connection.ftp_media_socket_ops->connect();
 }
 
-void FtpDownloader::send_request()
+bool FtpDownloader::send_requests()
 {
   ftp_init();
 

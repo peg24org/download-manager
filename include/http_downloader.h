@@ -22,8 +22,8 @@ class HttpDownloader : public Downloader {
   protected:
   std::string receive_header;
 
-  void send_request() override;
-  void send_request(Connection& connection) override;
+  bool send_requests() override;
+  bool send_request(Connection& connection) override;
   size_t receive_from_connection(size_t index, char* buffer,
                                  size_t buffer_capacity) override;
   size_t get_header_terminator_pos(const std::string& buffer) const;

@@ -40,13 +40,18 @@ Downloader::Downloader(const struct DownloadSource& download_source,
 void Downloader::run()
 {
   init_connections();
-  send_request();
+
+  bool request_sent = true;
+  if (!send_requests()) {
+    request_sent = false;
+    cerr << "Sending request failed." << endl;
+  }
 
   static constexpr size_t kBufferLen = 40000;
   char recv_buffer[kBufferLen];
   const size_t kFileSize = writer->get_file_size();
 
-  while (writer->get_total_written_bytes() < kFileSize) {
+  while (request_sent && (writer->get_total_written_bytes() < kFileSize)) {
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
     int max_fd = set_descriptors();
 

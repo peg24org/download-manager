@@ -112,45 +112,39 @@ size_t HttpDownloader::get_header_terminator_pos(const string& buffer) const
   return terminator_pos;
 }
 
-void HttpDownloader::send_request()
+bool HttpDownloader::send_requests()
 {
+  bool result = true;
   for (size_t index = 0; index < connections.size(); ++index) {
     Connection& connection = connections[index];
-    const string port = to_string(download_source.port);
-    const string host_name = download_source.host_name;
-    string current_pos;
-    if (connection.chunk.current_pos > 0)
-      current_pos = to_string(connections[index].chunk.current_pos);
-    else
-      current_pos = to_string(connections[index].chunk.current_pos);
-    string request = "GET " + download_source.file_path + "/" +
-      download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
-      current_pos + "-" +
-      to_string(connection.chunk.end_pos) + "\r\n" +
-      "User-Agent: no_name_yet!\r\n" +
-      "Accept: */*\r\n" +
-      "Accept-Encoding: identity\r\n" +
-      "Host:" + host_name + ":" + port + "\r\n" +
-      "Connection: Keep-Alive\r\n\r\n";
-    if(!send_data(connection, request.c_str(), request.length()))
-      connections[index].status = OperationStatus::SOCKET_SEND_ERROR;
+    result &= send_request(connection);
   }
+
+  return result;
 }
 
-void HttpDownloader::send_request(Connection& connection)
+bool HttpDownloader::send_request(Connection& connection)
 {
   const string port = to_string(download_source.port);
   const string host_name = download_source.host_name;
   string current_pos = to_string(connection.chunk.current_pos);
+  string end_pos = to_string(connection.chunk.end_pos);
 
   string request = "GET " + download_source.file_path + "/" +
     download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
-    current_pos + "-" +
-    to_string(connection.chunk.end_pos) + "\r\n" +  "Host:" +
+    current_pos + "-" + end_pos + "\r\n" +
+    "User-Agent: no_name_yet!\r\n" +
+    "Accept: */*\r\n" +
+    "Accept-Encoding: identity\r\n" +
+    "Host:" +
     host_name +	":" + port + "\r\n\r\n";
 
-  if(!send_data(connection, request.c_str(), request.length()))
+  if(!send_data(connection, request.c_str(), request.length())) {
     connection.status = OperationStatus::SOCKET_SEND_ERROR;
+    return false;
+  }
+
+  return true;
 }
 
 int HttpDownloader::set_descriptors()
