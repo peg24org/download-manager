@@ -32,8 +32,6 @@ class HttpDownloader : public Downloader {
 
   bool send_requests() override;
   bool send_request(Connection& connection) override;
-  size_t receive_from_connection(size_t index, char* buffer,
-                                 size_t buffer_capacity) override;
 
   void receive_from_connection(size_t index, Buffer& buffer) override;
 

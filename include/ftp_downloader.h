@@ -48,8 +48,6 @@ class FtpDownloader : public Downloader {
 
   bool send_requests() override;
   int set_descriptors() override;
-  size_t receive_from_connection(size_t index, char* buffer,
-                                 size_t buffer_capacity) override;
 
   void receive_from_connection(size_t index, Buffer& buffer) override;
 

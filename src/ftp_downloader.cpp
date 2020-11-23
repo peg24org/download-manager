@@ -231,27 +231,6 @@ int FtpDownloader::set_descriptors()
   return max_fd;
 }
 
-size_t FtpDownloader::receive_from_connection(size_t index, char* buffer,
-                                              size_t buffer_capacity)
-{
-  size_t recvd_bytes = 0;
-  Connection& connection = connections[index];
-  int sock_desc = connection.ftp_media_socket_ops->get_socket_descriptor();
-
-  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-    ftp_receive_data(connection, buffer,  recvd_bytes, buffer_capacity);
-
-    // Correct last received part for each chunk.
-    size_t end_pos = connection.chunk.end_pos;
-    size_t current_pos = connection.chunk.current_pos;
-    int64_t redundant_bytes = current_pos + recvd_bytes - end_pos;
-    if (redundant_bytes > 0)
-      recvd_bytes -= redundant_bytes - 1;
-  }
-
-  return recvd_bytes;
-}
-
 void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
 {
   Connection& connection = connections[index];

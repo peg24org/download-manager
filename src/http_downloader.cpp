@@ -166,37 +166,6 @@ int HttpDownloader::set_descriptors()
   return max_fd;
 }
 
-size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
-                                               size_t buffer_capacity)
-{
-  Connection& connection = connections[index];
-  size_t recvd_bytes = 0;
-  int sock_desc = connection.socket_ops->get_socket_descriptor();
-
-  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-    receive_data(connection, buffer,  recvd_bytes, buffer_capacity);
-    if (connection.status == OperationStatus::NOT_STARTED && recvd_bytes > 0) {
-      HttpDownloader::HttpStatus status = get_http_status(buffer, recvd_bytes);
-      if (status != HttpStatus::PARTIAL_CONTENT)
-        return 0;
-
-      string& http_header = connection.temp_http_header;
-      http_header += string(buffer, recvd_bytes);
-      size_t header_terminator_pos = get_header_terminator_pos(http_header);
-      if (header_terminator_pos == string::npos)
-        return 0;
-
-      const char* kData = http_header.data();
-      recvd_bytes = http_header.length() - header_terminator_pos;
-      memcpy(buffer, kData + header_terminator_pos, recvd_bytes);
-      connection.status = OperationStatus::DOWNLOADING;
-      http_header.clear();
-    }
-  }
-
-  return recvd_bytes;
-}
-
 void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
 {
   Connection& connection = connections[index];
