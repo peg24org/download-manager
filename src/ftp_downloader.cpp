@@ -252,6 +252,25 @@ size_t FtpDownloader::receive_from_connection(size_t index, char* buffer,
   return recvd_bytes;
 }
 
+void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
+{
+  Connection& connection = connections[index];
+  int sock_desc = connection.ftp_media_socket_ops->get_socket_descriptor();
+  buffer.clear();
+
+  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+    ftp_receive_data(connection, buffer);
+
+    // Correct length of last received part for each chunk.
+    size_t end_pos = connection.chunk.end_pos;
+    size_t current_pos = connection.chunk.current_pos;
+    int64_t redundant_bytes = current_pos + buffer.length() - end_pos;
+    if (redundant_bytes > 0) {
+      size_t new_length = buffer.length() - (redundant_bytes - 1);
+      buffer.set_length(new_length);
+    }
+  }
+}
 
 bool FtpDownloader::receive_data(Connection& connection, char* buffer,
                                  size_t& recv_len, size_t buffer_capacity)
@@ -276,6 +295,20 @@ bool FtpDownloader::ftp_receive_data(Connection& connection, char* buffer,
     connection.status = OperationStatus::SOCKET_RECV_ERROR;
     return false;
   }
+
+  return true;
+}
+
+bool FtpDownloader::ftp_receive_data(Connection& connection, Buffer& buffer)
+{
+  int sock_desc = connection.ftp_media_socket_ops->get_socket_descriptor();
+  size_t recvd_bytes = recv(sock_desc, buffer, buffer.capacity(), 0);
+  if (recvd_bytes < 0) {
+    buffer.clear();
+    connection.status = OperationStatus::SOCKET_RECV_ERROR;
+    return false;
+  }
+  buffer.set_length(recvd_bytes);
 
   return true;
 }

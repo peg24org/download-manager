@@ -69,7 +69,7 @@ void Downloader::run()
         recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
           size_t pos = connections[index].chunk.current_pos;
-          writer->write(recv_buffer, recvd_bytes, pos, index);
+          writer->write(recv_buffer, pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
           connections[index].last_recv_time_point = steady_clock::now();
         }

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "node.h"
+#include "buffer.h"
 #include "writer.h"
 #include "downloader.h"
 
@@ -49,6 +50,9 @@ class FtpDownloader : public Downloader {
   int set_descriptors() override;
   size_t receive_from_connection(size_t index, char* buffer,
                                  size_t buffer_capacity) override;
+
+  void receive_from_connection(size_t index, Buffer& buffer) override;
+
   std::vector<std::string> split_string(const std::string& buffer,
                                         char delimiter);
   std::pair<std::string, uint16_t> get_data_ip_port(const std::string& buffer);
@@ -56,6 +60,8 @@ class FtpDownloader : public Downloader {
                          uint16_t port);
   bool ftp_receive_data(Connection& connection, char* buffer,
                         size_t& received_len, size_t buffer_capacity);
+
+  bool ftp_receive_data(Connection& connection, Buffer& buffer);
 };
 
 #endif
