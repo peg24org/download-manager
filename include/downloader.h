@@ -92,7 +92,7 @@ class Downloader : public Thread {
                            size_t len);
 
     virtual bool send_requests() = 0;
-    virtual bool send_request(Connection& connection) {return false;};
+    virtual bool send_request(Connection& connection) = 0;
     // Return max_fd
     virtual int set_descriptors() = 0;
     virtual size_t receive_from_connection(size_t index, char* buffer,

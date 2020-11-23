@@ -35,6 +35,10 @@ Downloader::Downloader(const struct DownloadSource& download_source,
   , timeout_seconds(timeout_seconds)
   , number_of_connections(number_of_connections)
 {
+  for (auto chunk : chunks_collection) {
+    connections[chunk.first].chunk = chunk.second;
+    connections[chunk.first].status = OperationStatus::NOT_STARTED;
+  }
 }
 
 void Downloader::run()

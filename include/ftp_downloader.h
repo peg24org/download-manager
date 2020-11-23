@@ -22,7 +22,6 @@ class FtpDownloader : public Downloader {
   protected:
   std::string receive_header;
 
-  //virtual void send_request(size_t index);
   size_t get_header_delimiter_position(const char* buffer);
   size_t get_size();
   bool check_redirection(std::string& redirect_url);
@@ -33,6 +32,9 @@ class FtpDownloader : public Downloader {
   private:
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
 
+  void ftp_init(Connection& connection, std::string username="anonymous",
+                std::string password="anonymous");
+
   void ftp_init(std::string username="anonymous",
                 std::string password="anonymous");
   bool send_ftp_command(Connection& connection, const std::string& command,
@@ -40,6 +42,9 @@ class FtpDownloader : public Downloader {
 
   virtual bool receive_data(Connection& connection, char* buffer,
                             size_t& recv_len, size_t buffer_capacity) override;
+
+  bool send_request(Connection& connection) override;
+
   bool send_requests() override;
   int set_descriptors() override;
   size_t receive_from_connection(size_t index, char* buffer,

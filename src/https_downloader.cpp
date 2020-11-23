@@ -21,16 +21,6 @@ HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source)
 {
 }
 
-HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source,
-                                 std::unique_ptr<Writer> writer,
-                                 ChunksCollection& chunks_collection,
-                                 long int timeout,
-                                 int number_of_connections)
-  : HttpDownloader(download_source, move(writer),
-                   chunks_collection, timeout, number_of_connections)
-{
-}
-
 SSL* HttpsDownloader::get_ssl(BIO* bio)
 {
   SSL* ssl = nullptr;

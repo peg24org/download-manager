@@ -18,20 +18,6 @@ HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
 {
 }
 
-HttpDownloader::HttpDownloader(const struct DownloadSource& download_source,
-                               std::unique_ptr<Writer> writer,
-                               ChunksCollection& chunks_collection,
-                               long int timeout,
-                               int number_of_connections)
-  : Downloader(download_source, move(writer), chunks_collection, timeout,
-               number_of_connections)
-{
-  for (auto chunk : chunks_collection) {
-    connections[chunk.first].chunk = chunk.second;
-    connections[chunk.first].status = OperationStatus::NOT_STARTED;
-  }
-}
-
 size_t HttpDownloader::get_size()
 {
   string size_string;

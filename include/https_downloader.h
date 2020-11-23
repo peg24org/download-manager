@@ -11,13 +11,7 @@ class HttpsDownloader : public HttpDownloader {
   ~HttpsDownloader();
 
   HttpsDownloader(const struct DownloadSource& download_source);
-
-  HttpsDownloader(const struct DownloadSource& download_source,
-                  std::unique_ptr<Writer> writer,
-                  ChunksCollection& chunks_collection,
-                  long int timeout,
-                  int number_of_connections=1);
-
+  using HttpDownloader::HttpDownloader;
   private:
   bool receive_data(Connection& connection, char* buffer, size_t& received_len,
                     size_t buffer_capacity) override;

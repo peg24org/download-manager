@@ -49,6 +49,29 @@ int FtpDownloader::check_link(string& redirected_url, size_t& size)
   return 0;
 }
 
+void FtpDownloader::ftp_init(Connection& connection, string username,
+                             string password)
+{
+  const vector<string> init_commands = {
+    "",
+    "USER " + username + "\r\n",
+    "PASS " + password + "\r\n",
+    "TYPE I\r\n",
+    "PWD\r\n"
+  };
+
+  string reply;
+  for (const auto& command : init_commands)
+    if (!send_ftp_command(connection, command, reply))
+      cerr << "Error occurred: " << reply << endl;
+
+  string path = download_source.file_path;
+  string file_name = download_source.file_name;
+
+  const string kCwdCommand = "CWD " + path + "\r\n";
+  send_ftp_command(connection, kCwdCommand, reply);
+}
+
 void FtpDownloader::ftp_init(string username, string password)
 {
   const vector<string> init_commands = {
@@ -144,33 +167,49 @@ void FtpDownloader::open_data_channel(Connection& connection, const string& ip,
   connection.ftp_media_socket_ops->connect();
 }
 
-bool FtpDownloader::send_requests()
+bool FtpDownloader::send_request(Connection& connection)
 {
-  ftp_init();
+  bool result = true;
+
+  ftp_init(connection);
 
   string reply;
+  pair<string, uint16_t> ip_port_pair;
 
-  for (int index = 0; index < number_of_connections; ++index) {
-    Connection& connection = connections[index];
-    pair<string, uint16_t> ip_port_pair;
-    if (send_ftp_command(connection, "PASV\r\n", reply))
-      ip_port_pair = get_data_ip_port(reply);
-    else
-      cerr << "Error occurred: " << reply << endl;
-
-    string ip = ip_port_pair.first;
-    uint16_t port = ip_port_pair.second;
-    open_data_channel(connection, ip, port);
-
-    const size_t kCurrentPos = chunks_collection[index].current_pos;
-    const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
-    if (!send_ftp_command(connection, kRestCommand, reply))
-      cerr << "Error occurred: " << reply << endl;
-
-    const string kRetrCommand = "RETR " + download_source.file_name + "\r\n";
-    if (!send_ftp_command(connection, kRetrCommand, reply))
-      cerr << "Error occurred: " << reply << endl;
+  if (send_ftp_command(connection, "PASV\r\n", reply))
+    ip_port_pair = get_data_ip_port(reply);
+  else {
+    cerr << "Error occurred: " << reply << endl;
+    result = false;
   }
+
+  string ip = ip_port_pair.first;
+  uint16_t port = ip_port_pair.second;
+  open_data_channel(connection, ip, port);
+
+  const size_t kCurrentPos = connection.chunk.current_pos;
+  const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
+  if (!send_ftp_command(connection, kRestCommand, reply)) {
+    cerr << "Error occurred: " << reply << endl;
+    result = false;
+  }
+
+  const string kRetrCommand = "RETR " + download_source.file_name + "\r\n";
+  if (!send_ftp_command(connection, kRetrCommand, reply)) {
+    cerr << "Error occurred: " << reply << endl;
+    result = false;
+  }
+
+  return result;
+}
+
+bool FtpDownloader::send_requests()
+{
+  bool result = true;
+  for (size_t index = 0; index < connections.size(); ++index)
+    result &= send_request(connections[index]);
+
+  return result;
 }
 
 int FtpDownloader::set_descriptors()

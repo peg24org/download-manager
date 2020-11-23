@@ -8,14 +8,11 @@
 #include "downloader.h"
 
 class HttpDownloader : public Downloader {
+
   public:
   HttpDownloader(const struct DownloadSource& download_source);
 
-  HttpDownloader(const struct DownloadSource& download_source,
-                 std::unique_ptr<Writer> writer,
-                 ChunksCollection& chunks_collection,
-                 time_t timeout_seconds,
-                 int number_of_connections=1);
+  using Downloader::Downloader;
 
   int check_link(std::string& redirected_url, size_t& file_size) override;
 
