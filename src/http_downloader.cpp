@@ -196,3 +196,33 @@ size_t HttpDownloader::receive_from_connection(size_t index, char* buffer,
 
   return recvd_bytes;
 }
+
+void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
+{
+  Connection& connection = connections[index];
+  buffer.clear();
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
+
+  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+    receive_data(connection, buffer);
+
+    if (connection.status == OperationStatus::NOT_STARTED && buffer.length() > 0) {
+      HttpDownloader::HttpStatus status = get_http_status(buffer, buffer.length());
+      if (status != HttpStatus::PARTIAL_CONTENT)
+        buffer.clear();
+
+      string& http_header = connection.temp_http_header;
+      http_header += string(buffer, buffer.length());
+      size_t header_terminator_pos = get_header_terminator_pos(http_header);
+      if (header_terminator_pos == string::npos)
+        buffer.clear();
+
+      const char* kData = http_header.data();
+      size_t payload_len = http_header.length() - header_terminator_pos;
+      memcpy(buffer, kData + header_terminator_pos, payload_len);
+      connection.status = OperationStatus::DOWNLOADING;
+      buffer.set_length(payload_len);
+      http_header.clear();
+    }
+  }
+}

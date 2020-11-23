@@ -52,6 +52,29 @@ bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
   return retval;
 }
 
+bool HttpsDownloader::receive_data(Connection& connection, Buffer& buffer)
+{
+  bool retval = false;
+
+  SSL* ssl = dynamic_cast<HttpsSocketOps*>(
+      connection.socket_ops.get())->get_ssl();
+
+  int rec_len = SSL_read(ssl, buffer, buffer.capacity());
+  if (rec_len < 0) {
+    buffer.clear();
+    cerr << "error SSL_read" << endl;
+  }
+  else if (rec_len > 0) {
+    retval = true;
+    buffer.set_length(rec_len);
+  }
+  else {
+    buffer.clear();
+    cerr << "empty BIO_read" << endl;
+  }
+
+  return retval;
+}
 bool HttpsDownloader::send_data(Connection& connection, const char* buffer,
                                 size_t len)
 {

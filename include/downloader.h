@@ -88,6 +88,8 @@ class Downloader : public Thread {
     virtual bool receive_data(Connection& connection, char* buffer,
                               size_t& received_len, size_t buffer_capacity);
 
+    virtual bool receive_data(Connection& connection, Buffer& buffer);
+
     virtual bool send_data(Connection& connection, const char* buffer,
                            size_t len);
 
@@ -97,6 +99,9 @@ class Downloader : public Thread {
     virtual int set_descriptors() = 0;
     virtual size_t receive_from_connection(size_t index, char* buffer,
                                            size_t buffer_capacity) = 0;
+
+    virtual void receive_from_connection(size_t index, Buffer& buffer) {};
+
     virtual bool init_connections();
     virtual bool init_connection(Connection& connection);
     virtual std::vector<int> check_timeout();

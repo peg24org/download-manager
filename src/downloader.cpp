@@ -8,6 +8,7 @@
 #include <cassert>
 
 #include "node.h"
+#include "buffer.h"
 #include "downloader.h"
 
 using namespace std;
@@ -51,8 +52,7 @@ void Downloader::run()
     cerr << "Sending request failed." << endl;
   }
 
-  static constexpr size_t kBufferLen = 40000;
-  char recv_buffer[kBufferLen];
+  Buffer recv_buffer;
   const size_t kFileSize = writer->get_file_size();
 
   while (request_sent && (writer->get_total_written_bytes() < kFileSize)) {
@@ -65,7 +65,8 @@ void Downloader::run()
     else if (sel_retval > 0) {
       for (size_t index = 0; index < connections.size(); ++index) {
         size_t recvd_bytes = 0;
-        recvd_bytes = receive_from_connection(index, recv_buffer, kBufferLen);
+        receive_from_connection(index, recv_buffer);
+        recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
           size_t pos = connections[index].chunk.current_pos;
           writer->write(recv_buffer, recvd_bytes, pos, index);
@@ -114,6 +115,23 @@ bool Downloader::receive_data(Connection& connection, char* buffer,
     connection.status = OperationStatus::SOCKET_RECV_ERROR;
     result = false;
     received_len = 0;
+  }
+
+  return result;
+}
+
+bool Downloader::receive_data(Connection& connection, Buffer& buffer)
+{
+  bool result = true;
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
+  int64_t recv_len = recv(sock_desc, buffer, buffer.capacity(), 0);
+
+  if (recv_len >= 0)
+    buffer.set_length(recv_len);
+  else {
+    connection.status = OperationStatus::SOCKET_RECV_ERROR;
+    result = false;
+    buffer.clear();
   }
 
   return result;

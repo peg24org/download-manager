@@ -34,6 +34,9 @@ class HttpDownloader : public Downloader {
   bool send_request(Connection& connection) override;
   size_t receive_from_connection(size_t index, char* buffer,
                                  size_t buffer_capacity) override;
+
+  void receive_from_connection(size_t index, Buffer& buffer) override;
+
   size_t get_header_terminator_pos(const std::string& buffer) const;
   size_t get_size();
   bool check_redirection(std::string& redirect_url);
