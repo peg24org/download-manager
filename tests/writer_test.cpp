@@ -94,10 +94,10 @@ class WriterTestBufferInterface : public WriterTest
       memcpy(test_buffer_0, buffer_0.get(), kBuffer0Length);
       memcpy(test_buffer_1, buffer_1.get(), kBuffer1Length);
 
-      test_buffer_0.length = kBuffer0Length;
-      test_buffer_1.length = kBuffer1Length;
+      test_buffer_0.set_length(kBuffer0Length);
+      test_buffer_1.set_length(kBuffer1Length);
 
-      kPosition_1 = kPosition_0 + test_buffer_0.length;
+      kPosition_1 = kPosition_0 + test_buffer_0.length();
       writer->write(test_buffer_0, kPosition_0, kIndex_0);
       writer->write(test_buffer_1, kPosition_1, kIndex_1);
       chunks_collection = download_state_manager->get_download_chunks();
@@ -107,8 +107,8 @@ class WriterTestBufferInterface : public WriterTest
 TEST_F(WriterTestBufferInterface,
        retrieved_pos_should_be_same_as_stored_pos_plus_strlen_using_writer)
 {
-  size_t kPos_0 = kPosition_0 + test_buffer_0.length;
-  size_t kPos_1 = kPosition_1 + test_buffer_1.length;
+  size_t kPos_0 = kPosition_0 + test_buffer_0.length();
+  size_t kPos_1 = kPosition_1 + test_buffer_1.length();
 
   EXPECT_EQ(kPos_0, chunks_collection[kIndex_0].current_pos);
   EXPECT_EQ(kPos_1, chunks_collection[kIndex_1].current_pos);
@@ -129,6 +129,6 @@ TEST_F(WriterTestBufferInterface,
   char* buffer_0 = buffer + kPosition_0;
   char* buffer_1 = buffer + kPosition_1;
 
-  EXPECT_EQ(0, strncmp(test_buffer_0, buffer_0, test_buffer_0.length));
-  EXPECT_EQ(0, strncmp(test_buffer_1, buffer_1, test_buffer_1.length));
+  EXPECT_EQ(0, strncmp(test_buffer_0, buffer_0, test_buffer_0.length()));
+  EXPECT_EQ(0, strncmp(test_buffer_1, buffer_1, test_buffer_1.length()));
 }

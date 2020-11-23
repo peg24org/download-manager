@@ -83,7 +83,7 @@ TEST_F(FileIOTest, retrieved_file_contents_should_be_same_as_written_contents_1)
   static constexpr size_t kSizeOfTestBuffer = 3000;
   unique_ptr<char[]> random_buffer = get_random_buffer(kSizeOfTestBuffer);
   Buffer test_buffer;
-  test_buffer.length = kSizeOfTestBuffer;
+  test_buffer.set_length(kSizeOfTestBuffer);
   memcpy(test_buffer, random_buffer.get(), kSizeOfTestBuffer);
 
   writer.write(test_buffer);
@@ -119,16 +119,16 @@ TEST_F(FileIOTest, written_bytes_in_some_position_should_be_same_as_read_bytes_1
 
   Buffer test_buffer;
   memcpy(test_buffer, random_buffer.get(), kSizeOfTestBuffer);
-  test_buffer.length = kWritePosition;
+  test_buffer.set_length(kWritePosition);
   writer.write(test_buffer);
   writer.write(test_buffer, kWritePosition);
 
   reader.open();
   string read_contents = reader.get_file_contents();
   string read_sample_substr =
-    read_contents.substr(kWritePosition, test_buffer.length);
+    read_contents.substr(kWritePosition, test_buffer.length());
   const char* read_sample = read_sample_substr.c_str();
-  EXPECT_EQ(0, strncmp(test_buffer, read_sample, test_buffer.length));
+  EXPECT_EQ(0, strncmp(test_buffer, read_sample, test_buffer.length()));
 }
 
 TEST_F(FileIOTest, file_path_should_identifed_as_file_t)

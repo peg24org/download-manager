@@ -11,8 +11,8 @@ Writer::Writer(shared_ptr<FileIO> file_io,
 
 void Writer::write(const Buffer& buffer, size_t position, size_t index)
 {
-  file_io->write(const_cast<Buffer&>(buffer), buffer.length, position);
-  download_state_manager->update(index, position + buffer.length);
+  file_io->write(const_cast<Buffer&>(buffer), buffer.length(), position);
+  download_state_manager->update(index, position + buffer.length());
 }
 
 void Writer::write(const char* buffer, size_t length, size_t position,
