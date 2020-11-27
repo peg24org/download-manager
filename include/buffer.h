@@ -20,6 +20,7 @@ class Buffer
 
     // Move assignment
     Buffer& operator=(Buffer&& src) noexcept;
+
     /**
      * Char* cast operator overloading.
      *
@@ -27,16 +28,28 @@ class Buffer
      */
     operator char*();
 
+    // Caution: always gets null terminated c-string.
+    Buffer& operator<<(const char* input);
+
+    Buffer& operator<<(const std::string& input);
+
     /**
      * Resizes the buffer capacity.
      * Note: This function removes former data and creates new data buffer.
      *
-     * @param new_capacity New capacity of buffer
+     * @param capacity New capacity of buffer
      * @throws std::bad_alloc in case of failure.
-     * @return True in case of resizing is successful, otherwise returns False.
      */
-    void resize(size_t capacity);
+    void set_capacity(size_t capacity);
 
+    /**
+     * Extends capacity of buffer.
+     * Note: This function won't change the contents of buffer.
+     *
+     * @param capacity New capacity of buffer
+     * @throws std::bad_alloc in case of failure.
+     */
+    void extend(size_t capacity);
     /**
      * Gets capacity of buffer.
      *

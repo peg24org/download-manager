@@ -49,10 +49,43 @@ Buffer::operator char*()
   return buffer.get();
 }
 
-void Buffer::resize(size_t capacity)
+Buffer& Buffer::operator<<(const char* input)
+{
+  size_t input_len = strlen(input);
+  size_t necessary_len = input_len+buffer_length;
+  if (necessary_len > buffer_capacity)
+    extend(necessary_len * 2);
+
+  memcpy(buffer.get() + buffer_length, input, input_len);
+  buffer_length += input_len;
+
+  return *this;
+}
+
+Buffer& Buffer::operator<<(const std::string& input)
+{
+  size_t necessary_len = input.length()+buffer_length;
+  if (necessary_len > buffer_capacity)
+    extend(necessary_len * 2);
+
+  memcpy(buffer.get() + buffer_length, input.c_str(), input.length());
+  buffer_length += input.length();
+
+  return *this;
+}
+
+void Buffer::set_capacity(size_t capacity)
 {
   this->buffer_capacity = capacity;
   buffer = make_unique<char[]>(capacity);
+}
+
+void Buffer::extend(size_t capacity)
+{
+  buffer_capacity = capacity;
+  unique_ptr<char[]> temp_buffer = make_unique<char[]>(buffer_capacity);
+  memcpy(temp_buffer.get(), buffer.get(), buffer_length);
+  buffer = move(temp_buffer);
 }
 
 size_t Buffer::capacity() const noexcept
