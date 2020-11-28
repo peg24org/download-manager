@@ -251,3 +251,40 @@ TEST_F(BufferTest, insertion_operator_should_insert_data_to_the_end_of_contents)
   EXPECT_EQ(expected_len, buffer.length());
   EXPECT_STREQ(expected_contents.get(), buffer);
 }
+
+TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_str_literals)
+{
+  Buffer test_buffer;
+
+  test_buffer << "one" << " " << "two";
+
+  EXPECT_STREQ("one two", test_buffer);
+}
+
+TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_cstr)
+{
+  Buffer test_buffer;
+
+  char one[] = "one";
+  char space[] = " ";
+  char two[] = "two";
+  string expected_string = string(one) + string(space) + string(two);
+
+  test_buffer << one << space << two;
+
+  EXPECT_STREQ(expected_string.c_str(), test_buffer);
+}
+
+TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_stl_string)
+{
+  Buffer test_buffer;
+
+  string one("one");
+  string space(" ");
+  string two("two");
+  string expected_string = one + space + two;
+
+  test_buffer << one << space << two;
+
+  EXPECT_STREQ(expected_string.c_str(), test_buffer);
+}
