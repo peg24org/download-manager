@@ -252,7 +252,7 @@ TEST_F(BufferTest, insertion_operator_should_insert_data_to_the_end_of_contents)
   EXPECT_STREQ(expected_contents.get(), buffer);
 }
 
-TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_str_literals)
+TEST_F(BufferTest, buffer_should_preserve_inserted_str_literals_order)
 {
   Buffer test_buffer;
 
@@ -261,7 +261,7 @@ TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_str_literals)
   EXPECT_STREQ("one two", test_buffer);
 }
 
-TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_cstr)
+TEST_F(BufferTest, buffer_should_preserve_inserted_cstrs_order)
 {
   Buffer test_buffer;
 
@@ -275,7 +275,7 @@ TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_cstr)
   EXPECT_STREQ(expected_string.c_str(), test_buffer);
 }
 
-TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_stl_string)
+TEST_F(BufferTest, buffer_should_preserve_inserted_strings_order)
 {
   Buffer test_buffer;
 
@@ -287,4 +287,25 @@ TEST_F(BufferTest, data_in_buffer_should_be_same_as_insertion_stl_string)
   test_buffer << one << space << two;
 
   EXPECT_STREQ(expected_string.c_str(), test_buffer);
+}
+
+TEST_F(BufferTest, buffer_should_preserve_inserted_chars_order)
+{
+  Buffer test_buffer;
+  constexpr char kTestData[] = "test";
+
+  test_buffer << kTestData[0];
+  test_buffer << kTestData[1] << kTestData[2] << kTestData[3];
+
+  EXPECT_STREQ(kTestData, test_buffer);
+}
+
+TEST_F(BufferTest, inserting_char_should_append_char_to_the_end_of_data)
+{
+  constexpr char kTestChar = 'X';
+  const string expected_data = string(buffer, buffer.length()) + kTestChar;
+
+  buffer << kTestChar;
+
+  EXPECT_STREQ(expected_data.c_str(), buffer);
 }

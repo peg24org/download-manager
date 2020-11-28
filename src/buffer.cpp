@@ -74,6 +74,18 @@ Buffer& Buffer::operator<<(const std::string& input)
   return *this;
 }
 
+Buffer& Buffer::operator<<(char input)
+{
+  size_t necessary_len = buffer_length + 1;
+  if (necessary_len > buffer_capacity)
+    extend(necessary_len * 2);
+
+  buffer.get()[buffer_length] = input;
+  ++buffer_length;
+
+  return *this;
+}
+
 void Buffer::set_capacity(size_t capacity)
 {
   this->buffer_capacity = capacity;
