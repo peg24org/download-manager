@@ -35,6 +35,8 @@ class Buffer
 
     Buffer& operator<<(char input);
 
+    Buffer& operator<<(int input);
+
     /**
      * Resizes the buffer capacity.
      * Note: This function removes former data and creates new data buffer.

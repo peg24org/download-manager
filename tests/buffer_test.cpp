@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
-#include <iostream>
 
 #include "buffer.h"
 #include "test_utils.h"
@@ -135,7 +134,6 @@ TEST_F(BufferTest, clear_should_set_length_to_zero_and_not_change_the_contents)
   EXPECT_EQ(0, buffer.length());
 }
 
-
 TEST_F(BufferTest, deep_clear_should_set_length_to_zero_and_contents_to_null)
 {
   unique_ptr<char[]> test_data = make_unique<char[]>(buffer.length());
@@ -179,79 +177,6 @@ TEST_F(BufferTest, extending_the_buffer_should_increase_capasity)
   EXPECT_EQ(len, old_len);
 }
 
-TEST_F(BufferTest, c_str_insertion_operator_should_insert_data_and_len)
-{
-  Buffer test_buffer;
-  unique_ptr<char[]> test_data;
-  test_data = get_random_buffer(70000, 0x21, 0x7e); // Printable characters
-  size_t test_data_len = strlen(test_data.get());
-
-  EXPECT_STRNE(test_data.get(), test_buffer);
-  EXPECT_EQ(0, test_buffer.length());
-
-  test_buffer << test_data.get();
-
-  size_t len = test_buffer.length();
-
-  EXPECT_EQ(len, test_data_len);
-  EXPECT_STREQ(test_data.get(), test_buffer);
-}
-
-TEST_F(BufferTest, c_str_insertion_operator_should_append_the_end_of_contents)
-{
-  unique_ptr<char[]> random_str;
-  size_t kRandLen = 50000;
-  random_str = get_random_buffer(kRandLen, 0x20, 0x7e);
-  size_t expected_len = strlen(random_str.get()) + buffer.length();
-
-  unique_ptr<char[]> expected_contents = make_unique<char[]>(expected_len);
-  memcpy(expected_contents.get(), buffer, buffer.length());
-  memcpy(expected_contents.get()+buffer.length(), random_str.get(), kRandLen);
-
-  EXPECT_NE(0, buffer.length());
-
-  buffer << random_str.get();
-
-  EXPECT_EQ(expected_len, buffer.length());
-  EXPECT_STREQ(expected_contents.get(), buffer);
-}
-
-TEST_F(BufferTest, insertion_operator_should_insert_data_and_len_correctly)
-{
-  Buffer test_buffer;
-  unique_ptr<char[]> test_data;
-  test_data = get_random_buffer(70000, 0x20, 0x7e);
-  string test_str(test_data.get(), strlen(test_data.get()));
-
-  EXPECT_STRNE(test_str.c_str(), test_buffer);
-  EXPECT_EQ(0, test_buffer.length());
-
-  test_buffer << test_str;
-
-  EXPECT_EQ(test_buffer.length(), test_str.length());
-  EXPECT_STREQ(test_str.c_str(), test_buffer);
-}
-
-TEST_F(BufferTest, insertion_operator_should_insert_data_to_the_end_of_contents)
-{
-  unique_ptr<char[]> random_str;
-  size_t kRandLen = 50000;
-  random_str = get_random_buffer(kRandLen, 0x20, 0x7e);
-  string test_str(random_str.get(), strlen(random_str.get()));
-  size_t expected_len = test_str.length() + buffer.length();
-
-  unique_ptr<char[]> expected_contents = make_unique<char[]>(expected_len);
-  memcpy(expected_contents.get(), buffer, buffer.length());
-  memcpy(expected_contents.get()+buffer.length(), test_str.c_str(), kRandLen);
-
-  EXPECT_NE(0, buffer.length());
-
-  buffer << test_str;
-
-  EXPECT_EQ(expected_len, buffer.length());
-  EXPECT_STREQ(expected_contents.get(), buffer);
-}
-
 TEST_F(BufferTest, buffer_should_preserve_inserted_str_literals_order)
 {
   Buffer test_buffer;
@@ -259,20 +184,6 @@ TEST_F(BufferTest, buffer_should_preserve_inserted_str_literals_order)
   test_buffer << "one" << " " << "two";
 
   EXPECT_STREQ("one two", test_buffer);
-}
-
-TEST_F(BufferTest, buffer_should_preserve_inserted_cstrs_order)
-{
-  Buffer test_buffer;
-
-  char one[] = "one";
-  char space[] = " ";
-  char two[] = "two";
-  string expected_string = string(one) + string(space) + string(two);
-
-  test_buffer << one << space << two;
-
-  EXPECT_STREQ(expected_string.c_str(), test_buffer);
 }
 
 TEST_F(BufferTest, buffer_should_preserve_inserted_strings_order)
@@ -300,12 +211,89 @@ TEST_F(BufferTest, buffer_should_preserve_inserted_chars_order)
   EXPECT_STREQ(kTestData, test_buffer);
 }
 
-TEST_F(BufferTest, inserting_char_should_append_char_to_the_end_of_data)
+template<typename T>
+struct InsertionOperatorTest : public testing::Test
 {
-  constexpr char kTestChar = 'X';
-  const string expected_data = string(buffer, buffer.length()) + kTestChar;
+  using ParamType = T;
+  void SetUp()
+  {
+    unique_ptr<char[]> test_data = get_random_buffer(buffer.kDefaultCapacity);
+    memcpy(buffer, test_data.get(), buffer.kDefaultCapacity);
+    buffer.set_length(buffer.kDefaultCapacity);
+  }
+  Buffer buffer;
+  size_t rand_len = 70000;
+};
 
-  buffer << kTestChar;
+using MyTypes = testing::Types<string, char*, char, int>;
+TYPED_TEST_CASE(InsertionOperatorTest, MyTypes);
 
-  EXPECT_STREQ(expected_data.c_str(), buffer);
+template<typename T>
+size_t insert_data(Buffer& buffer, char* random_data)
+{
+  size_t insertion_len = 0;
+  if (typeid(T) == typeid(string)) {
+    string data(random_data, strlen(random_data));
+    buffer << data;
+    insertion_len = data.length();
+  }
+  else if(typeid(T) == typeid(char*)) {
+    buffer << random_data;
+    insertion_len = strlen(random_data);
+  }
+  else if(typeid(T) == typeid(char) || typeid(T) == typeid(int)) {
+    buffer << random_data;
+    insertion_len = strlen(random_data);
+  }
+
+  return insertion_len;
+}
+
+TYPED_TEST(InsertionOperatorTest, should_insert_data_and_update_length)
+{
+  using ParamType  = typename TestFixture::ParamType;
+
+  if (typeid(ParamType) == typeid(int) || typeid(ParamType) == typeid(char))
+    this->rand_len = 1;
+
+  Buffer test_buffer;
+  unique_ptr<char[]> random_data;
+  random_data = get_random_buffer(this->rand_len, 0x21, 0x7e); // Printable characters
+
+  EXPECT_EQ(0, test_buffer.length());
+  EXPECT_STRNE(random_data.get(), test_buffer);
+
+  size_t test_data_len = strlen(random_data.get());
+  insert_data<ParamType>(test_buffer, random_data.get());
+  size_t len = test_buffer.length();
+
+  EXPECT_EQ(len, test_data_len);
+  EXPECT_STREQ(random_data.get(), test_buffer);
+}
+
+TYPED_TEST(InsertionOperatorTest, should_append_the_end_of_contents)
+{
+  using ParamType  = typename TestFixture::ParamType;
+
+  if (typeid(ParamType) == typeid(int) || typeid(ParamType) == typeid(char))
+    this->rand_len = 1;
+
+  // Create random data
+  unique_ptr<char[]> random_data;
+  random_data = get_random_buffer(this->rand_len, 0x20, 0x7e); // Printable chars
+  size_t expected_contents_len = strlen(random_data.get()) + this->buffer.length();
+  const size_t initial_buffer_len = this->buffer.length();
+
+  // Create expected data
+  unique_ptr<char[]> expected_contents = make_unique<char[]>(expected_contents_len);
+  memcpy(expected_contents.get(), this->buffer, this->buffer.length());
+  memcpy(expected_contents.get()+this->buffer.length(), random_data.get(), this->rand_len);
+
+  EXPECT_NE(0, this->buffer.length());
+
+  const size_t insertion_len = insert_data<ParamType>(this->buffer,
+                                                      random_data.get());
+
+  EXPECT_EQ(insertion_len+initial_buffer_len, this->buffer.length());
+  EXPECT_STREQ(expected_contents.get(), this->buffer);
 }
