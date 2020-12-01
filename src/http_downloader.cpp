@@ -180,8 +180,9 @@ void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
     receive_data(connection, buffer);
 
     // TODO: Add flag for first packet.
-    if (connection.status == OperationStatus::NOT_STARTED && buffer.length() > 0) {
-      HttpDownloader::HttpStatus status = get_http_status(buffer, buffer.length());
+    if (!connection.header_skipped && buffer.length() > 0) {
+      HttpDownloader::HttpStatus status = get_http_status(buffer,
+                                                          buffer.length());
       if (status != HttpStatus::PARTIAL_CONTENT)
         buffer.clear();
 
@@ -194,7 +195,7 @@ void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
       const char* kData = http_header.data();
       size_t payload_len = http_header.length() - header_terminator_pos;
       memcpy(buffer, kData + header_terminator_pos, payload_len);
-      connection.status = OperationStatus::DOWNLOADING;
+      connection.header_skipped = true;
       buffer.set_length(payload_len);
       http_header.clear();
     }

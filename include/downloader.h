@@ -36,6 +36,7 @@ struct Connection {
     , ssl(nullptr)
     , last_recv_time_point(std::chrono::steady_clock::now())
     , http_proxy(nullptr)
+    , header_skipped(false)
   {
   }
 
@@ -49,8 +50,8 @@ struct Connection {
   std::unique_ptr<SocketOps> ftp_media_socket_ops;
   std::chrono::steady_clock::time_point last_recv_time_point;
   std::string temp_http_header;
-
   std::unique_ptr<HttpProxy> http_proxy;
+  bool header_skipped;
 };
 
 class Downloader : public Thread {
