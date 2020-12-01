@@ -27,6 +27,7 @@ SSL* HttpsDownloader::get_ssl(BIO* bio)
   BIO_get_ssl(bio, &ssl);
   if (ssl == nullptr)
     cerr << "Error occurred when getting ssl." << endl;
+
   return ssl;
 }
 
@@ -75,16 +76,30 @@ bool HttpsDownloader::receive_data(Connection& connection, Buffer& buffer)
 
   return retval;
 }
-bool HttpsDownloader::send_data(Connection& connection, const char* buffer,
-                                size_t len)
+
+bool HttpsDownloader::send_data(const Connection& connection,
+                                const Buffer& buffer)
 {
+  bool result = true;
   BIO* bio = dynamic_cast<HttpsSocketOps*>(
       connection.socket_ops.get())->get_bio();
 
-  BIO_write(bio, buffer, len);
+  int64_t sent_bytes = 0;
+  while (static_cast<size_t>(sent_bytes) < buffer.length()) {
+    int64_t temp_sent_bytes = BIO_write(bio, const_cast<Buffer&>(buffer),
+                                        buffer.length());
+    if (temp_sent_bytes > 0)
+      sent_bytes += temp_sent_bytes;
+    else if(temp_sent_bytes == -2) {
+      cerr << "Operation not implemented in the specific BIO type." << endl;
+      result = false;
+      break;
+    }
+  }
+
   BIO_flush(bio);
 
-  return true;
+  return result;
 }
 
 bool HttpsDownloader::init_connection(Connection& connection)

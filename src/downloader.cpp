@@ -137,19 +137,21 @@ bool Downloader::receive_data(Connection& connection, Buffer& buffer)
   return result;
 }
 
-bool Downloader::send_data(Connection& connection, const char* buffer,
-                           size_t len)
+bool Downloader::send_data(const Connection& connection, const Buffer& buffer)
 {
   size_t sent_bytes = 0;
   size_t tmp_sent_bytes = 0;
-
   int sock_desc = connection.socket_ops->get_socket_descriptor();
-  while (sent_bytes < len) {
-    if ((tmp_sent_bytes = send(sock_desc, buffer, len, 0)) > 0)
+
+  while (sent_bytes < buffer.length()) {
+    tmp_sent_bytes = send(sock_desc, const_cast<Buffer&>(buffer)+sent_bytes,
+                          buffer.length(), 0);
+    if (tmp_sent_bytes >= 0)
       sent_bytes += tmp_sent_bytes;
     else
       return false;
   }
+
   return true;
 }
 

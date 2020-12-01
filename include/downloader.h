@@ -90,8 +90,7 @@ class Downloader : public Thread {
 
     virtual bool receive_data(Connection& connection, Buffer& buffer);
 
-    virtual bool send_data(Connection& connection, const char* buffer,
-                           size_t len);
+    virtual bool send_data(const Connection& connection, const Buffer& buffer);
 
     virtual bool send_requests() = 0;
     virtual bool send_request(Connection& connection) = 0;

@@ -63,4 +63,3 @@ class FtpDownloader : public Downloader {
 };
 
 #endif
-

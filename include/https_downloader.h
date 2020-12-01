@@ -12,16 +12,17 @@ class HttpsDownloader : public HttpDownloader {
 
   HttpsDownloader(const struct DownloadSource& download_source);
   using HttpDownloader::HttpDownloader;
+
   private:
   bool receive_data(Connection& connection, char* buffer, size_t& received_len,
                     size_t buffer_capacity) override;
 
   bool receive_data(Connection& connection, Buffer& buffer) override;
 
-  bool send_data(Connection& connection, const char* buffer,
-                 size_t len) override;
+  bool send_data(const Connection& connection, const Buffer& buffer) override;
 
   SSL* get_ssl(BIO* bio);
+
   bool init_connection(Connection& connection) override;
 };
 

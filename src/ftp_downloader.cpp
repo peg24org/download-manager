@@ -101,7 +101,9 @@ void FtpDownloader::ftp_init(string username, string password)
 bool FtpDownloader::send_ftp_command(Connection& connection,
                                      const string& command, string& result)
 {
-  if (!send_data(connection, command.c_str(), command.length()))
+  Buffer command_buffer;
+  command_buffer << command;
+  if (!send_data(connection, command_buffer))
     return false;
 
   constexpr static size_t kHeaderCapacity = 1000;
@@ -148,7 +150,7 @@ pair<string, uint16_t> FtpDownloader::get_data_ip_port(const string& buffer)
   vector<string> splitted_ip_port = split_string(ip_port_string, ',');
 
   string ip = splitted_ip_port[0] + "." + splitted_ip_port[1] + "." +
-    splitted_ip_port[2] + "." + splitted_ip_port[3];
+              splitted_ip_port[2] + "." + splitted_ip_port[3];
 
   string p1 = splitted_ip_port[4];
   string p2 = splitted_ip_port[5];

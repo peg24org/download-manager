@@ -46,7 +46,8 @@ bool HttpDownloader::check_redirection(string& redirecting)
   return result;
 }
 
-HttpDownloader::HttpStatus HttpDownloader::get_http_status(const char* buffer, size_t range)
+HttpDownloader::HttpStatus HttpDownloader::get_http_status(const char* buffer,
+                                                           size_t range)
 {
   int status;
   size_t line_length = 0;
@@ -68,19 +69,23 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
   int redirect_status = 0;
   if (!init_connections())
     return -1;
+
   // Use GET instead of HEAD, because some servers doesn't support HEAD
   // command.
-  string request = "GET " + download_source.file_path +
-    download_source.file_name + " HTTP/1.1\r\n" +
-    "User-Agent: no_name_yet!\r\n" +
-    "Accept: */*\r\n" +
-    "Accept-Encoding: identity\r\n"
-    + "Host: " + download_source.host_name + ":" +
-    to_string(download_source.port) + "\r\n" +
-    "Connection: Keep-Alive\r\n\r\n";
+  Buffer request(1024);
+  request << "GET "
+          << download_source.file_path << download_source.file_name
+          << " HTTP/1.1\r\n"
+          << "User-Agent: no_name_yet!\r\n"
+          << "Accept: */*\r\n"
+          << "Accept: */*\r\n"
+          << "Accept-Encoding: identity\r\n"
+          << "Host: " << download_source.host_name << ':'
+          << to_string(download_source.port) + "\r\n"
+          << "Connection: Keep-Alive\r\n\r\n";
 
   receive_header.resize(MAX_HTTP_HEADER_LENGTH);
-  if (!send_data(connections[0], request.c_str(), request.length()))
+  if (!send_data(connections[0], request))
     return -1;
 
   while (true) {
@@ -135,16 +140,16 @@ bool HttpDownloader::send_request(Connection& connection)
   string current_pos = to_string(connection.chunk.current_pos);
   string end_pos = to_string(connection.chunk.end_pos);
 
-  string request = "GET " + download_source.file_path + "/" +
-    download_source.file_name + " HTTP/1.1\r\nRange: bytes=" +
-    current_pos + "-" + end_pos + "\r\n" +
-    "User-Agent: no_name_yet!\r\n" +
-    "Accept: */*\r\n" +
-    "Accept-Encoding: identity\r\n" +
-    "Host:" +
-    host_name +	":" + port + "\r\n\r\n";
+  Buffer request;
+  request << "GET " << download_source.file_path << "/"
+          << download_source.file_name << " HTTP/1.1\r\nRange: bytes="
+          << current_pos << "-" << end_pos << "\r\n"
+          << "User-Agent: no_name_yet!\r\n"
+          << "Accept: */*\r\n"
+          << "Accept-Encoding: identity\r\n"
+          << "Host:" << host_name << ":" << port << "\r\n\r\n";
 
-  if(!send_data(connection, request.c_str(), request.length())) {
+  if(!send_data(connection, request)) {
     connection.status = OperationStatus::SOCKET_SEND_ERROR;
     return false;
   }
@@ -175,6 +180,7 @@ void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
     receive_data(connection, buffer);
 
+    // TODO: Add flag for first packet.
     if (connection.status == OperationStatus::NOT_STARTED && buffer.length() > 0) {
       HttpDownloader::HttpStatus status = get_http_status(buffer, buffer.length());
       if (status != HttpStatus::PARTIAL_CONTENT)
