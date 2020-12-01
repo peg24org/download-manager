@@ -253,19 +253,6 @@ void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
   }
 }
 
-bool FtpDownloader::receive_data(Connection& connection, char* buffer,
-                                 size_t& recv_len, size_t buffer_capacity)
-{
-  recv_len = recv(connection.socket_ops->get_socket_descriptor(), buffer,
-                  buffer_capacity, 0);
-  if (recv_len < 0) {
-    connection.status = OperationStatus::SOCKET_RECV_ERROR;
-    return false;
-  }
-
-  return true;
-}
-
 bool FtpDownloader::ftp_receive_data(Connection& connection, char* buffer,
                                      size_t& received_len,
                                      size_t buffer_capacity)

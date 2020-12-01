@@ -41,9 +41,6 @@ class FtpDownloader : public Downloader {
   bool send_ftp_command(Connection& connection, const std::string& command,
                         std::string& result);
 
-  virtual bool receive_data(Connection& connection, char* buffer,
-                            size_t& recv_len, size_t buffer_capacity) override;
-
   bool send_request(Connection& connection) override;
 
   bool send_requests() override;
