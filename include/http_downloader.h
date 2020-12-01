@@ -28,16 +28,14 @@ class HttpDownloader : public Downloader {
     RANGE_NOT_SATICFIABLE = 416
   };
 
-  std::string receive_header;
-
   bool send_requests() override;
   bool send_request(Connection& connection) override;
 
   void receive_from_connection(size_t index, Buffer& buffer) override;
 
   size_t get_header_terminator_pos(const std::string& buffer) const;
-  size_t get_size();
-  bool check_redirection(std::string& redirect_url);
+  size_t get_size(std::string header);
+  bool check_redirection(std::string& redirect_url, const std::string& header);
 
   // Parse the first line
   HttpStatus get_http_status(const char* buffer, size_t range);

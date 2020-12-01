@@ -85,14 +85,13 @@ class Downloader : public Thread {
                              const std::string& pattern);
 
     void run() override;
-    virtual bool receive_data(Connection& connection, char* buffer,
-                              size_t& received_len, size_t buffer_capacity);
 
     virtual bool receive_data(Connection& connection, Buffer& buffer);
 
     virtual bool send_data(const Connection& connection, const Buffer& buffer);
 
     virtual bool send_requests() = 0;
+
     virtual bool send_request(Connection& connection) = 0;
     // Return max_fd
     virtual int set_descriptors() = 0;

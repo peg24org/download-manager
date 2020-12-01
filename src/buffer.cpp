@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Buffer::Buffer(size_t capacity) : buffer_length(0)
+Buffer::Buffer(size_t capacity) : buffer_length(0), index_position(0)
 {
   allocate(capacity);
 }
@@ -15,12 +15,14 @@ Buffer::Buffer(const Buffer& src) : buffer_length(src.buffer_length)
 {
   allocate(src.buffer_capacity);
   memcpy(buffer.get(), src.buffer.get(), buffer_length);
+  this->index_position = src.index_position;
 }
 
 Buffer::Buffer(Buffer&& src) noexcept
   : buffer_length(src.buffer_length)
   , buffer_capacity(src.buffer_capacity)
   , buffer(exchange(src.buffer, nullptr))
+  , index_position(src.index_position)
 {
 }
 
@@ -46,7 +48,7 @@ Buffer& Buffer::operator=(Buffer&& src) noexcept
 
 Buffer::operator char*()
 {
-  return buffer.get();
+  return buffer.get() + index_position;
 }
 
 Buffer& Buffer::operator<<(const char* input)
@@ -132,6 +134,13 @@ void Buffer::deep_clear() noexcept
 {
   clear();
   memset(buffer.get(), '\0', buffer_capacity);
+}
+
+Buffer& Buffer::seek(size_t position)
+{
+  index_position = position;
+
+  return *this;
 }
 
 void Buffer::allocate(size_t capacity)

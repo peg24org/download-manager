@@ -31,28 +31,6 @@ SSL* HttpsDownloader::get_ssl(BIO* bio)
   return ssl;
 }
 
-bool HttpsDownloader::receive_data(Connection& connection, char* buffer,
-                                   size_t& received_len,
-                                   size_t buffer_capacity)
-{
-  bool retval = false;
-
-  SSL* ssl = dynamic_cast<HttpsSocketOps*>(
-      connection.socket_ops.get())->get_ssl();
-
-  int len = SSL_read(ssl, buffer, buffer_capacity);
-  if (len < 0)
-    cerr << "error SSL_read" << endl;
-  else if (len > 0) 
-    retval = true;
-  else 
-    cerr << "empty BIO_read" << endl;
-
-  received_len = len;
-
-  return retval;
-}
-
 bool HttpsDownloader::receive_data(Connection& connection, Buffer& buffer)
 {
   bool retval = false;

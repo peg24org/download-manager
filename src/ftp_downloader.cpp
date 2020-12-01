@@ -106,25 +106,22 @@ bool FtpDownloader::send_ftp_command(Connection& connection,
   if (!send_data(connection, command_buffer))
     return false;
 
-  constexpr static size_t kHeaderCapacity = 1000;
-  char response[kHeaderCapacity];
+  //constexpr static size_t kHeaderCapacity = 1000;
+  //char response[kHeaderCapacity];
+  Buffer response(1000);
 
-  size_t received_bytes = 0;
   while (true) {
-    size_t number_of_bytes;
-
-    if (!receive_data(connection, response + received_bytes, number_of_bytes,
-                      kHeaderCapacity)) {
+    if (!receive_data(connection, response.seek(response.length()))) {
       cerr << "Socket receive error" << endl;
       break;
     }
-    received_bytes += number_of_bytes;
 
     // RFC9559:
     // A reply is defined to contain the 3-digit code, followed by space.
     string status;
-    if (regex_search_string(response, "(\\d{3}\\s)(.*)")) {
-      result = string(response, received_bytes);
+    string response_str(response, response.length());
+    if (regex_search_string(response_str, "(\\d{3}\\s)(.*)")) {
+      result = string(response, response.length());
       return true;
     }
   }
@@ -251,20 +248,6 @@ void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
       buffer.set_length(new_length);
     }
   }
-}
-
-bool FtpDownloader::ftp_receive_data(Connection& connection, char* buffer,
-                                     size_t& received_len,
-                                     size_t buffer_capacity)
-{
-  received_len = recv(connection.ftp_media_socket_ops->get_socket_descriptor(),
-                      buffer, buffer_capacity, 0);
-  if (received_len < 0) {
-    connection.status = OperationStatus::SOCKET_RECV_ERROR;
-    return false;
-  }
-
-  return true;
 }
 
 bool FtpDownloader::ftp_receive_data(Connection& connection, Buffer& buffer)

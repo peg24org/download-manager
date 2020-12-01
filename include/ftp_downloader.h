@@ -53,8 +53,6 @@ class FtpDownloader : public Downloader {
   std::pair<std::string, uint16_t> get_data_ip_port(const std::string& buffer);
   void open_data_channel(Connection& connection, const std::string& ip,
                          uint16_t port);
-  bool ftp_receive_data(Connection& connection, char* buffer,
-                        size_t& received_len, size_t buffer_capacity);
 
   bool ftp_receive_data(Connection& connection, Buffer& buffer);
 };

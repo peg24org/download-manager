@@ -18,25 +18,25 @@ HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
 {
 }
 
-size_t HttpDownloader::get_size()
+size_t HttpDownloader::get_size(string header)
 {
   string size_string;
-  if (regex_search_string(receive_header, "(Content-Length: )(\\d+)",
-                          size_string))
+  if (regex_search_string(header, "(Content-Length: )(\\d+)", size_string))
     return  strtoul(static_cast<const char*>(size_string.c_str()), nullptr, 0);
   return 0;
 }
 
-bool HttpDownloader::check_redirection(string& redirecting)
+bool HttpDownloader::check_redirection(string& redirecting,
+                                       const string& header)
 {
   bool result = false;
   // Check header
-  if (regex_search_string(receive_header, HTTP_HEADER)) {
+  if (regex_search_string(header, HTTP_HEADER)) {
     // Check redirection
-    if (regex_search_string(receive_header, "(Location: )(.+)",redirecting)) {
+    if (regex_search_string(header, "(Location: )(.+)",redirecting)) {
       result = true;
       // Check if redirecting to path instead of URL, then create new URL.
-      if (!regex_search_string(receive_header, "http.*://")) {
+      if (!regex_search_string(header, "http.*://")) {
         const Protocol& protocol = download_source.protocol;
         string prefix = protocol == Protocol::HTTP ? "http://" : "https://";
         redirecting = prefix + download_source.host_name + redirecting;
@@ -84,26 +84,25 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
           << to_string(download_source.port) + "\r\n"
           << "Connection: Keep-Alive\r\n\r\n";
 
-  receive_header.resize(MAX_HTTP_HEADER_LENGTH);
+  Buffer header(MAX_HTTP_HEADER_LENGTH);
   if (!send_data(connections[0], request))
     return -1;
 
+  string header_str;
+
   while (true) {
-    size_t number_of_bytes;
-    if (!receive_data(connections[0], const_cast<char*>(receive_header.data()),
-                      number_of_bytes, MAX_HTTP_HEADER_LENGTH))
+    if (!receive_data(connections[0], header.seek(header.length())))
       return -1;
-    if (receive_header.find("\r\n\r\n") != string::npos) {
+    header_str = string(header, header.length());
+    if (header_str.find("\r\n\r\n") != string::npos) {
       break;
     }
   }
 
-  if (check_redirection(redirected_url))
-    // Link is redirected
+  if (check_redirection(redirected_url, header_str))    // Link is redirected
     redirect_status = 1;
   else {
-    file_size = get_size();
-    // Link is not redirected
+    file_size = get_size(header_str);   // Link is not redirected
     redirect_status = 0;
   }
 

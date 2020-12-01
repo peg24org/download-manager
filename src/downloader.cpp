@@ -102,24 +102,6 @@ bool Downloader::regex_search_string(const string& input, const string& pattern)
   return regex_search_string(input, pattern, temp);
 }
 
-bool Downloader::receive_data(Connection& connection, char* buffer,
-                              size_t& received_len, size_t buffer_capacity)
-{
-  bool result = true;
-  int64_t recv_len = recv(connection.socket_ops->get_socket_descriptor(),
-                          buffer, buffer_capacity, 0);
-
-  if (recv_len >= 0)
-    received_len = recv_len;
-  else {
-    connection.status = OperationStatus::SOCKET_RECV_ERROR;
-    result = false;
-    received_len = 0;
-  }
-
-  return result;
-}
-
 bool Downloader::receive_data(Connection& connection, Buffer& buffer)
 {
   bool result = true;
