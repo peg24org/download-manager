@@ -219,5 +219,4 @@ void Node::set_proxy(string proxy_url)
   this->proxy_url = proxy_url;
 }
 
-
 size_t Node::node_index = 0;

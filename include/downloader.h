@@ -11,7 +11,6 @@
 #include "writer.h"
 #include "file_io.h"
 #include "socket_ops.h"
-#include "download_state_manager.h"
 
 enum class OperationStatus {
   ERROR,
@@ -113,9 +112,6 @@ class Downloader : public Thread {
     std::map<size_t, Connection> connections;
     fd_set readfds;
     int number_of_connections;
-
-  private:
-    static DownloadStateManager* download_state_manager;
 };
 
 #endif

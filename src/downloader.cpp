@@ -17,8 +17,6 @@ using namespace std::chrono;
 const string Downloader::HTTP_HEADER =
     "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
 
-DownloadStateManager* Downloader::download_state_manager = nullptr;
-
 Downloader::Downloader(const struct DownloadSource& download_source)
   : download_source(download_source),
     number_of_connections(1)
