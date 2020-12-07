@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <functional>
 
 #include "node.h"
 #include "ftp_downloader.h"
@@ -65,10 +66,16 @@ void Node::run()
 
   downloader = make_downloader(move(writer));
 
+
+  // Create and register callback
+  CallBack callback = bind(&Node::on_data_received_node, this,
+                           placeholders::_1);
+  downloader->register_callback(callback);
+
   downloader->start();
+  downloader->join();
 
   check_download_state();
-  downloader->join();
 }
 
 void Node::check_url()
@@ -92,15 +99,8 @@ void Node::check_url()
 
 void Node::check_download_state()
 {
-  size_t total_received_bytes = 0;
-  // TODO use downloader status
-  while (total_received_bytes < file_length) {
-    this_thread::sleep_for(chrono::milliseconds(callback_refresh_interval));
-    total_received_bytes = download_state_manager->get_total_written_bytes();
-    on_data_received(total_received_bytes);
-  }
-  // Downloading finished
-  download_state_manager->remove_stat_file();
+  if (total_received_bytes < file_length)
+    download_state_manager->remove_stat_file();
 }
 
 unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
@@ -217,6 +217,16 @@ string Node::get_output_path(const string& optional_path,
 void Node::set_proxy(string proxy_url)
 {
   this->proxy_url = proxy_url;
+}
+
+void Node::on_data_received_node(size_t speed)
+{
+  size_t total_received_bytes = 0;
+  total_received_bytes = download_state_manager->get_total_written_bytes();
+  on_data_received(total_received_bytes, speed);
+
+  if (total_received_bytes >= file_length)
+    download_state_manager->remove_stat_file();
 }
 
 size_t Node::node_index = 0;

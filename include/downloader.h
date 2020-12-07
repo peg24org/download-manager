@@ -3,14 +3,17 @@
 
 #include <map>
 #include <vector>
+#include <functional>
 
 #include <openssl/bio.h>
 
-#include "http_proxy.h"
 #include "thread.h"
 #include "writer.h"
 #include "file_io.h"
 #include "socket_ops.h"
+#include "http_proxy.h"
+
+using CallBack = std::function<void(size_t)>;
 
 enum class OperationStatus {
   ERROR,
@@ -75,7 +78,10 @@ class Downloader : public Thread {
      *  it will return -1
      */
     virtual int check_link(std::string& redirect_url, size_t& size) = 0;
+
     void use_http_proxy(std::string proxy_host, uint16_t proxy_port);
+
+    void register_callback(CallBack callback);
 
   protected:
     bool regex_search_string(const std::string& input,
@@ -112,6 +118,9 @@ class Downloader : public Thread {
     std::map<size_t, Connection> connections;
     fd_set readfds;
     int number_of_connections;
+
+  private:
+    CallBack callback;
 };
 
 #endif

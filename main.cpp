@@ -32,11 +32,11 @@ string get_friendly_size_notation(size_t size)
 void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
-  cerr << "\t-h --help    Display this usage information." << endl
-       << "\t-n           number of connections" << endl
-       << "\t-o           output file name" << endl
-       << "\t-p --proxy   proxy address" << endl
-       << "\t-t --timeout timeout interval" << endl;
+  cerr << "\t-h --help         Display this usage information." << endl
+       << "\t-n                number of connections" << endl
+       << "\t-o                output file name" << endl
+       << "\t-p --proxy        proxy address" << endl
+       << "\t-t --timeout      timeout interval" << endl;
   exit(exit_code);
 }
 
@@ -47,19 +47,13 @@ class DownloadMngr : public Node
   size_t file_size = 0;
   size_t last_recv_bytes = 0;
 
-  void on_data_received(size_t received_bytes)
+  void on_data_received(size_t received_bytes, size_t speed)
   {
     float progress = (static_cast<float>(received_bytes) /
                       static_cast<float>(file_size)) * 100;
 
     cout << "\r" <<
       "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
-
-    static const float time_interval = callback_refresh_interval / 1000.0;
-    float speed = 0;
-    if (received_bytes != last_recv_bytes)
-      speed = (received_bytes - last_recv_bytes) / time_interval;
-    last_recv_bytes = received_bytes;
 
     cout << " Speed: " << setw(10) << get_friendly_size_notation(speed) << "/s";
     cout << "\tReceived: " << setw(10) <<
@@ -69,7 +63,6 @@ class DownloadMngr : public Node
       cout << endl;
     cout << flush;
   }
-
   void on_get_file_info(size_t node_index, size_t file_size,
                         const string& file_name)
   {
@@ -90,12 +83,12 @@ int main(int argc, char* argv[])
   int next_option;
   const char* const short_options = "hvo:n:t:p:";
   const struct option long_options[] = {
-    {"help",    0, nullptr, 'h'},
-    {"output",  1, nullptr, 'o'},
-    {"verbose", 0, nullptr, 'v'},
-    {"timeout", 1, nullptr, 't'},
-    {"proxy",   1, nullptr, 'p'},  // host:ip
-    {nullptr,      0, nullptr, 0}
+    {"help",        0, nullptr, 'h'},
+    {"output",      1, nullptr, 'o'},
+    {"verbose",     0, nullptr, 'v'},
+    {"timeout",     1, nullptr, 't'},
+    {"proxy",       1, nullptr, 'p'},  // host:ip
+    {nullptr,       0, nullptr, 0}
   };
   program_name = argv[0];
 

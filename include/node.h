@@ -19,11 +19,12 @@ class Node : public Thread {
 
     // Set proxy if proxy_url is not empty.
     void set_proxy(std::string proxy_url);
+
   protected:
     // callback refresh interval in milliseconds
     size_t callback_refresh_interval = 500;
 
-    virtual void on_data_received(size_t received_bytes) = 0;
+    virtual void on_data_received(size_t received_bytes, size_t speed) = 0;
 
   private:
     constexpr static char kCurrDir[] = "./";
@@ -40,6 +41,8 @@ class Node : public Thread {
     bool check_resume();
     std::string get_output_path(const std::string& optional_path,
                                 const std::string& source_name);
+
+    void on_data_received_node(size_t speed);
 
     std::unique_ptr<Downloader> downloader;
     ChunksCollection chunks_collection;

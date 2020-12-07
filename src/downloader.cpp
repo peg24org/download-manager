@@ -40,6 +40,11 @@ Downloader::Downloader(const struct DownloadSource& download_source,
   }
 }
 
+void Downloader::register_callback(CallBack callback)
+{
+  this->callback = callback;
+}
+
 void Downloader::run()
 {
   init_connections();
@@ -52,6 +57,12 @@ void Downloader::run()
 
   Buffer recv_buffer;
   const size_t kFileSize = writer->get_file_size();
+
+  // Speed parameters
+  size_t total_recv_bytes = 0;
+  size_t last_overall_recv_bytes = 0;
+  size_t speed = 0;
+  steady_clock::time_point last_recv_time_point = steady_clock::now();
 
   while (request_sent && (writer->get_total_written_bytes() < kFileSize)) {
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
@@ -66,10 +77,23 @@ void Downloader::run()
         receive_from_connection(index, recv_buffer);
         recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
+          // Write data
           size_t pos = connections[index].chunk.current_pos;
           writer->write(recv_buffer, pos, index);
           connections[index].chunk.current_pos += recvd_bytes;
           connections[index].last_recv_time_point = steady_clock::now();
+
+          // Speed computes
+          total_recv_bytes += recvd_bytes;
+          double duration = duration_cast<seconds>(
+              steady_clock::now() - last_recv_time_point).count();
+          if (duration > 0) {
+            double bytes_diff = total_recv_bytes - last_overall_recv_bytes;
+            speed = bytes_diff / duration;
+            last_recv_time_point = steady_clock::now();
+            last_overall_recv_bytes = total_recv_bytes;
+            callback(speed);
+          }
         }
       }   // End of for loop
     }   // End of else if
@@ -80,6 +104,8 @@ void Downloader::run()
     vector<int> timeout_indices = check_timeout();
     if (timeout_indices.size() > 0)
       retry(timeout_indices);
+
+    callback(speed);
   }   // End of while loop
 }   // End of downloader thread run()
 
