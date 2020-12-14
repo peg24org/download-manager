@@ -72,6 +72,7 @@ void Node::run()
                            placeholders::_1);
   downloader->register_callback(callback);
 
+  downloader->set_speed_limit(speed_limit);
   downloader->start();
   downloader->join();
 
@@ -217,6 +218,11 @@ string Node::get_output_path(const string& optional_path,
 void Node::set_proxy(string proxy_url)
 {
   this->proxy_url = proxy_url;
+}
+
+void Node::set_speed_limit(size_t speed_limit)
+{
+  this->speed_limit = speed_limit;
 }
 
 void Node::on_data_received_node(size_t speed)

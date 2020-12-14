@@ -20,6 +20,13 @@ class Node : public Thread {
     // Set proxy if proxy_url is not empty.
     void set_proxy(std::string proxy_url);
 
+    /**
+     * Set speed limit in bytes/second
+     *
+     * @param speed_limit Speed limit in bytes per second
+     */
+    void set_speed_limit(size_t speed_limit);
+
   protected:
     // callback refresh interval in milliseconds
     size_t callback_refresh_interval = 500;
@@ -63,6 +70,7 @@ class Node : public Thread {
     long int timeout;
 
     std::string proxy_url;
+    size_t speed_limit;
 };
 
 #endif

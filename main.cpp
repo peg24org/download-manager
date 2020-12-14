@@ -1,10 +1,9 @@
-#include <cmath>
+#include <getopt.h>
 
+#include <cmath>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
-
-#include <getopt.h>
 
 #include "node.h"
 
@@ -16,7 +15,7 @@ string get_friendly_size_notation(size_t size)
 {
   stringstream friendly_size;
 
-  friendly_size << setprecision(3);
+  friendly_size << setprecision(2);
   if (size > pow(2, 10) && size < pow(2, 20))    // KB
     friendly_size << fixed << static_cast<float>(size) / pow(2, 10) << " KB";
   else if (size > pow(2, 20) && size < pow(2, 30))    // MB
@@ -29,13 +28,30 @@ string get_friendly_size_notation(size_t size)
   return friendly_size.str();
 }
 
+string get_friendly_speed_notation(size_t size)
+{
+  stringstream friendly_size;
+
+  if (size > pow(2, 10) && size < pow(2, 20))    // KB
+    friendly_size << setprecision(0) << fixed << static_cast<float>(size) / pow(2, 10) << " KB";
+  else if (size > pow(2, 20) && size < pow(2, 30))    // MB
+    friendly_size << setprecision(1) << fixed << static_cast<float>(size) / pow(2, 20) << " MB";
+  else if (size > pow(2, 30) && size < pow(2, 40))    // GB
+    friendly_size << setprecision(2) << fixed << static_cast<float>(size) / pow(2, 30) << " GB";
+  else
+    friendly_size << size<< " B";
+
+  return friendly_size.str();
+}
+
 void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
-  cerr << "\t-h --help         Display this usage information." << endl
+  cerr << "\t-h --help         display this usage information." << endl
        << "\t-n                number of connections" << endl
        << "\t-o                output file name" << endl
        << "\t-p --proxy        proxy address" << endl
+       << "\t-l --speed_limit  download speed limit" << endl
        << "\t-t --timeout      timeout interval" << endl;
   exit(exit_code);
 }
@@ -55,12 +71,11 @@ class DownloadMngr : public Node
     cout << "\r" <<
       "Progress: " << fixed << setw(6) << setprecision(2) << progress << "%";
 
-    cout << " Speed: " << setw(10) << get_friendly_size_notation(speed) << "/s";
-    cout << "\tReceived: " << setw(10) <<
-            get_friendly_size_notation(received_bytes);
+    cout << " Speed: " << setw(10) << get_friendly_speed_notation(speed)
+         << "/s";
+    cout << "\tReceived: " << setw(10)
+         << get_friendly_size_notation(received_bytes);
 
-    if (progress >= 100)
-      cout << endl;
     cout << flush;
   }
   void on_get_file_info(size_t node_index, size_t file_size,
@@ -77,16 +92,18 @@ int main(int argc, char* argv[])
   string link;
   string optional_path;
   long int timeout{0};
+  size_t speed_limit{0};
   string proxy_url;
 
   //**************** get command line arguments ***************
   int next_option;
-  const char* const short_options = "hvo:n:t:p:";
+  const char* const short_options = "hvo:n:t:p:l:";
   const struct option long_options[] = {
     {"help",        0, nullptr, 'h'},
     {"output",      1, nullptr, 'o'},
     {"verbose",     0, nullptr, 'v'},
     {"timeout",     1, nullptr, 't'},
+    {"speed_limit", 1, nullptr, 'l'},
     {"proxy",       1, nullptr, 'p'},  // host:ip
     {nullptr,       0, nullptr, 0}
   };
@@ -108,6 +125,9 @@ int main(int argc, char* argv[])
         break;
       case 't':
         timeout = stoi(optarg);
+        break;
+      case 'l':
+        speed_limit= stoi(optarg);
         break;
       case 'p':
         proxy_url = optarg;
@@ -137,6 +157,7 @@ int main(int argc, char* argv[])
 
   if (!proxy_url.empty())
     node->set_proxy(proxy_url);
+  node->set_speed_limit(speed_limit);
   node->start();
   node->join();
 

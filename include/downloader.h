@@ -83,6 +83,7 @@ class Downloader : public Thread {
 
     void register_callback(CallBack callback);
 
+    void set_speed_limit(size_t speed_limit);
   protected:
     bool regex_search_string(const std::string& input,
                              const std::string& pattern,
@@ -121,6 +122,17 @@ class Downloader : public Thread {
 
   private:
     CallBack callback;
+
+    struct RateParams {
+      size_t limit = 0;
+      size_t speed = 0;
+      size_t total_recv_bytes = 0;
+      size_t total_limiter_bytes = 0;
+      size_t last_overall_recv_bytes = 0;
+      std::chrono::steady_clock::time_point last_recv_time_point;
+    } rate;
+
+    void rate_process(RateParams& rate, size_t recvd_bytes);
 };
 
 #endif

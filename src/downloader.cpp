@@ -1,11 +1,6 @@
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <unistd.h>
 
-#include <mutex>
 #include <regex>
-#include <cstdlib>
-#include <cassert>
 
 #include "node.h"
 #include "buffer.h"
@@ -45,6 +40,11 @@ void Downloader::register_callback(CallBack callback)
   this->callback = callback;
 }
 
+void Downloader::set_speed_limit(size_t speed_limit)
+{
+  rate.limit = speed_limit;
+}
+
 void Downloader::run()
 {
   init_connections();
@@ -58,11 +58,7 @@ void Downloader::run()
   Buffer recv_buffer;
   const size_t kFileSize = writer->get_file_size();
 
-  // Speed parameters
-  size_t total_recv_bytes = 0;
-  size_t last_overall_recv_bytes = 0;
-  size_t speed = 0;
-  steady_clock::time_point last_recv_time_point = steady_clock::now();
+  rate.last_recv_time_point = steady_clock::now();
 
   while (request_sent && (writer->get_total_written_bytes() < kFileSize)) {
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
@@ -83,17 +79,11 @@ void Downloader::run()
           connections[index].chunk.current_pos += recvd_bytes;
           connections[index].last_recv_time_point = steady_clock::now();
 
-          // Speed computes
-          total_recv_bytes += recvd_bytes;
-          double duration = duration_cast<seconds>(
-              steady_clock::now() - last_recv_time_point).count();
-          if (duration > 0) {
-            double bytes_diff = total_recv_bytes - last_overall_recv_bytes;
-            speed = bytes_diff / duration;
-            last_recv_time_point = steady_clock::now();
-            last_overall_recv_bytes = total_recv_bytes;
-            callback(speed);
-          }
+          rate.total_recv_bytes += recvd_bytes;
+
+          rate_process(rate, recvd_bytes);
+
+          callback(rate.speed);
         }
       }   // End of for loop
     }   // End of else if
@@ -105,7 +95,7 @@ void Downloader::run()
     if (timeout_indices.size() > 0)
       retry(timeout_indices);
 
-    callback(speed);
+    callback(rate.speed);
   }   // End of while loop
 }   // End of downloader thread run()
 
@@ -215,5 +205,30 @@ void Downloader::retry(const vector<int>& connection_indices)
     Connection& connection = connections[index];
     init_connection(connection);
     send_request(connection);
+  }
+}
+
+void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
+{
+  // Speed limit
+  if (rate.limit > 0) {
+    rate.total_limiter_bytes += recvd_bytes;
+    double limit_duration = duration_cast<milliseconds>(steady_clock::now() - rate.last_recv_time_point).count();
+    if (rate.total_limiter_bytes > rate.limit && limit_duration < 1000) {
+      const size_t delay = 1000 * ((static_cast<double>(rate.total_limiter_bytes)) / rate.limit);
+      this_thread::sleep_for(chrono::milliseconds(delay));
+      rate.total_limiter_bytes = 0;
+    }
+  }
+
+  // Speed computes
+  double duration = duration_cast<milliseconds>(
+      steady_clock::now() - rate.last_recv_time_point).count();
+  if (duration > 1000) {
+    double bytes_diff = rate.total_recv_bytes - rate.last_overall_recv_bytes;
+    rate.speed = (1000 * bytes_diff) / duration;
+    rate.last_recv_time_point = steady_clock::now();
+    rate.last_overall_recv_bytes = rate.total_recv_bytes;
+    rate.total_limiter_bytes = 0;
   }
 }
