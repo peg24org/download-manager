@@ -44,6 +44,41 @@ string get_friendly_speed_notation(size_t size)
   return friendly_size.str();
 }
 
+bool is_numeric(string& input)
+{
+  bool result = true;
+
+  for (char& c : input)
+    result &= isdigit(c);
+
+  return result;
+}
+size_t read_friendly_size_notation(string input)
+{
+  if (is_numeric(input))
+    return stoul(input);
+
+  size_t result = stoul(input.substr(0, input.size()-1));
+  char unit = input.back();
+
+  switch(unit) {
+    case 'K':
+    case 'k':
+      result *= pow(2, 10);
+      break;
+    case 'M':
+    case 'm':
+      result *= pow(2, 20);
+      break;
+    case 'G':
+    case 'g':
+      result *= pow(2, 30);
+      break;
+  }
+
+  return result;
+}
+
 void print_usage(int exit_code)
 {
   cerr << "Usage: "<< program_name << " options [ URL ]"<<endl;
@@ -51,7 +86,7 @@ void print_usage(int exit_code)
        << "\t-n                number of connections" << endl
        << "\t-o                output file name" << endl
        << "\t-p --proxy        proxy address" << endl
-       << "\t-l --speed_limit  download speed limit" << endl
+       << "\t-l --speed_limit  download speed limit. [prefixes:k, m, g]"<< endl
        << "\t-t --timeout      timeout interval" << endl;
   exit(exit_code);
 }
@@ -127,7 +162,7 @@ int main(int argc, char* argv[])
         timeout = stoi(optarg);
         break;
       case 'l':
-        speed_limit= stoi(optarg);
+        speed_limit = read_friendly_size_notation(optarg);
         break;
       case 'p':
         proxy_url = optarg;
