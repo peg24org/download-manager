@@ -54,8 +54,6 @@ class Node : public Thread {
     ChunksCollection chunks_collection;
     std::shared_ptr<DownloadStateManager> download_state_manager;
 
-    std::shared_ptr<FileIO> file_io;
-
     size_t file_length;
     size_t total_received_bytes;
     static size_t node_index; // index of node

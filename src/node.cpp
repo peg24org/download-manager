@@ -33,7 +33,7 @@ void Node::run()
 
   size_t trd_norm_len = file_length / number_of_connections;
 
-  file_io = make_shared<FileIO>(file_path);
+  shared_ptr<FileIO> file_io = make_shared<FileIO>(file_path);
 
   shared_ptr<FileIO> stat_file_io = make_unique<FileIO>("." + file_path + ".stat");
 
