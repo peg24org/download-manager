@@ -35,12 +35,11 @@ void Node::run()
 
   file_io = make_shared<FileIO>(file_path);
 
-  stat_file_io = make_unique<FileIO>("." + file_path + ".stat");
+  shared_ptr<FileIO> stat_file_io = make_unique<FileIO>("." + file_path + ".stat");
 
-  download_state_manager =
-    make_unique<DownloadStateManager>(move(stat_file_io));
+  download_state_manager = make_unique<DownloadStateManager>(stat_file_io);
 
-  if (check_resume()) { // Resuming download
+  if (stat_file_io->check_existence()) { // Resuming download
     chunks_collection = download_state_manager->get_download_chunks();
     file_io->open();
   }
@@ -171,17 +170,6 @@ unique_ptr<Downloader> Node::make_downloader()
   }
 
   return downloader_obj;
-}
-
-bool Node::check_resume()
-{
-  stat_file_io =
-    make_unique<FileIO>("." + file_path + ".stat");
-
-  if (!(stat_file_io->check_existence()))
-    return false;
-
-  return true;
 }
 
 string Node::get_output_path(const string& optional_path,

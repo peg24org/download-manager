@@ -4,7 +4,7 @@
 
 using namespace std;
 
-DownloadStateManager::DownloadStateManager(unique_ptr<FileIO> file_io)
+DownloadStateManager::DownloadStateManager(shared_ptr<FileIO> file_io)
   : file_io(move(file_io))
 {
 }

@@ -24,7 +24,7 @@ using ChunksCollection = std::unordered_map<size_t, DownloadChunk>;
 class DownloadStateManager
 {
   public:
-    DownloadStateManager(std::unique_ptr<FileIO> file_io);
+    DownloadStateManager(std::shared_ptr<FileIO> file_io);
 
     /**
      * Sets initial state of downloading
@@ -64,7 +64,7 @@ class DownloadStateManager
     void remove_stat_file();
 
   protected:
-    std::unique_ptr<FileIO> file_io;
+    std::shared_ptr<FileIO> file_io;
 
   private:
     void store();

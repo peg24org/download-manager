@@ -44,8 +44,7 @@ class Node : public Thread {
     void check_url();
     void check_download_state();
     DownloadSource make_download_source(UrlOps& url_ops);
-    // Checks the downloading file existence and its LOG file.
-    bool check_resume();
+
     std::string get_output_path(const std::string& optional_path,
                                 const std::string& source_name);
 
@@ -56,7 +55,6 @@ class Node : public Thread {
     std::shared_ptr<DownloadStateManager> download_state_manager;
 
     std::shared_ptr<FileIO> file_io;
-    std::unique_ptr<FileIO> stat_file_io;
 
     size_t file_length;
     size_t total_received_bytes;
