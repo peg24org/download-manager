@@ -20,6 +20,7 @@ Node::Node(const string& url, const string& optional_path,
   , optional_path(optional_path)
   , number_of_connections(number_of_connections)
   , timeout(timeout)
+  , resume(false)
 {
   ++node_index;
 }
@@ -39,7 +40,7 @@ void Node::run()
 
   download_state_manager = make_unique<DownloadStateManager>(stat_file_io);
 
-  if (stat_file_io->check_existence()) { // Resuming download
+  if (resume && stat_file_io->check_existence()) { // Resuming download
     chunks_collection = download_state_manager->get_download_chunks();
     file_io->open();
   }
@@ -211,6 +212,11 @@ void Node::set_proxy(string proxy_url)
 void Node::set_speed_limit(size_t speed_limit)
 {
   this->speed_limit = speed_limit;
+}
+
+void Node::set_resume(bool resume)
+{
+  this->resume = resume;
 }
 
 void Node::on_data_received_node(size_t speed)

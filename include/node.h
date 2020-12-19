@@ -27,6 +27,14 @@ class Node : public Thread {
      */
     void set_speed_limit(size_t speed_limit);
 
+    /**
+     * Resume download.
+     *
+     * @param resume True: for resuming download, False: for new downloading.
+     *    Default is False.
+     */
+    void set_resume(bool resume);
+
   protected:
     // callback refresh interval in milliseconds
     size_t callback_refresh_interval = 500;
@@ -67,6 +75,7 @@ class Node : public Thread {
 
     std::string proxy_url;
     size_t speed_limit;
+    bool resume;
 };
 
 #endif

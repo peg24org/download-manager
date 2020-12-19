@@ -85,6 +85,7 @@ void print_usage(int exit_code)
   cerr << "\t-h --help         display this usage information." << endl
        << "\t-n                number of connections" << endl
        << "\t-o                output file name" << endl
+       << "\t-c                download continue" << endl
        << "\t-p --proxy        proxy address" << endl
        << "\t-l --speed_limit  download speed limit. [prefixes:k, m, g]"<< endl
        << "\t-t --timeout      timeout interval" << endl;
@@ -129,13 +130,15 @@ int main(int argc, char* argv[])
   long int timeout{0};
   size_t speed_limit{0};
   string proxy_url;
+  bool download_continue = false;
 
   //**************** get command line arguments ***************
   int next_option;
-  const char* const short_options = "ho:n:t:p:l:";
+  const char* const short_options = "hco:n:t:p:l:";
   const struct option long_options[] = {
     {"help",        0, nullptr, 'h'},
     {"output",      1, nullptr, 'o'},
+    {"continue",    0, nullptr, 'c'},
     {"timeout",     1, nullptr, 't'},
     {"speed_limit", 1, nullptr, 'l'},
     {"proxy",       1, nullptr, 'p'},  // host:ip
@@ -156,6 +159,9 @@ int main(int argc, char* argv[])
         break;
       case 'o':
         optional_path = optarg;
+        break;
+      case 'c':
+        download_continue = true;
         break;
       case 't':
         timeout = stoi(optarg);
@@ -192,6 +198,7 @@ int main(int argc, char* argv[])
   if (!proxy_url.empty())
     node->set_proxy(proxy_url);
   node->set_speed_limit(speed_limit);
+  node->set_resume(download_continue);
   node->start();
   node->join();
 
