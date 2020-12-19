@@ -74,10 +74,9 @@ void Downloader::run()
         recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
           // Write data
-          size_t pos = connections[index].chunk.current_pos;
+          size_t pos = update_connection_stat(connections[index], recvd_bytes);
+
           writer->write(recv_buffer, pos, index);
-          connections[index].chunk.current_pos += recvd_bytes;
-          connections[index].last_recv_time_point = steady_clock::now();
 
           rate.total_recv_bytes += recvd_bytes;
 
@@ -161,7 +160,7 @@ bool Downloader::init_connections()
 
 bool Downloader::init_connection(Connection& connection)
 {
-  int result;
+  bool result;
   if (!download_source.proxy_ip.empty()) {
     connection.socket_ops = make_unique<SocketOps>(download_source.proxy_ip,
                                                    download_source.proxy_port);
@@ -231,4 +230,15 @@ void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
     rate.last_overall_recv_bytes = rate.total_recv_bytes;
     rate.total_limiter_bytes = 0;
   }
+}
+
+
+size_t Downloader::update_connection_stat(Connection& connection,
+                                          size_t recvd_bytes)
+{
+  size_t pos = connection.chunk.current_pos;
+  connection.chunk.current_pos += recvd_bytes;
+  connection.last_recv_time_point = steady_clock::now();
+
+  return pos;
 }

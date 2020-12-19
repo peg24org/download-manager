@@ -133,6 +133,8 @@ class Downloader : public Thread {
     } rate;
 
     void rate_process(RateParams& rate, size_t recvd_bytes);
+
+    size_t update_connection_stat(Connection& connection, size_t recvd_bytes);
 };
 
 #endif
