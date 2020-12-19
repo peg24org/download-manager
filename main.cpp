@@ -132,11 +132,10 @@ int main(int argc, char* argv[])
 
   //**************** get command line arguments ***************
   int next_option;
-  const char* const short_options = "hvo:n:t:p:l:";
+  const char* const short_options = "ho:n:t:p:l:";
   const struct option long_options[] = {
     {"help",        0, nullptr, 'h'},
     {"output",      1, nullptr, 'o'},
-    {"verbose",     0, nullptr, 'v'},
     {"timeout",     1, nullptr, 't'},
     {"speed_limit", 1, nullptr, 'l'},
     {"proxy",       1, nullptr, 'p'},  // host:ip
