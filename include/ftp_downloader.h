@@ -16,7 +16,7 @@ class FtpDownloader : public Downloader {
                 std::unique_ptr<Writer> writer,
                 ChunksCollection& chunks_collection,
                 time_t timeout_seconds,
-                int number_of_connections=1);
+                int number_of_parts=1);
 
   int check_link(std::string& redirected_url, size_t& file_size) override;
 

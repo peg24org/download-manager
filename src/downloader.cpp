@@ -14,7 +14,7 @@ const string Downloader::HTTP_HEADER =
 
 Downloader::Downloader(const struct DownloadSource& download_source)
   : download_source(download_source),
-    number_of_connections(1)
+    number_of_parts(1)
 {
 }
 
@@ -22,12 +22,12 @@ Downloader::Downloader(const struct DownloadSource& download_source,
                        std::unique_ptr<Writer> writer,
                        const ChunksCollection& chunks_collection,
                        time_t timeout_seconds,
-                       int number_of_connections)
+                       int number_of_parts)
   : download_source(download_source)
   , writer(move(writer))
   , chunks_collection(chunks_collection)
   , timeout_seconds(timeout_seconds)
-  , number_of_connections(number_of_connections)
+  , number_of_parts(number_of_parts)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
@@ -154,7 +154,7 @@ bool Downloader::send_data(const Connection& connection, const Buffer& buffer)
 bool Downloader::init_connections()
 {
   bool result = true;
-  for (int index = 0; index < number_of_connections; ++index)
+  for (int index = 0; index < number_of_parts; ++index)
     result &= init_connection(connections[index]);
   return result;
 }

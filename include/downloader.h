@@ -65,7 +65,7 @@ class Downloader : public Thread {
                std::unique_ptr<Writer> writer,
                const ChunksCollection& chunks_collection,
                time_t timeout_seconds,
-               int number_of_connections=1);
+               int number_of_parts=1);
 
     /**
      * Check the size of file and redirection
@@ -118,7 +118,7 @@ class Downloader : public Thread {
     time_t timeout_seconds;
     std::map<size_t, Connection> connections;
     fd_set readfds;
-    int number_of_connections;
+    int number_of_parts;
 
   private:
     CallBack callback;

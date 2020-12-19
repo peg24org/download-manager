@@ -124,7 +124,7 @@ class DownloadMngr : public Node
 
 int main(int argc, char* argv[])
 {
-  short int number_of_connections{1};
+  short int number_of_parts{1};
   string link;
   string optional_path;
   long int timeout{0};
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
       case 'h':
         print_usage(0);
       case 'n':
-        number_of_connections = stoi(optarg);
+        number_of_parts = stoi(optarg);
         break;
       case 'o':
         optional_path = optarg;
@@ -190,10 +190,9 @@ int main(int argc, char* argv[])
 
   if (timeout)
     node = make_unique<DownloadMngr>(link, optional_path,
-                                     number_of_connections, timeout);
+                                     number_of_parts, timeout);
   else
-    node = make_unique<DownloadMngr>(link, optional_path,
-                                     number_of_connections);
+    node = make_unique<DownloadMngr>(link, optional_path, number_of_parts);
 
   if (!proxy_url.empty())
     node->set_proxy(proxy_url);

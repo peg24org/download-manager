@@ -15,10 +15,10 @@
 using namespace std;
 
 Node::Node(const string& url, const string& optional_path,
-           uint16_t number_of_connections, long int timeout)
+           uint16_t number_of_parts, long int timeout)
   : url_ops(url)
   , optional_path(optional_path)
-  , number_of_connections(number_of_connections)
+  , number_of_parts(number_of_parts)
   , timeout(timeout)
   , resume(false)
 {
@@ -32,7 +32,7 @@ void Node::run()
   on_get_file_info(node_index, file_length, download_source.file_name);
   file_path = get_output_path(optional_path, download_source.file_name);
 
-  size_t trd_norm_len = file_length / number_of_connections;
+  size_t trd_norm_len = file_length / number_of_parts;
 
   shared_ptr<FileIO> file_io = make_shared<FileIO>(file_path);
 
@@ -46,10 +46,10 @@ void Node::run()
   }
   else {  // Not resuming download, create chunks collection
     file_io->create(file_length);
-    for (int i = 0; i < number_of_connections; i++) {
+    for (int i = 0; i < number_of_parts; i++) {
       size_t start_position = i * trd_norm_len;
       size_t length = trd_norm_len;
-      if (i == (number_of_connections - 1)) {
+      if (i == (number_of_parts - 1)) {
         length = file_length - (trd_norm_len * i);
         start_position = i * trd_norm_len;
       }
@@ -114,21 +114,21 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
                                                    move(writer),
                                                    chunks_collection,
                                                    timeout,
-                                                   number_of_connections);
+                                                   number_of_parts);
       break;
     case Protocol::HTTPS:
       downloader_obj = make_unique<HttpsDownloader>(download_source,
                                                     move(writer),
                                                     chunks_collection,
                                                     timeout,
-                                                    number_of_connections);
+                                                    number_of_parts);
       break;
     case Protocol::FTP:
       downloader_obj = make_unique<FtpDownloader>(download_source,
                                                   move(writer),
                                                   chunks_collection,
                                                   timeout,
-                                                  number_of_connections);
+                                                  number_of_parts);
       break;
   }
 

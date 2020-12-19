@@ -21,9 +21,9 @@ FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
                              std::unique_ptr<Writer> writer,
                              ChunksCollection& chunks_collection,
                              long int timeout,
-                             int number_of_connections)
+                             int number_of_parts)
   : Downloader(download_source, move(writer), chunks_collection, timeout,
-               number_of_connections)
+               number_of_parts)
 {
   for (auto chunk : chunks_collection) {
     connections[chunk.first].chunk = chunk.second;
