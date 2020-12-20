@@ -79,12 +79,12 @@ void Downloader::run()
           writer->write(recv_buffer, pos, index);
 
           rate.total_recv_bytes += recvd_bytes;
-
           rate_process(rate, recvd_bytes);
 
           callback(rate.speed);
         }
       }   // End of for loop
+      survey_connections();
     }   // End of else if
     else {    // Timeout
       // TODO: handle this
@@ -161,23 +161,34 @@ bool Downloader::init_connections()
 bool Downloader::init_connection(Connection& connection)
 {
   bool result;
-  if (!download_source.proxy_ip.empty()) {
-    connection.socket_ops = make_unique<SocketOps>(download_source.proxy_ip,
-                                                   download_source.proxy_port);
-    result = connection.socket_ops->connect();
-    // TODO: handle return result.
-    int socket_descriptor = connection.socket_ops->get_socket_descriptor();
-    connection.http_proxy = make_unique<HttpProxy>(download_source.host_name,
-                                                   download_source.port);
-    connection.http_proxy->connect(socket_descriptor);
-  }
-  else {
-    connection.socket_ops = make_unique<SocketOps>(download_source.ip,
-                                                   download_source.port);
-    result = connection.socket_ops->connect();
-  }
+  if (!connection.finished) {
+    if (!download_source.proxy_ip.empty()) {
 
-  connection.header_skipped = false;
+      const string& kProxyIp = download_source.proxy_ip;
+      uint16_t proxy_port = download_source.proxy_port;
+
+      connection.socket_ops = make_unique<SocketOps>(kProxyIp, proxy_port);
+      result = connection.socket_ops->connect();
+      // TODO: handle return result.
+      int socket_descriptor = connection.socket_ops->get_socket_descriptor();
+      string& host_name = download_source.host_name;
+      uint16_t source_port = download_source.port;
+
+      connection.http_proxy = make_unique<HttpProxy>(host_name, source_port);
+      connection.http_proxy->connect(socket_descriptor);
+    }
+    else {
+      const string& kSourceIp = download_source.ip;
+      uint16_t port = download_source.port;
+
+      connection.socket_ops = make_unique<SocketOps>(kSourceIp, port);
+      result = connection.socket_ops->connect();
+    }
+
+    connection.header_skipped = false;
+  }
+  else
+    result = true;
 
   return result;
 }
@@ -241,4 +252,14 @@ size_t Downloader::update_connection_stat(Connection& connection,
   connection.last_recv_time_point = steady_clock::now();
 
   return pos;
+}
+
+void Downloader::survey_connections()
+{
+  // Check if downloading part finished.
+  for (auto& [index, connection] : connections)
+    // In ftp connection current_pos may be greater than end_pos
+    if (!connection.finished &&
+        connection.chunk.current_pos >= connection.chunk.end_pos)
+      connection.finished = true;
 }

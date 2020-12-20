@@ -173,6 +173,11 @@ int HttpDownloader::set_descriptors()
 void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
 {
   Connection& connection = connections[index];
+  if (connection.finished) {
+    buffer.set_length(0);
+    return;
+  }
+
   buffer.clear();
   int sock_desc = connection.socket_ops->get_socket_descriptor();
 

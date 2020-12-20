@@ -39,6 +39,7 @@ struct Connection {
     , last_recv_time_point(std::chrono::steady_clock::now())
     , http_proxy(nullptr)
     , header_skipped(false)
+    , finished(false)
   {
   }
 
@@ -54,6 +55,7 @@ struct Connection {
   std::string temp_http_header;
   std::unique_ptr<HttpProxy> http_proxy;
   bool header_skipped;
+  bool finished;
 };
 
 class Downloader : public Thread {
@@ -135,6 +137,8 @@ class Downloader : public Thread {
     void rate_process(RateParams& rate, size_t recvd_bytes);
 
     size_t update_connection_stat(Connection& connection, size_t recvd_bytes);
+
+    void survey_connections();
 };
 
 #endif
