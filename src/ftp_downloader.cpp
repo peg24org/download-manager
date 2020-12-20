@@ -215,8 +215,9 @@ int FtpDownloader::set_descriptors()
 {
   int max_fd = 0;
   FD_ZERO(&readfds);
-  for (size_t index = 0; index < connections.size(); ++index) {
-    const Connection& connection = connections[index];
+  for (auto& [index, connection] : connections) {
+    if (connection.finished)
+      continue;
     size_t current_pos = connection.chunk.current_pos;
     size_t end_pos = connection.chunk.end_pos;
     // Check if chunk is completed
