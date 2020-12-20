@@ -161,8 +161,10 @@ int HttpDownloader::set_descriptors()
   int max_fd = 0;
   FD_ZERO(&readfds);
 
-  for (size_t index = 0; index < connections.size(); ++index) {
-    int sock_desc = connections[index].socket_ops->get_socket_descriptor();
+  for (auto& [index, connection] : connections) {
+    if (connection.finished)
+      continue;
+    int sock_desc = connection.socket_ops->get_socket_descriptor();
     FD_SET(sock_desc, &readfds);
     max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
   }
