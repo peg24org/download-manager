@@ -19,11 +19,11 @@ FtpDownloader::FtpDownloader(const struct DownloadSource& download_source)
 }
 
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
-                             unique_ptr<Writer> writer,
+                             unique_ptr<FileIO> file_io,
                              shared_ptr<StateManager> state_manager,
                              long int timeout,
                              int number_of_parts)
-  : Downloader(download_source, move(writer), state_manager, timeout,
+  : Downloader(download_source, move(file_io), state_manager, timeout,
                number_of_parts)
 {
 }
@@ -183,7 +183,6 @@ bool FtpDownloader::send_request(Connection& connection)
 
   const size_t kCurrentPos = connection.chunk_.current;
   const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
-  cerr << "REQ:" << kRestCommand << endl;
   if (!send_ftp_command(connection, kRestCommand, reply)) {
     cerr << "Error occurred: " << reply << endl;
     result = false;

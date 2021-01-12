@@ -32,7 +32,7 @@ void Node::run()
   on_get_file_info(node_index, file_length, download_source.file_name);
   file_path = get_output_path(optional_path, download_source.file_name);
 
-  shared_ptr<FileIO> file_io = make_shared<FileIO>(file_path);
+  unique_ptr<FileIO> file_io = make_unique<FileIO>(file_path);
 
   shared_ptr<FileIO> stat_file_io = make_unique<FileIO>("." + file_path + ".stat");
 
@@ -51,9 +51,7 @@ void Node::run()
   if (number_of_parts == 1)
     state_manager->set_chunk_size(file_length);
 
-  unique_ptr<Writer> writer = make_unique<Writer>(file_io);
-
-  downloader = make_downloader(move(writer));
+  downloader = make_downloader(move(file_io));
 
 
   // Create and register callback
@@ -85,28 +83,28 @@ void Node::check_url()
   }
 }
 
-unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
+unique_ptr<Downloader> Node::make_downloader(unique_ptr<FileIO> file_io)
 {
   unique_ptr<Downloader> downloader_obj;
 
   switch(download_source.protocol) {
     case Protocol::HTTP:
       downloader_obj = make_unique<HttpDownloader>(download_source,
-                                                   move(writer),
+                                                   move(file_io),
                                                    state_manager,
                                                    timeout,
                                                    number_of_parts);
       break;
     case Protocol::HTTPS:
       downloader_obj = make_unique<HttpsDownloader>(download_source,
-                                                    move(writer),
+                                                    move(file_io),
                                                     state_manager,
                                                     timeout,
                                                     number_of_parts);
       break;
     case Protocol::FTP:
       downloader_obj = make_unique<FtpDownloader>(download_source,
-                                                  move(writer),
+                                                  move(file_io),
                                                   state_manager,
                                                   timeout,
                                                   number_of_parts);

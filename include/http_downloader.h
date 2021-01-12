@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "node.h"
-#include "writer.h"
 #include "downloader.h"
 
 class HttpDownloader : public Downloader {

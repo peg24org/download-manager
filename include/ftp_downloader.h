@@ -5,7 +5,7 @@
 
 #include "node.h"
 #include "buffer.h"
-#include "writer.h"
+#include "file_io.h"
 #include "downloader.h"
 
 class FtpDownloader : public Downloader {
@@ -13,7 +13,7 @@ class FtpDownloader : public Downloader {
   FtpDownloader(const struct DownloadSource& download_source);
 
   FtpDownloader(const struct DownloadSource& download_source,
-                std::unique_ptr<Writer> writer,
+                std::unique_ptr<FileIO> file_io,
                 std::shared_ptr<StateManager> state_manager,
                 time_t timeout_seconds,
                 int number_of_parts=1);

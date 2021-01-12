@@ -8,7 +8,6 @@
 #include <openssl/bio.h>
 
 #include "thread.h"
-#include "writer.h"
 #include "file_io.h"
 #include "socket_ops.h"
 #include "http_proxy.h"
@@ -74,7 +73,7 @@ class Downloader : public Thread {
     Downloader(const struct DownloadSource& download_source);
 
     Downloader(const struct DownloadSource& download_source,
-               std::unique_ptr<Writer> writer,
+               std::unique_ptr<FileIO> file_io,
                std::shared_ptr<StateManager> state_manager,
                time_t timeout_seconds,
                int number_of_parts=1);
@@ -136,7 +135,7 @@ class Downloader : public Thread {
 
     struct DownloadSource download_source;
 
-    std::unique_ptr<Writer> writer;
+    std::unique_ptr<FileIO> file_io;
     std::shared_ptr<StateManager> state_manager;
     time_t timeout_seconds;
     // <index, connection> [index: same as part index]

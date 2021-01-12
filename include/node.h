@@ -45,7 +45,7 @@ class Node : public Thread {
     constexpr static char kCurrDir[] = "./";
     constexpr static time_t DEFAULT_TIMEOUT_SECONDS = 10;
 
-    std::unique_ptr<Downloader> make_downloader(std::unique_ptr<Writer> writer);
+    std::unique_ptr<Downloader> make_downloader(std::unique_ptr<FileIO> file_io);
     std::unique_ptr<Downloader> make_downloader();
 
     void run();

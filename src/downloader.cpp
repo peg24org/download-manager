@@ -19,12 +19,12 @@ Downloader::Downloader(const struct DownloadSource& download_source)
 }
 
 Downloader::Downloader(const struct DownloadSource& download_source,
-                       unique_ptr<Writer> writer,
+                       unique_ptr<FileIO> file_io,
                        shared_ptr<StateManager> state_manager,
                        time_t timeout_seconds,
                        int number_of_parts)
   : download_source(download_source)
-  , writer(move(writer))
+  , file_io(move(file_io))
   , state_manager(state_manager)
   , timeout_seconds(timeout_seconds)
   , number_of_parts(number_of_parts)
@@ -75,7 +75,7 @@ void Downloader::run()
         if (recvd_bytes) {
           // Write data
           size_t pos = connection.chunk_.current;
-          writer->write(recv_buffer, pos);
+          file_io->write(recv_buffer, pos);
 
           update_connection_stat(recvd_bytes, index);
           rate.total_recv_bytes += recvd_bytes;
