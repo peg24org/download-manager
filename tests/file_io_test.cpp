@@ -43,7 +43,7 @@ TEST_F(FileIOTest, file_should_be_exist_after_calling_create_function)
 
 TEST_F(FileIOTest, file_io_should_throw_exception_if_is_not_open)
 {
-  EXPECT_THROW(reader.get_file_contents(), std::runtime_error);
+  EXPECT_THROW(reader.get_file_contents(), runtime_error);
 }
 
 TEST_F(FileIOTest, writer_file_length_should_be_same_reader_file_length)

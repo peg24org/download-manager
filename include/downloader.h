@@ -12,6 +12,7 @@
 #include "file_io.h"
 #include "socket_ops.h"
 #include "http_proxy.h"
+#include "state_manager.h"
 
 using CallBack = std::function<void(size_t)>;
 
@@ -39,12 +40,20 @@ struct Connection {
     , last_recv_time_point(std::chrono::steady_clock::now())
     , http_proxy(nullptr)
     , header_skipped(false)
-    , finished(false)
+    , inited(false)
+    , request_sent(false)
   {
   }
 
+  enum class Status {
+    FAILED,
+    SUCCEED,
+    REJECTED,
+    NEW_PART_NOT_AVAILABLE
+  };
+
   OperationStatus status;
-  struct DownloadChunk chunk;
+  Chunk chunk_;
   BIO* bio;
   SSL* ssl;
   // Used for http, https and ftp command channel.
@@ -55,7 +64,8 @@ struct Connection {
   std::string temp_http_header;
   std::unique_ptr<HttpProxy> http_proxy;
   bool header_skipped;
-  bool finished;
+  bool inited;
+  bool request_sent;
 };
 
 class Downloader : public Thread {
@@ -65,7 +75,7 @@ class Downloader : public Thread {
 
     Downloader(const struct DownloadSource& download_source,
                std::unique_ptr<Writer> writer,
-               const ChunksCollection& chunks_collection,
+               std::shared_ptr<StateManager> state_manager,
                time_t timeout_seconds,
                int number_of_parts=1);
 
@@ -86,10 +96,14 @@ class Downloader : public Thread {
     void register_callback(CallBack callback);
 
     void set_speed_limit(size_t speed_limit);
+
+    void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
+
   protected:
     bool regex_search_string(const std::string& input,
                              const std::string& pattern,
                              std::string& output, int pos_of_pattern = 2);
+
     bool regex_search_string(const std::string& input,
                              const std::string& pattern);
 
@@ -108,22 +122,32 @@ class Downloader : public Thread {
     virtual void receive_from_connection(size_t index, Buffer& buffer) = 0;
 
     virtual bool init_connections();
+
     virtual bool init_connection(Connection& connection);
+
+    virtual Connection::Status create_connection(bool info_connection=false);
+
     virtual std::vector<int> check_timeout();
     // Retry download in connections
     virtual void retry(const std::vector<int>& connection_indices);
 
+    virtual std::unique_ptr<SocketOps>
+       build_socket(const DownloadSource& download_source, bool proxy=false);
+
     struct DownloadSource download_source;
 
     std::unique_ptr<Writer> writer;
-    ChunksCollection chunks_collection;
+    std::shared_ptr<StateManager> state_manager;
     time_t timeout_seconds;
+    // <index, connection> [index: same as part index]
     std::map<size_t, Connection> connections;
     fd_set readfds;
     int number_of_parts;
 
   private:
     CallBack callback;
+    // <index, chunk>
+    std::queue<std::pair<size_t, Chunk>> initial_parts;
 
     struct RateParams {
       size_t limit = 0;
@@ -136,7 +160,7 @@ class Downloader : public Thread {
 
     void rate_process(RateParams& rate, size_t recvd_bytes);
 
-    size_t update_connection_stat(Connection& connection, size_t recvd_bytes);
+    void update_connection_stat(size_t recvd_bytes, size_t index);
 
     void survey_connections();
 };

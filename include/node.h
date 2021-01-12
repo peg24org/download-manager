@@ -7,7 +7,7 @@
 #include "file_io.h"
 #include "url_ops.h"
 #include "downloader.h"
-#include "download_state_manager.h"
+#include "state_manager.h"
 
 class Node : public Thread {
   public:
@@ -59,8 +59,7 @@ class Node : public Thread {
     void on_data_received_node(size_t speed);
 
     std::unique_ptr<Downloader> downloader;
-    ChunksCollection chunks_collection;
-    std::shared_ptr<DownloadStateManager> download_state_manager;
+    std::shared_ptr<StateManager> state_manager;
 
     size_t file_length;
     size_t total_received_bytes;

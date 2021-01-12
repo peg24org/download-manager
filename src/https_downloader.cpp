@@ -19,6 +19,7 @@ HttpsDownloader::~HttpsDownloader()
 HttpsDownloader::HttpsDownloader(const struct DownloadSource& download_source)
   : HttpDownloader(download_source)
 {
+  create_connection(true);
 }
 
 SSL* HttpsDownloader::get_ssl(BIO* bio)
@@ -87,4 +88,23 @@ bool HttpsDownloader::init_connection(Connection& connection)
 
     connection.socket_ops = make_unique<HttpsSocketOps>(host, port);
     return connection.socket_ops->connect();
+}
+
+unique_ptr<SocketOps>
+  HttpsDownloader::build_socket(const DownloadSource& download_source,
+                                bool proxy)
+{
+  string host;
+  uint16_t port;
+
+  if (!proxy) {
+    host = download_source.host_name;
+    port = download_source.port;
+  }
+  else {
+    host = download_source.proxy_ip;
+    port = download_source.proxy_port;
+  }
+
+  return make_unique<HttpsSocketOps>(host, port);
 }

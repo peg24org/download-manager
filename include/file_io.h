@@ -43,11 +43,13 @@ class FileIO {
      */
     virtual void write(const Buffer& buffer, size_t position=0);
 
-    virtual bool check_existence();
+    virtual bool check_existence() const;
+
     virtual PathType check_path_type();
 
     /**
      * Returns one line of file.
+     *
      * @param line_number Line number of file to get
      * @throws std::runtime_error Thrown if 'open' function is not called
      * @return One line of file

@@ -51,7 +51,7 @@ void FileIO::write(const Buffer& buffer, size_t position)
   write(const_cast<Buffer&>(buffer), buffer.length(), position);
 }
 
-bool FileIO::check_existence()
+bool FileIO::check_existence() const
 {
   struct stat stat_buf;
   return stat(path.c_str(), &stat_buf) == 0;

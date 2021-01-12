@@ -15,27 +15,22 @@ using namespace std;
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source)
   : Downloader(download_source)
 {
+  create_connection(true);
 }
 
 FtpDownloader::FtpDownloader(const struct DownloadSource& download_source,
-                             std::unique_ptr<Writer> writer,
-                             ChunksCollection& chunks_collection,
+                             unique_ptr<Writer> writer,
+                             shared_ptr<StateManager> state_manager,
                              long int timeout,
                              int number_of_parts)
-  : Downloader(download_source, move(writer), chunks_collection, timeout,
+  : Downloader(download_source, move(writer), state_manager, timeout,
                number_of_parts)
 {
-  for (auto chunk : chunks_collection) {
-    connections[chunk.first].chunk = chunk.second;
-    connections[chunk.first].status = OperationStatus::NOT_STARTED;
-  }
 }
 
 int FtpDownloader::check_link(string& redirected_url, size_t& size)
 {
-  if (!init_connections())
-    return -1;
-  ftp_init();
+  ftp_init(connections[0]);
 
   string reply;
   const string command = "SIZE " + download_source.file_name + "\r\n";
@@ -186,8 +181,9 @@ bool FtpDownloader::send_request(Connection& connection)
   uint16_t port = ip_port_pair.second;
   open_data_channel(connection, ip, port);
 
-  const size_t kCurrentPos = connection.chunk.current_pos;
+  const size_t kCurrentPos = connection.chunk_.current;
   const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
+  cerr << "REQ:" << kRestCommand << endl;
   if (!send_ftp_command(connection, kRestCommand, reply)) {
     cerr << "Error occurred: " << reply << endl;
     result = false;
@@ -198,6 +194,7 @@ bool FtpDownloader::send_request(Connection& connection)
     cerr << "Error occurred: " << reply << endl;
     result = false;
   }
+  connection.request_sent = true;
 
   return result;
 }
@@ -205,8 +202,9 @@ bool FtpDownloader::send_request(Connection& connection)
 bool FtpDownloader::send_requests()
 {
   bool result = true;
-  for (size_t index = 0; index < connections.size(); ++index)
-    result &= send_request(connections[index]);
+  for (auto& [index, connection] : connections)
+    if (!connection.request_sent)
+      result &= send_request(connection);
 
   return result;
 }
@@ -216,10 +214,8 @@ int FtpDownloader::set_descriptors()
   int max_fd = 0;
   FD_ZERO(&readfds);
   for (auto& [index, connection] : connections) {
-    if (connection.finished)
-      continue;
-    size_t current_pos = connection.chunk.current_pos;
-    size_t end_pos = connection.chunk.end_pos;
+    size_t current_pos = connection.chunk_.current;
+    size_t end_pos = connection.chunk_.end;
     // Check if chunk is completed
     if (current_pos < end_pos) {
       int sock_desc = connection.ftp_media_socket_ops->get_socket_descriptor();
@@ -241,11 +237,11 @@ void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
     ftp_receive_data(connection, buffer);
 
     // Correct length of last received part for each chunk.
-    size_t end_pos = connection.chunk.end_pos;
-    size_t current_pos = connection.chunk.current_pos;
+    size_t end_pos = connection.chunk_.end;
+    size_t current_pos = connection.chunk_.current;
     int64_t redundant_bytes = current_pos + buffer.length() - end_pos;
     if (redundant_bytes > 0) {
-      size_t new_length = buffer.length() - (redundant_bytes - 1);
+      size_t new_length = buffer.length() - redundant_bytes;
       buffer.set_length(new_length);
     }
   }

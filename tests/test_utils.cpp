@@ -7,6 +7,13 @@
 
 using namespace std;
 
+FileIOMock::FileIOMock()
+  : FileIO("NEVER_CREATING_FILE_NAME")
+  , file_opened(false)
+  , existence(false)
+{
+}
+
 void FileIOMock::create(size_t file_length)
 {
   file_buffer = make_unique<char[]>(file_length);
@@ -28,6 +35,21 @@ char* FileIOMock::get_file_buffer()
   return file_buffer.get();
 }
 
+bool FileIOMock::check_existence() const
+{
+  return existence;
+}
+
+void FileIOMock::set_existence(bool input)
+{
+  existence = input;
+}
+
+string FileIOMock::get_file_contents()
+{
+  return string(file_buffer.get());
+}
+
 void StatFileIOMock::write(const char* buffer, size_t length, size_t position)
 {
   file_contents.replace(position, length, buffer);
@@ -36,7 +58,7 @@ void StatFileIOMock::write(const char* buffer, size_t length, size_t position)
 string StatFileIOMock::get_file_contents()
 {
   if (!file_opened)
-    throw std::runtime_error("FileIO is not open.");
+    throw std::runtime_error("StatFileIO is not open.");
   return file_contents;
 }
 

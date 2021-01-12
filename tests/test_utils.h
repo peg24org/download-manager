@@ -10,15 +10,19 @@
 class FileIOMock : public FileIO
 {
   public:
-    FileIOMock() : FileIO("NEVER_CREATING_FILE_NAME"), file_opened(false) {}
+    FileIOMock();
     virtual void create(size_t file_length = 0) override;
     void open() override;
     void write(const char* buffer, size_t length, size_t position=0) override;
     char* get_file_buffer();
+    bool check_existence() const override;
+    void set_existence(bool input);
+    std::string get_file_contents() override;
 
   protected:
     std::string file_contents;
     bool file_opened;
+    bool existence;
 
   private:
     std::unique_ptr<char[]> file_buffer;

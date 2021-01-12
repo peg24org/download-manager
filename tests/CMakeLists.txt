@@ -11,7 +11,8 @@ set (SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/writer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/url_ops.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/download_state_manager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../src/state_manager.cpp
+  #${CMAKE_CURRENT_SOURCE_DIR}/../src/download_state_manager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../src/file_io.cpp)
 
 # Add unit tests
@@ -19,10 +20,11 @@ set (SOURCES ${SOURCES}
   test_utils.cpp
   buffer_test.cpp
   url_ops_test.cpp
-  writer_test.cpp
+  #writer_test.cpp
   url_ops_test.cpp
   file_io_test.cpp
-  download_state_manager_test.cpp)
+  state_manager_test.cpp)
+  #download_state_manager_test.cpp)
 
 add_executable(unit_tests ${SOURCES})
 target_link_libraries(unit_tests gtest gtest_main pthread)

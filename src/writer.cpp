@@ -2,32 +2,27 @@
 
 using namespace std;
 
-Writer::Writer(shared_ptr<FileIO> file_io,
-    shared_ptr<DownloadStateManager> download_state_manager)
+Writer::Writer(shared_ptr<FileIO> file_io)
   : file_io(file_io)
-  , download_state_manager(download_state_manager)
 {
 }
 
-void Writer::write(const Buffer& buffer, size_t position, size_t index)
+void Writer::write(const Buffer& buffer, size_t position)
 {
   file_io->write(const_cast<Buffer&>(buffer), buffer.length(), position);
-  download_state_manager->update(index, position + buffer.length());
 }
 
-void Writer::write(const char* buffer, size_t length, size_t position,
-    size_t index)
+void Writer::write(const char* buffer, size_t length, size_t position)
 {
   file_io->write(buffer, length, position);
-  download_state_manager->update(index, position + length);
 }
 
 size_t Writer::get_file_size() const
 {
-	return download_state_manager->get_file_size();
+  return 0;
 }
 
 size_t Writer::get_total_written_bytes() const
 {
-  return download_state_manager->get_total_written_bytes();
+  return 0;
 }

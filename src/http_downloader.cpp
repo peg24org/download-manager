@@ -16,6 +16,7 @@ using namespace std;
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
   : Downloader(download_source)
 {
+  create_connection(true);
 }
 
 size_t HttpDownloader::get_size(string header)
@@ -67,8 +68,6 @@ HttpDownloader::HttpStatus HttpDownloader::get_http_status(const char* buffer,
 int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
 {
   int redirect_status = 0;
-  if (!init_connections())
-    return -1;
 
   // Use GET instead of HEAD, because some servers doesn't support HEAD
   // command.
@@ -124,10 +123,10 @@ size_t HttpDownloader::get_header_terminator_pos(const string& buffer) const
 bool HttpDownloader::send_requests()
 {
   bool result = true;
-  for (size_t index = 0; index < connections.size(); ++index) {
-    Connection& connection = connections[index];
-    result &= send_request(connection);
-  }
+
+  for (auto& [index, connection] : connections)
+    if (!connection.request_sent)
+      result &= send_request(connection);
 
   return result;
 }
@@ -136,8 +135,8 @@ bool HttpDownloader::send_request(Connection& connection)
 {
   const string port = to_string(download_source.port);
   const string host_name = download_source.host_name;
-  string current_pos = to_string(connection.chunk.current_pos);
-  string end_pos = to_string(connection.chunk.end_pos);
+  string current_pos = to_string(connection.chunk_.current);
+  string end_pos = to_string(connection.chunk_.end);
 
   Buffer request;
   request << "GET " << download_source.file_path << "/"
@@ -153,6 +152,7 @@ bool HttpDownloader::send_request(Connection& connection)
     return false;
   }
 
+  connection.request_sent = true;
   return true;
 }
 
@@ -162,8 +162,6 @@ int HttpDownloader::set_descriptors()
   FD_ZERO(&readfds);
 
   for (auto& [index, connection] : connections) {
-    if (connection.finished)
-      continue;
     int sock_desc = connection.socket_ops->get_socket_descriptor();
     FD_SET(sock_desc, &readfds);
     max_fd = (max_fd < sock_desc) ? sock_desc : max_fd;
@@ -175,10 +173,6 @@ int HttpDownloader::set_descriptors()
 void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
 {
   Connection& connection = connections[index];
-  if (connection.finished) {
-    buffer.set_length(0);
-    return;
-  }
 
   buffer.clear();
   int sock_desc = connection.socket_ops->get_socket_descriptor();
@@ -196,6 +190,7 @@ void HttpDownloader::receive_from_connection(size_t index, Buffer& buffer)
       string& http_header = connection.temp_http_header;
       http_header += string(buffer, buffer.length());
       size_t header_terminator_pos = get_header_terminator_pos(http_header);
+
       if (header_terminator_pos == string::npos)
         buffer.clear();
 

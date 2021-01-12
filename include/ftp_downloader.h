@@ -14,7 +14,7 @@ class FtpDownloader : public Downloader {
 
   FtpDownloader(const struct DownloadSource& download_source,
                 std::unique_ptr<Writer> writer,
-                ChunksCollection& chunks_collection,
+                std::shared_ptr<StateManager> state_manager,
                 time_t timeout_seconds,
                 int number_of_parts=1);
 

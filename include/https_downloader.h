@@ -11,6 +11,7 @@ class HttpsDownloader : public HttpDownloader {
   ~HttpsDownloader();
 
   HttpsDownloader(const struct DownloadSource& download_source);
+
   using HttpDownloader::HttpDownloader;
 
   private:
@@ -21,6 +22,9 @@ class HttpsDownloader : public HttpDownloader {
   SSL* get_ssl(BIO* bio);
 
   bool init_connection(Connection& connection) override;
+
+  std::unique_ptr<SocketOps> build_socket(const DownloadSource& download_source,
+                                          bool proxy=false) override;
 };
 
 #endif

@@ -32,37 +32,26 @@ void Node::run()
   on_get_file_info(node_index, file_length, download_source.file_name);
   file_path = get_output_path(optional_path, download_source.file_name);
 
-  size_t trd_norm_len = file_length / number_of_parts;
-
   shared_ptr<FileIO> file_io = make_shared<FileIO>(file_path);
 
   shared_ptr<FileIO> stat_file_io = make_unique<FileIO>("." + file_path + ".stat");
 
-  download_state_manager = make_unique<DownloadStateManager>(stat_file_io);
+  state_manager = make_shared<StateManager>(file_path);
+  bool state_file_available = state_manager->state_file_available();
 
-  if (resume && stat_file_io->check_existence()) { // Resuming download
-    chunks_collection = download_state_manager->get_download_chunks();
+  if (resume && state_file_available) { // Resuming download
+    state_manager->retrieve();
     file_io->open();
   }
   else {  // Not resuming download, create chunks collection
     file_io->create(file_length);
-    for (int i = 0; i < number_of_parts; i++) {
-      size_t start_position = i * trd_norm_len;
-      size_t length = trd_norm_len;
-      if (i == (number_of_parts - 1)) {
-        length = file_length - (trd_norm_len * i);
-        start_position = i * trd_norm_len;
-      }
-
-      chunks_collection[i].start_pos = start_position==0 ? 0 : start_position+1;
-      chunks_collection[i].current_pos = chunks_collection[i].start_pos;
-      chunks_collection[i].end_pos = start_position + length;
-    }
-    download_state_manager->set_initial_state(chunks_collection, file_length);
+    state_manager->create_new_state(file_length);
   }
 
-  unique_ptr<Writer> writer = make_unique<Writer>(file_io,
-                                                  download_state_manager);
+  if (number_of_parts == 1)
+    state_manager->set_chunk_size(file_length);
+
+  unique_ptr<Writer> writer = make_unique<Writer>(file_io);
 
   downloader = make_downloader(move(writer));
 
@@ -75,8 +64,6 @@ void Node::run()
   downloader->set_speed_limit(speed_limit);
   downloader->start();
   downloader->join();
-
-  check_download_state();
 }
 
 void Node::check_url()
@@ -98,12 +85,6 @@ void Node::check_url()
   }
 }
 
-void Node::check_download_state()
-{
-  if (total_received_bytes < file_length)
-    download_state_manager->remove_stat_file();
-}
-
 unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
 {
   unique_ptr<Downloader> downloader_obj;
@@ -112,21 +93,21 @@ unique_ptr<Downloader> Node::make_downloader(unique_ptr<Writer> writer)
     case Protocol::HTTP:
       downloader_obj = make_unique<HttpDownloader>(download_source,
                                                    move(writer),
-                                                   chunks_collection,
+                                                   state_manager,
                                                    timeout,
                                                    number_of_parts);
       break;
     case Protocol::HTTPS:
       downloader_obj = make_unique<HttpsDownloader>(download_source,
                                                     move(writer),
-                                                    chunks_collection,
+                                                    state_manager,
                                                     timeout,
                                                     number_of_parts);
       break;
     case Protocol::FTP:
       downloader_obj = make_unique<FtpDownloader>(download_source,
                                                   move(writer),
-                                                  chunks_collection,
+                                                  state_manager,
                                                   timeout,
                                                   number_of_parts);
       break;
@@ -222,11 +203,9 @@ void Node::set_resume(bool resume)
 void Node::on_data_received_node(size_t speed)
 {
   size_t total_received_bytes = 0;
-  total_received_bytes = download_state_manager->get_total_written_bytes();
+  //total_received_bytes = download_state_manager->get_total_written_bytes();
+  total_received_bytes = state_manager->get_total_recvd_bytes();
   on_data_received(total_received_bytes, speed);
-
-  if (total_received_bytes >= file_length)
-    download_state_manager->remove_stat_file();
 }
 
 size_t Node::node_index = 0;
