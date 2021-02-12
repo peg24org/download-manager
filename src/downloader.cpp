@@ -106,12 +106,14 @@ bool Downloader::regex_search_string(const string& input,
   regex e(pattern);
   bool retval = regex_search(input, m, e);
   output = m[pos_of_pattern];
+
   return retval;
 }
 
 bool Downloader::regex_search_string(const string& input, const string& pattern)
 {
   string temp;
+
   return regex_search_string(input, pattern, temp);
 }
 

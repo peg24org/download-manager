@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "node.h"
-
+#include <iostream>
 using namespace std;
 
 HttpDownloader::HttpDownloader(const struct DownloadSource& download_source)
@@ -27,6 +27,25 @@ size_t HttpDownloader::get_size(string header)
   return 0;
 }
 
+bool HttpDownloader::check_file_availability(const string& header)
+{
+  bool result = false;
+  string first_line = header.substr(0, header.find("\r\n"));
+  // Check header
+  string http_code_str;
+  if (regex_search_string(first_line, "HTTP.* (\\d+) .*", http_code_str, 1)) {
+    int http_code = stoi(http_code_str);
+    if (http_code != 200) {
+      cerr << "URL error, http response: " << http_code << endl;
+      result = false;
+    }
+    else
+      result = true;
+  }
+
+  return result;
+}
+
 bool HttpDownloader::check_redirection(string& redirecting,
                                        const string& header)
 {
@@ -34,7 +53,7 @@ bool HttpDownloader::check_redirection(string& redirecting,
   // Check header
   if (regex_search_string(header, HTTP_HEADER)) {
     // Check redirection
-    if (regex_search_string(header, "(Location: )(.+)",redirecting)) {
+    if (regex_search_string(header, "(Location: )(.+)", redirecting)) {
       result = true;
       // Check if redirecting to path instead of URL, then create new URL.
       if (!regex_search_string(header, "http.*://")) {
@@ -98,11 +117,15 @@ int HttpDownloader::check_link(string& redirected_url, size_t& file_size)
     }
   }
 
-  if (check_redirection(redirected_url, header_str))    // Link is redirected
-    redirect_status = 1;
+  if (!check_file_availability(header_str))
+    redirect_status = -1;
   else {
-    file_size = get_size(header_str);   // Link is not redirected
-    redirect_status = 0;
+    if (check_redirection(redirected_url, header_str))    // Link is redirected
+      redirect_status = 1;
+    else {
+      file_size = get_size(header_str);   // Link is not redirected
+      redirect_status = 0;
+    }
   }
 
   return redirect_status;

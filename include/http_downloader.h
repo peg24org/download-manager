@@ -34,6 +34,7 @@ class HttpDownloader : public Downloader {
 
   size_t get_header_terminator_pos(const std::string& buffer) const;
   size_t get_size(std::string header);
+  bool check_file_availability(const std::string& header);
   bool check_redirection(std::string& redirect_url, const std::string& header);
 
   // Parse the first line
