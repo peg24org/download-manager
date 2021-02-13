@@ -18,7 +18,6 @@ set (SOURCES ${SOURCES}
   test_utils.cpp
   buffer_test.cpp
   url_ops_test.cpp
-  url_ops_test.cpp
   file_io_test.cpp
   state_manager_test.cpp)
 
