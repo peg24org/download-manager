@@ -158,8 +158,8 @@ bool HttpDownloader::send_request(Connection& connection)
 {
   const string port = to_string(download_source.port);
   const string host_name = download_source.host_name;
-  string current_pos = to_string(connection.chunk_.current);
-  string end_pos = to_string(connection.chunk_.end);
+  string current_pos = to_string(connection.chunk.current);
+  string end_pos = to_string(connection.chunk.end);
 
   Buffer request;
   request << "GET " << download_source.file_path << "/"

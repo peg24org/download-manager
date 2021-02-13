@@ -52,7 +52,7 @@ struct Connection {
   };
 
   OperationStatus status;
-  Chunk chunk_;
+  Chunk chunk;
   BIO* bio;
   SSL* ssl;
   // Used for http, https and ftp command channel.

@@ -74,7 +74,7 @@ void Downloader::run()
         recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
           // Write data
-          size_t pos = connection.chunk_.current;
+          size_t pos = connection.chunk.current;
           file_io->write(recv_buffer, pos);
 
           update_connection_stat(recvd_bytes, index);
@@ -239,7 +239,7 @@ Connection::Status Downloader::create_connection(bool info_connection)
   }
 
   connection.header_skipped = false;
-  connection.chunk_ = part.second;
+  connection.chunk = part.second;
   connection.request_sent = false;
 
   return result;
@@ -297,7 +297,7 @@ void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
 
 void Downloader::update_connection_stat(size_t recvd_bytes, size_t index)
 {
-  connections[index].chunk_.current += recvd_bytes;
+  connections[index].chunk.current += recvd_bytes;
   connections[index].last_recv_time_point = steady_clock::now();
   state_manager->update(index, recvd_bytes);
 }
@@ -306,7 +306,7 @@ void Downloader::survey_connections()
 {
   vector<size_t> finished_connections;
   for (auto& [index, connection] : connections)
-    if (connection.chunk_.current >= connection.chunk_.end)
+    if (connection.chunk.current >= connection.chunk.end)
       finished_connections.push_back(index);
 
   for (size_t index : finished_connections)

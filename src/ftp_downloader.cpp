@@ -181,7 +181,7 @@ bool FtpDownloader::send_request(Connection& connection)
   uint16_t port = ip_port_pair.second;
   open_data_channel(connection, ip, port);
 
-  const size_t kCurrentPos = connection.chunk_.current;
+  const size_t kCurrentPos = connection.chunk.current;
   const string kRestCommand = "REST " + to_string(kCurrentPos) + "\r\n";
   if (!send_ftp_command(connection, kRestCommand, reply)) {
     cerr << "Error occurred: " << reply << endl;
@@ -213,8 +213,8 @@ int FtpDownloader::set_descriptors()
   int max_fd = 0;
   FD_ZERO(&readfds);
   for (auto& [index, connection] : connections) {
-    size_t current_pos = connection.chunk_.current;
-    size_t end_pos = connection.chunk_.end;
+    size_t current_pos = connection.chunk.current;
+    size_t end_pos = connection.chunk.end;
     // Check if chunk is completed
     if (current_pos < end_pos) {
       int sock_desc = connection.ftp_media_socket_ops->get_socket_descriptor();
@@ -236,8 +236,8 @@ void FtpDownloader::receive_from_connection(size_t index, Buffer& buffer)
     ftp_receive_data(connection, buffer);
 
     // Correct length of last received part for each chunk.
-    size_t end_pos = connection.chunk_.end;
-    size_t current_pos = connection.chunk_.current;
+    size_t end_pos = connection.chunk.end;
+    size_t current_pos = connection.chunk.current;
     int64_t redundant_bytes = current_pos + buffer.length() - end_pos;
     if (redundant_bytes > 0) {
       size_t new_length = buffer.length() - redundant_bytes;
