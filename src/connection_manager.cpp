@@ -41,6 +41,11 @@ string ConnectionManager::get_file_name() const
   return url_parser.get_file_name();
 }
 
+size_t ConnectionManager::get_file_length() const
+{
+  return file_length;
+}
+
 unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
 {
   unique_ptr<SocketOps> socket_ops;
@@ -102,7 +107,7 @@ pair<bool, string> ConnectionManager::check_redirection()
                               socket_ops.get())) {
       throw runtime_error(string("receiving failed, ") + __FUNCTION__);
     }
-    if (pattern_finder.find_http_header_delimiter(recvd_header))
+    if (pattern_finder.find_http_header_delimiter(recvd_header) > 0)
       break;
   }
 
@@ -112,6 +117,8 @@ pair<bool, string> ConnectionManager::check_redirection()
   redirection = pattern_finder.find_redirection(recvd_header);
   if (redirection.first)
     url_parser = UrlParser(redirection.second);
+  else
+    file_length = pattern_finder.find_file_length(recvd_header);
 
   return redirection;
 }

@@ -13,7 +13,9 @@ class ConnectionManager
 
     Protocol get_protocol() const;
     std::string get_path() const;
+    // 0: unknown file length.
     std::string get_file_name() const;
+    size_t get_file_length() const;
     std::unique_ptr<SocketOps> get_socket_ops();
 
   private:
@@ -22,6 +24,7 @@ class ConnectionManager
 
     UrlParser url_parser;
     std::string ip;
+    size_t file_length;
 };
 
 #endif
