@@ -28,6 +28,7 @@ class Buffer
      */
     operator char*();
 
+    // TODO: implement << operator for Buffer
     // Caution: always gets null terminated c-string.
     Buffer& operator<<(const char* input);
 
@@ -60,6 +61,8 @@ class Buffer
      * @return Capacity of buffer
      */
     size_t capacity() const noexcept;
+
+    size_t total_capacity() const noexcept;
 
     // Gets length of buffer.
     size_t length() const noexcept;

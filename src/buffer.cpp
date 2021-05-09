@@ -100,6 +100,7 @@ void Buffer::set_capacity(size_t capacity)
 {
   this->buffer_capacity = capacity;
   buffer = make_unique<char[]>(capacity);
+  buffer_length = 0;
 }
 
 void Buffer::extend(size_t capacity)
@@ -112,9 +113,13 @@ void Buffer::extend(size_t capacity)
 
 size_t Buffer::capacity() const noexcept
 {
-  return buffer_capacity;
+  return buffer_capacity - buffer_length;
 }
 
+size_t Buffer::total_capacity() const noexcept
+{
+  return buffer_capacity;
+}
 size_t Buffer::length() const noexcept
 {
   return buffer_length;
