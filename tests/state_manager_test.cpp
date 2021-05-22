@@ -176,7 +176,8 @@ TEST_F(StateManagerTest, retrived_state_file_contents_check_1)
   }
 }
 
-TEST(ChunkNotAvailableTest, chunk_should_be_available_by_creating_new_state)
+TEST(StateManagerTestChunkNotAvailable,
+     chunk_should_be_available_by_creating_new_state)
 {
   static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
   StateManagerTestClass state_manager;
@@ -185,3 +186,17 @@ TEST(ChunkNotAvailableTest, chunk_should_be_available_by_creating_new_state)
   state_manager.create_new_state(kFileSize);
   EXPECT_TRUE(state_manager.part_available());
 }
+
+TEST(StateManagerTestGetParts,
+     parts_number_should_be_equal_to_created_and_not_completed_parts)
+{
+  static constexpr size_t kParts = 123;
+  static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
+  StateManagerTestClass state_manager;
+
+  state_manager.create_new_state(kFileSize);
+  for (size_t i = 0; i < kParts; ++i)
+    state_manager.get_part();
+  EXPECT_EQ(kParts, state_manager.downloading_parts());
+}
+

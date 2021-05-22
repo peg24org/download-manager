@@ -29,6 +29,7 @@ class Buffer
     operator char*();
 
     // TODO: implement << operator for Buffer
+    // TODO: implement << operator for size_t
     // Caution: always gets null terminated c-string.
     Buffer& operator<<(const char* input);
 

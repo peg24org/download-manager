@@ -46,27 +46,51 @@ size_t ConnectionManager::get_file_length() const
   return file_length;
 }
 
+string ConnectionManager::get_host_name() const
+{
+  return url_parser.get_host_name();
+}
+
+uint16_t ConnectionManager::get_port() const
+{
+  return url_parser.get_port();
+}
+
+int ConnectionManager::get_one_socket_descriptor()
+{
+  if (socket_ops->connect())
+    return socket_ops->get_socket_descriptor();
+
+  return -1;
+}
+
+unique_ptr<SocketOps> ConnectionManager::acquire_sock_ops()
+{
+  return get_socket_ops();
+}
+
 unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
 {
-  unique_ptr<SocketOps> socket_ops;
+  unique_ptr<SocketOps> sock_ops;
   Protocol protocol = url_parser.get_protocol();
   switch (protocol) {
     case Protocol::HTTP:
     case Protocol::FTP:
-      socket_ops = make_unique<SocketOps>(ip, url_parser.get_port());
+      sock_ops = make_unique<SocketOps>(ip, url_parser.get_port());
       break;
     case Protocol::HTTPS:
-      socket_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port());
+      sock_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port());
       break;
   }
-  return socket_ops;
+  sock_ops->connect();
+
+  return move(sock_ops);
 }
 
 pair<bool, string> ConnectionManager::check_redirection()
 {
   unique_ptr<Transceiver> transceiver;
-  unique_ptr<SocketOps> socket_ops = get_socket_ops();
-  socket_ops->connect();
+  socket_ops = get_socket_ops();
   pair<bool, string> result = make_pair(false, "");
 
   switch (url_parser.get_protocol()) {

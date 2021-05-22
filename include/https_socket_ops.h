@@ -4,7 +4,6 @@
 #include <openssl/ssl.h>
 #include <unistd.h>
 
-#include "url_ops.h"
 #include "socket_ops.h"
 
 // Socket operations for secure connection.

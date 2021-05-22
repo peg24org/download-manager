@@ -5,6 +5,7 @@
 #include "node.h"
 #include "buffer.h"
 #include "downloader.h"
+#include "request_manager.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -12,23 +13,18 @@ using namespace std::chrono;
 const string Downloader::HTTP_HEADER =
     "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
 
-Downloader::Downloader(const struct DownloadSource& download_source)
-  : download_source(download_source),
-    number_of_parts(1)
-{
-}
-
-Downloader::Downloader(const struct DownloadSource& download_source,
-                       unique_ptr<FileIO> file_io,
+Downloader::Downloader(unique_ptr<RequestManager> request_manager,
                        shared_ptr<StateManager> state_manager,
-                       time_t timeout_seconds,
-                       int number_of_parts)
-  : download_source(download_source)
-  , file_io(move(file_io))
+                       unique_ptr<FileIO> file_io)
+  : request_manager(move(request_manager))
   , state_manager(state_manager)
-  , timeout_seconds(timeout_seconds)
-  , number_of_parts(number_of_parts)
+  , timeout_seconds(5)
+  , number_of_parts(1)
+  , file_io(move(file_io))
 {
+  DwlAvailNotifyCB callback = bind(&Downloader::on_dwl_available, this,
+                                   placeholders::_1, placeholders::_2);
+  this->request_manager->register_dwl_notify_cb(callback);
 }
 
 void Downloader::register_callback(CallBack callback)
@@ -46,29 +42,34 @@ void Downloader::set_download_parts(queue<pair<size_t, Chunk>> initial_parts)
   this->initial_parts = initial_parts;
 }
 
+void Downloader::set_parts(uint16_t parts)
+{
+  number_of_parts = parts;
+}
+
 void Downloader::run()
 {
+  transceiver = make_unique<HttpTransceiver>();
   init_connections();
 
-  bool requests_sent = true;
-  if (!send_requests()) {
-    requests_sent = false;
-    cerr << "Sending request failed." << endl;
-  }
-
   Buffer recv_buffer;
+  rate.last_recv_time_point = steady_clock::now();
   const size_t kFileSize = state_manager->get_file_size();
 
-  rate.last_recv_time_point = steady_clock::now();
-
-  while (requests_sent && (state_manager->get_total_recvd_bytes() < kFileSize)) {
+  while (state_manager->get_total_recvd_bytes() < kFileSize) {
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
+    check_new_sock_ops();
     int max_fd = set_descriptors();
-    int sel_retval = select(max_fd+1, &readfds, nullptr, nullptr, &timeout);
+
+    int sel_retval = select(max_fd + 1, &readfds, nullptr, nullptr, &timeout);
     if (sel_retval == -1)
       cerr << "Select error occurred." << endl;
     else if (sel_retval > 0) {
       for (auto& [index, connection] : connections) {
+        if (connection.socket_ops.get() == nullptr) {
+          cerr << " [ " << index << " ] " << " connection null." << endl;
+          continue;
+        }
         size_t recvd_bytes = 0;
         receive_from_connection(index, recv_buffer);
         recvd_bytes = recv_buffer.length();
@@ -90,12 +91,13 @@ void Downloader::run()
       // TODO: handle this
     }   // End of else for timeout
     // Check each connection for timeout
-    vector<int> timeout_indices = check_timeout();
-    if (timeout_indices.size() > 0)
-      retry(timeout_indices);
-
-    callback(rate.speed);
+//    vector<int> timeout_indices = check_timeout();
+//    if (timeout_indices.size() > 0)
+//      retry(timeout_indices);
+//    callback(rate.speed);
   }   // End of while loop
+  request_manager->stop();
+  request_manager->join();
 }   // End of downloader thread run()
 
 bool Downloader::regex_search_string(const string& input,
@@ -152,97 +154,65 @@ bool Downloader::send_data(const Connection& connection, const Buffer& buffer)
   return true;
 }
 
-bool Downloader::init_connections()
+int Downloader::set_descriptors()
 {
-  bool result = true;
-  for (int index = 0; index < number_of_parts; ++index) {
-    Connection::Status status = create_connection();
-    switch(status) {
-      case Connection::Status::NEW_PART_NOT_AVAILABLE:
-        break;
-      break;
-      case Connection::Status::SUCCEED:
-        result &= true;
-      break;
-      case Connection::Status::FAILED:
-      case Connection::Status::REJECTED:
-        result &= false;
-        break;
-      break;
+  int max_fd = 0;
+  FD_ZERO(&readfds);
+  for (auto& [index, connection] : connections) {
+    if (connection.socket_ops.get() == nullptr) {
+      continue;
     }
+    int socket_desc = connection.socket_ops->get_socket_descriptor();
+    FD_SET(socket_desc, &readfds);
+    max_fd = (max_fd < socket_desc) ? socket_desc : max_fd;
   }
 
-  return result;
+  return max_fd;
 }
 
-bool Downloader::init_connection(Connection& connection)
+void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
 {
-  bool result;
-  if (!connection.inited) {
-    if (!download_source.proxy_ip.empty()) {
+  buffer.clear();
+  Connection& connection = connections[_index];
 
-      connection.socket_ops = build_socket(download_source, true);
-      result = connection.socket_ops->connect();
-      // TODO: handle return result.
-      int socket_descriptor = connection.socket_ops->get_socket_descriptor();
-      string& host_name = download_source.host_name;
-      uint16_t source_port = download_source.port;
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
 
-      connection.http_proxy = make_unique<HttpProxy>(host_name, source_port);
-      connection.http_proxy->connect(socket_descriptor);
+  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+    if (!connection.header_skipped) {
+      transceiver->receive(buffer, connection.socket_ops.get(), true);
+      connection.header_skipped = true;
     }
     else {
-      connection.socket_ops = build_socket(download_source);
-      result = connection.socket_ops->connect();
+      transceiver->receive(buffer, connection.socket_ops.get(), false);
     }
-
-    connection.header_skipped = false;
-    connection.inited = true;
   }
-  else
-    result = true;
+}
 
-  return result;
+void Downloader::init_connections()
+{
+  for (uint16_t i = 0; i < number_of_parts; ++i) {
+    if (state_manager->part_available())
+      init_connection(i);
+    else
+      {/*part not available.*/}
+  }
+  request_manager->start();
+}
+
+void Downloader::init_connection(size_t connection_index)
+{
+  pair<size_t, Chunk> part = state_manager->get_part();
+  const size_t start = part.second.current == 0 ? 0 : part.second.current + 1;
+
+  const size_t length = part.second.end - part.second.current;
+  const uint16_t index = state_manager->downloading_parts();
+  connections[connection_index].chunk.end = part.second.end;
+  connections[connection_index].chunk.current = start;
+  request_manager->add_request(start, part.second.end, connection_index);
 }
 
 Connection::Status Downloader::create_connection(bool info_connection)
 {
-  Connection::Status result = Connection::Status::FAILED;
-  pair<size_t, Chunk> part;
-  // index used in state manager in going to write data properly.
-  size_t index = 0;
-  if (!info_connection) {
-    part = state_manager->get_part();
-    index = part.first;
-  }
-
-  connections[index] = Connection();
-  Connection& connection = connections[index];
-
-  if (!download_source.proxy_ip.empty()) {
-
-    connection.socket_ops = build_socket(download_source, true);
-    if (connection.socket_ops->connect())
-      result = Connection::Status::SUCCEED;
-
-    int socket_descriptor = connection.socket_ops->get_socket_descriptor();
-    string& host_name = download_source.host_name;
-    uint16_t source_port = download_source.port;
-
-    connection.http_proxy = make_unique<HttpProxy>(host_name, source_port);
-    connection.http_proxy->connect(socket_descriptor);
-  }
-  else {
-    connection.socket_ops = build_socket(download_source);
-    if (connection.socket_ops->connect())
-      result = Connection::Status::SUCCEED;
-  }
-
-  connection.header_skipped = false;
-  connection.chunk = part.second;
-  connection.request_sent = false;
-
-  return result;
 }
 
 vector<int> Downloader::check_timeout()
@@ -265,7 +235,7 @@ void Downloader::retry(const vector<int>& connection_indices)
 {
   for (const int index : connection_indices) {
     Connection& connection = connections[index];
-    init_connection(connection);
+    //init_connection(connection);
     send_request(connection);
   }
 }
@@ -308,38 +278,23 @@ void Downloader::survey_connections()
   for (auto& [index, connection] : connections)
     if (connection.chunk.current >= connection.chunk.end)
       finished_connections.push_back(index);
-
-  for (size_t index : finished_connections)
-    connections.erase(index);
-
-  bool new_connections_created = false;
-  while(static_cast<int>(connections.size()) < number_of_parts &&
-        state_manager->part_available()) {
-    Connection::Status status = create_connection();
-    if (status == Connection::Status::NEW_PART_NOT_AVAILABLE)
-      break;
-    else
-      new_connections_created = true;
-  }
-
-  if (new_connections_created)
-    send_requests();
 }
 
-unique_ptr<SocketOps>
-  Downloader::build_socket(const DownloadSource& download_source, bool proxy)
+void Downloader::on_dwl_available(uint16_t index,
+                                  unique_ptr<SocketOps> sock_ops)
 {
-  string host;
-  uint16_t port;
-
-  if (!proxy) {
-    host = download_source.ip;
-    port = download_source.port;
-  }
-  else {
-    host = download_source.proxy_ip;
-    port = download_source.proxy_port;
-  }
-
-  return make_unique<SocketOps>(host, port);
+  lock_guard<mutex> lock(new_available_parts_mutex);
+  new_available_parts.push({index, move(sock_ops)});
 }
+
+void Downloader::check_new_sock_ops()
+{
+  lock_guard<mutex> lock(new_available_parts_mutex);
+  while (!new_available_parts.empty()) {
+    NewAvailPart& new_available_part = new_available_parts.front();
+    connections[new_available_part.part_index].socket_ops = move(
+        new_available_part.sock_ops);
+    new_available_parts.pop();
+  }
+}
+

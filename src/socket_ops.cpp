@@ -54,3 +54,11 @@ int SocketOps::get_socket_descriptor() const noexcept
 {
   return socket_descriptor;
 }
+
+
+void SocketOps::set_http_proxy(const std::string& host, uint16_t port)
+{
+  http_proxy_host = host;
+  proxy_port = port;
+}
+
