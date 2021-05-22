@@ -274,10 +274,17 @@ void Downloader::update_connection_stat(size_t recvd_bytes, size_t index)
 
 void Downloader::survey_connections()
 {
+  // Remove finished connections
   vector<size_t> finished_connections;
   for (auto& [index, connection] : connections)
     if (connection.chunk.current >= connection.chunk.end)
       finished_connections.push_back(index);
+
+  for (size_t index : finished_connections)
+    connections.erase(index);
+  // Create new connections
+  while (connections.size() < number_of_parts && state_manager->part_available())
+    init_connection(connections.size());
 }
 
 void Downloader::on_dwl_available(uint16_t index,
