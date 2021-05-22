@@ -67,7 +67,6 @@ class RequestManager : public Thread
   private:
     void run() override;
     std::pair<bool, std::string> check_redirected();
-    int set_descriptors();
     bool send_requests();
     bool send_request(const Buffer& request, int socket);
     // Connect to address and return socket.

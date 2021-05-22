@@ -61,20 +61,6 @@ pair<bool, string> RequestManager::check_redirected()
 {
 }
 
-int RequestManager::set_descriptors()
-{
-  int max_fd = 0;
-//  lock_guard<mutex> lock(request_mutex);
-//  FD_ZERO(&writefds);
-//  for (auto request: requests) {
-//    int socket_desc = request.socket;
-//    FD_SET(socket_desc, &writefds);
-//    max_fd = (max_fd < socket_desc) ? socket_desc : max_fd;
-//  }
-//
-  return max_fd;
-}
-
 bool RequestManager::send_requests()
 {
   lock_guard<mutex> lock(request_mutex);
