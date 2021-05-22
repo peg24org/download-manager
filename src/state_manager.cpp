@@ -91,7 +91,7 @@ pair<size_t, Chunk> StateManager::get_part()
       size_t end = last_chunk.end + chunk_size;
       if (end > download_file_size) // Check for last chunk
         end = download_file_size;
-      new_part.second = Chunk(last_chunk.end, last_chunk.end, end);
+      new_part.second = Chunk(last_chunk.end, last_chunk.end + 1, end);
     }
     parts[new_part.first] = new_part.second;
   }
@@ -111,7 +111,7 @@ void StateManager::create_new_state(size_t download_file_size)
 
 void StateManager::set_chunk_size(size_t chunk_size)
 {
-  //if (chunk_size > kMinChunkSize)
+  if (chunk_size > kMinChunkSize)
     this->chunk_size = chunk_size;
 }
 

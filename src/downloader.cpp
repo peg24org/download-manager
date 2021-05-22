@@ -202,7 +202,7 @@ void Downloader::init_connections()
 void Downloader::init_connection(size_t connection_index)
 {
   pair<size_t, Chunk> part = state_manager->get_part();
-  const size_t start = part.second.current == 0 ? 0 : part.second.current + 1;
+  const size_t start = part.second.current;
 
   const size_t length = part.second.end - part.second.current;
   const uint16_t index = state_manager->downloading_parts();
