@@ -10,6 +10,7 @@
 #include "thread.h"
 #include "buffer.h"
 #include "socket_ops.h"
+#include "transceiver.h"
 #include "connection_manager.h"
 
 constexpr time_t kDefaultTimeoutSeconds = 5;
@@ -74,6 +75,7 @@ class RequestManager : public Thread
     bool request_available();
     Buffer generate_request_str(const Request& request);
     std::atomic<bool> keep_running;
+    Transceiver transceiver;
 };
 
 #endif

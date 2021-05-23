@@ -78,20 +78,7 @@ bool RequestManager::send_requests()
 
 bool RequestManager::send_request(const Buffer& request, SocketOps* sock_ops)
 {
-  size_t sent_bytes = 0;
-  size_t tmp_sent_bytes = 0;
-  int socket = sock_ops->get_socket_descriptor();
-
-  while (sent_bytes < request.length()) {
-    tmp_sent_bytes = send(socket, const_cast<Buffer&>(request) + sent_bytes,
-                          request.length(), 0);
-    if (tmp_sent_bytes >= 0)
-      sent_bytes += tmp_sent_bytes;
-    else
-      return false;
-  }
-
-  return true;
+  return transceiver.send(request, sock_ops);
 }
 
 int RequestManager::connect()
