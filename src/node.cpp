@@ -10,7 +10,6 @@
 #include "node.h"
 #include "request_manager.h"
 #include "connection_manager.h"
-#include "http_request_manager.h"
 
 using namespace std;
 
@@ -63,7 +62,7 @@ void Node::run()
 
   switch (protocol) {
     case Protocol::HTTP:
-      request_manager = make_unique<HttpRequstManager>(move(connection_manager));
+      request_manager = make_unique<RequestManager>(move(connection_manager));
       transceiver = make_unique<HttpTransceiver>();
       break;
     case Protocol::HTTPS:
