@@ -68,7 +68,7 @@ class RequestManager : public Thread
     void run() override;
     std::pair<bool, std::string> check_redirected();
     bool send_requests();
-    bool send_request(const Buffer& request, int socket);
+    virtual bool send_request(const Buffer& request, SocketOps* sock_ops);
     // Connect to address and return socket.
     int connect();
     bool request_available();

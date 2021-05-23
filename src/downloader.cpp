@@ -178,16 +178,8 @@ void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
 
   int sock_desc = connection.socket_ops->get_socket_descriptor();
 
-  if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
+  if (FD_ISSET(sock_desc, &readfds))
     transceiver->receive(buffer, connection);
-//    if (!connection.header_skipped) {
-//      transceiver->receive(buffer, connection.socket_ops.get(), true);
-//      connection.header_skipped = true;
-//    }
-//    else {
-//      transceiver->receive(buffer, connection.socket_ops.get(), false);
-//    }
-  }
 }
 
 void Downloader::init_connections()

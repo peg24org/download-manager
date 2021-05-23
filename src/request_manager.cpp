@@ -70,18 +70,20 @@ bool RequestManager::send_requests()
       const Buffer request_buf = generate_request_str(request);
       cerr << string(const_cast<Buffer&>(request_buf), request_buf.length()) << endl;
       int sock = sock_ops->get_socket_descriptor();
-      request.sent = send_request(request_buf, sock);
+      request.sent = send_request(request_buf, sock_ops.get());
       notify_dwl_available(request.request_index, move(sock_ops));
     }
   }
 }
 
-bool RequestManager::send_request(const Buffer& request, int socket)
+bool RequestManager::send_request(const Buffer& request, SocketOps* sock_ops)
 {
   size_t sent_bytes = 0;
   size_t tmp_sent_bytes = 0;
+  int socket = sock_ops->get_socket_descriptor();
+
   while (sent_bytes < request.length()) {
-    tmp_sent_bytes = send(socket, const_cast<Buffer&>(request)+sent_bytes,
+    tmp_sent_bytes = send(socket, const_cast<Buffer&>(request) + sent_bytes,
                           request.length(), 0);
     if (tmp_sent_bytes >= 0)
       sent_bytes += tmp_sent_bytes;

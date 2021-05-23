@@ -55,10 +55,24 @@ void Node::run()
   CallBack callback = bind(&Node::on_data_received_node, this,
                            placeholders::_1);
 
-  unique_ptr<RequestManager> request_manager = make_unique<HttpRequstManager>(
-      move(connection_manager));
 
-  unique_ptr<Transceiver> transceiver = make_unique<HttpTransceiver>();
+  unique_ptr<RequestManager> request_manager;
+
+  Protocol protocol = connection_manager->get_protocol();
+  unique_ptr<Transceiver> transceiver;
+
+  switch (protocol) {
+    case Protocol::HTTP:
+      request_manager = make_unique<HttpRequstManager>(move(connection_manager));
+      transceiver = make_unique<HttpTransceiver>();
+      break;
+    case Protocol::HTTPS:
+      break;
+    case Protocol::FTP:
+      break;
+  }
+
+
 
   Downloader downloader(move(request_manager), state_manager, move(file_io),
                         move(transceiver));
