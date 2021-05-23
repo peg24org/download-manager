@@ -50,7 +50,6 @@ void Node::run()
 
   if (number_of_parts == 1)
     state_manager->set_chunk_size(file_length);
-  //state_manager->set_chunk_size(pow(2, 20)*3);
 
   // Create and register callback
   CallBack callback = bind(&Node::on_data_received_node, this,
@@ -59,7 +58,10 @@ void Node::run()
   unique_ptr<RequestManager> request_manager = make_unique<HttpRequstManager>(
       move(connection_manager));
 
-  Downloader downloader(move(request_manager), state_manager, move(file_io));
+  unique_ptr<Transceiver> transceiver = make_unique<HttpTransceiver>();
+
+  Downloader downloader(move(request_manager), state_manager, move(file_io),
+                        move(transceiver));
   downloader.register_callback(callback);
   downloader.set_parts(number_of_parts);
   //downloader.set_speed_limit(speed_limit);

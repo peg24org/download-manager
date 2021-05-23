@@ -1,11 +1,13 @@
 #ifndef _HTTP_TRANSCEIVER_H
 #define _HTTP_TRANSCEIVER_H
 
+#include "connection.h"
 #include "transceiver.h"
 
 class HttpTransceiver : public Transceiver
 {
   public:
+    bool receive(Buffer& buffer, Connection& connection) override;
     bool receive(Buffer& buffer, SocketOps* socket_ops, bool skip_header);
 
   private:

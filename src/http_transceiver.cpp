@@ -5,6 +5,20 @@
 
 using namespace std;
 
+bool HttpTransceiver::receive(Buffer& buffer, Connection& connection)
+{
+  bool result;
+  if (!connection.header_skipped) {
+    result = receive(buffer, connection.socket_ops.get(), true);
+    connection.header_skipped = true;
+  }
+  else {
+    result = receive(buffer, connection.socket_ops.get(), false);
+  }
+
+  return result;
+}
+
 bool HttpTransceiver::receive(Buffer& buffer, SocketOps* socket_ops,
                               bool skip_header)
 {

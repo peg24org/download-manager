@@ -40,6 +40,11 @@ bool Transceiver::receive(Buffer& buffer, SocketOps* socket_ops)
   return true;
 }
 
+bool Transceiver::receive(Buffer& buffer, Connection& connection)
+{
+  return receive(buffer, connection.socket_ops.get());
+}
+
 ssize_t Transceiver::receive(char* buffer, size_t length, SocketOps* socket_ops)
 {
   int socket = socket_ops->get_socket_descriptor();

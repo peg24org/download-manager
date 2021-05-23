@@ -15,12 +15,14 @@ const string Downloader::HTTP_HEADER =
 
 Downloader::Downloader(unique_ptr<RequestManager> request_manager,
                        shared_ptr<StateManager> state_manager,
-                       unique_ptr<FileIO> file_io)
+                       unique_ptr<FileIO> file_io,
+                       unique_ptr<Transceiver> transceiver)
   : request_manager(move(request_manager))
   , state_manager(state_manager)
   , timeout_seconds(5)
   , number_of_parts(1)
   , file_io(move(file_io))
+  , transceiver(move(transceiver))
 {
   DwlAvailNotifyCB callback = bind(&Downloader::on_dwl_available, this,
                                    placeholders::_1, placeholders::_2);
@@ -49,7 +51,6 @@ void Downloader::set_parts(uint16_t parts)
 
 void Downloader::run()
 {
-  transceiver = make_unique<HttpTransceiver>();
   init_connections();
 
   Buffer recv_buffer;
@@ -178,13 +179,14 @@ void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
   int sock_desc = connection.socket_ops->get_socket_descriptor();
 
   if (FD_ISSET(sock_desc, &readfds)) {  // read from the socket
-    if (!connection.header_skipped) {
-      transceiver->receive(buffer, connection.socket_ops.get(), true);
-      connection.header_skipped = true;
-    }
-    else {
-      transceiver->receive(buffer, connection.socket_ops.get(), false);
-    }
+    transceiver->receive(buffer, connection);
+//    if (!connection.header_skipped) {
+//      transceiver->receive(buffer, connection.socket_ops.get(), true);
+//      connection.header_skipped = true;
+//    }
+//    else {
+//      transceiver->receive(buffer, connection.socket_ops.get(), false);
+//    }
   }
 }
 
