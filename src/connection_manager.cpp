@@ -121,14 +121,12 @@ pair<bool, string> ConnectionManager::check_redirection()
     << "\r\n"
     << "Connection: Keep-Alive\r\n\r\n";
 
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
   Buffer header(MAX_HTTP_HEADER_LENGTH);
   if (!transceiver->send(request, socket_ops.get()))
     throw runtime_error(string("sending request failed, ") + __FUNCTION__);
   Buffer recvd_header;
 
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   PatternFinder pattern_finder;
   while (true) {
    // if (!transceiver->receive(recvd_header.seek(recvd_header.length()),

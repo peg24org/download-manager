@@ -8,26 +8,19 @@ using namespace std;
 bool HttpTransceiver::receive(Buffer& buffer, Connection& connection)
 {
   bool result = true;
-  cerr << ".........................." <<  __FUNCTION__ << endl;
   SocketOps* sock_ops = connection.socket_ops.get();
   if (connection.header_skipped) {
-      cerr << "Header skipped................" << endl;
       result = receive(buffer, sock_ops);
       return result;
   }
 
   Buffer header_buffer;
   while (!connection.header_skipped) {
-    //cerr << "Header not skipped................" << endl;
     result = receive(header_buffer, sock_ops);
     if (result == false) {
       cerr << "RECV ERROR" << endl;
       break;
     }
-    else {
-      cerr << "head:" << string(header_buffer, header_buffer.length()) << endl;
-    }
-    cerr << "head buffer: " << endl << string(header_buffer, header_buffer.length()) << endl;
     const ssize_t header_pos = get_header_terminator_pos(header_buffer,
                                                          header_buffer.length());
     if (header_pos > -1) {
@@ -66,7 +59,6 @@ ssize_t HttpTransceiver::get_header_terminator_pos(const char* buffer,
 
 bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
 {
-  cerr << "http recv..asdfadddddddddddddddddddddd" << endl;
   ssize_t recvd_bytes = 0;
   recvd_bytes = plain_transceiver.receive(buffer,
                                           buffer.capacity(),
@@ -81,7 +73,6 @@ bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
 
 bool HttpTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
 {
-  cerr << "REQUEST in http send:" << string(buffer, buffer.length()) << endl;
   bool result = false;
   int sock_desc = sock_ops->get_socket_descriptor();
   result = plain_transceiver.send(buffer, buffer.capacity(), sock_desc);

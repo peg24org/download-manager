@@ -21,15 +21,11 @@ bool HttpsTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
   else
     result = false;
 
-  cerr << "https receiveçççççççççççççççççççççççççççç" <<
-    string(buffer, buffer.length()) << endl << endl;
-
   return result;
 }
 
 bool HttpsTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
 {
-  cerr << "REQUEST in https send:" << string(buffer, buffer.length()) << endl;
   bool result = true;
   BIO* bio = dynamic_cast<HttpsSocketOps*>(sock_ops)->get_bio();
   secure_transceiver.send(bio, buffer, buffer.length());

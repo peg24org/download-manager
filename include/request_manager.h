@@ -40,7 +40,8 @@ struct Request
 class RequestManager : public Thread
 {
   public: RequestManager(std::string url);
-    RequestManager(std::unique_ptr<ConnectionManager> connection_manager);
+    RequestManager(std::unique_ptr<ConnectionManager> connection_manager,
+                   std::unique_ptr<Transceiver> transceiver);
     void stop();
     bool resumable();
     size_t get_size();
