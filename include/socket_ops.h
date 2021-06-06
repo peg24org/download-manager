@@ -32,7 +32,7 @@ class SocketOps
      *  Gets the socket descriptor for send/recv.
      *  @return The socket descriptor.
      */
-    int get_socket_descriptor() const noexcept;
+    virtual int get_socket_descriptor() const noexcept;
 
     void set_http_proxy(const std::string& host, uint16_t port);
 

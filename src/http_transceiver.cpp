@@ -7,45 +7,48 @@ using namespace std;
 
 bool HttpTransceiver::receive(Buffer& buffer, Connection& connection)
 {
-  bool result;
-  if (!connection.header_skipped) {
-    result = receive(buffer, connection.socket_ops.get(), true);
-    connection.header_skipped = true;
+  bool result = true;
+  cerr << ".........................." <<  __FUNCTION__ << endl;
+  SocketOps* sock_ops = connection.socket_ops.get();
+  if (connection.header_skipped) {
+      cerr << "Header skipped................" << endl;
+      result = receive(buffer, sock_ops);
+      return result;
   }
-  else {
-    result = receive(buffer, connection.socket_ops.get(), false);
+
+  Buffer header_buffer;
+  while (!connection.header_skipped) {
+    //cerr << "Header not skipped................" << endl;
+    result = receive(header_buffer, sock_ops);
+    if (result == false) {
+      cerr << "RECV ERROR" << endl;
+      break;
+    }
+    else {
+      cerr << "head:" << string(header_buffer, header_buffer.length()) << endl;
+    }
+    cerr << "head buffer: " << endl << string(header_buffer, header_buffer.length()) << endl;
+    const ssize_t header_pos = get_header_terminator_pos(header_buffer,
+                                                         header_buffer.length());
+    if (header_pos > -1) {
+      buffer = header_buffer;
+      memcpy(buffer, static_cast<char*>(header_buffer) + header_pos,
+             header_buffer.length() - header_pos);
+      buffer.set_length(header_buffer.length() - header_pos);
+      connection.header_skipped = true;
+      break;
+    }
   }
 
   return result;
 }
 
-bool HttpTransceiver::receive(Buffer& buffer, SocketOps* socket_ops,
-                              bool skip_header)
+bool HttpTransceiver::send(const Buffer& buffer, Connection& connection)
 {
-  bool result = true;
-
-  if (!skip_header) {
-      result = Transceiver::receive(buffer, socket_ops);
-      return result;
-  }
-
-  while (skip_header) {
-    Buffer temp_buffer;
-    result = Transceiver::receive(temp_buffer, socket_ops);
-    if (result == false) {
-      cerr << "RECV ERROR" << endl;
-      break;
-    }
-    const ssize_t header_pos = get_header_terminator_pos(temp_buffer,
-                                                         temp_buffer.length());
-    if (header_pos > -1) {
-      buffer = temp_buffer;
-      size_t pos = header_pos;
-      memcpy(buffer, temp_buffer + pos, temp_buffer.length() - pos);
-      buffer.set_length(temp_buffer.length() - pos);
-      break;
-    }
-  }
+  bool result = false;
+  int sock_desc = connection.socket_ops->get_socket_descriptor();
+  const char* raw_buffer = const_cast<Buffer&>(buffer);
+  result = plain_transceiver.send(raw_buffer, buffer.capacity(), sock_desc);
 
   return result;
 }
@@ -59,5 +62,30 @@ ssize_t HttpTransceiver::get_header_terminator_pos(const char* buffer,
     return head_position - buffer + 4;
   else
     return -1;
+}
+
+bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
+{
+  cerr << "http recv..asdfadddddddddddddddddddddd" << endl;
+  ssize_t recvd_bytes = 0;
+  recvd_bytes = plain_transceiver.receive(buffer,
+                                          buffer.capacity(),
+                                          sock_ops->get_socket_descriptor());
+  buffer.set_length(recvd_bytes);
+
+  if (recvd_bytes >= 0)
+    return true;
+  else
+    return false;
+}
+
+bool HttpTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
+{
+  cerr << "REQUEST in http send:" << string(buffer, buffer.length()) << endl;
+  bool result = false;
+  int sock_desc = sock_ops->get_socket_descriptor();
+  result = plain_transceiver.send(buffer, buffer.capacity(), sock_desc);
+
+  return result;
 }
 

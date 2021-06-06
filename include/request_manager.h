@@ -11,6 +11,7 @@
 #include "buffer.h"
 #include "socket_ops.h"
 #include "transceiver.h"
+#include "http_transceiver.h"
 #include "connection_manager.h"
 
 constexpr time_t kDefaultTimeoutSeconds = 5;
@@ -69,13 +70,13 @@ class RequestManager : public Thread
     void run() override;
     std::pair<bool, std::string> check_redirected();
     bool send_requests();
-    virtual bool send_request(const Buffer& request, SocketOps* sock_ops);
+    virtual bool send_request(Buffer& request, SocketOps* sock_ops);
     // Connect to address and return socket.
     int connect();
     bool request_available();
     Buffer generate_request_str(const Request& request);
     std::atomic<bool> keep_running;
-    Transceiver transceiver;
+    std::unique_ptr<Transceiver> transceiver;
 };
 
 #endif

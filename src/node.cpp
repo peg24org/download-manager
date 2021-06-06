@@ -9,7 +9,10 @@
 
 #include "node.h"
 #include "request_manager.h"
+#include "http_transceiver.h"
+#include "https_transceiver.h"
 #include "connection_manager.h"
+//#include "https_request_manager.h"
 
 using namespace std;
 
@@ -26,16 +29,22 @@ Node::Node(const string& url, const string& optional_path,
 
 void Node::run()
 {
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   unique_ptr<ConnectionManager> connection_manager;
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   connection_manager = make_unique<ConnectionManager>(url);
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   const pair<string, string> paths= get_output_paths(
       connection_manager->get_file_name());
   const size_t file_length = connection_manager->get_file_length();
+  cerr << "FILE:" << file_length << endl;
+  cerr << "FILE:" << paths.first << endl;
   unique_ptr<FileIO> file_io = make_unique<FileIO>(paths.first);
 
   unique_ptr<FileIO> stat_file_io = make_unique<FileIO>(paths.second);
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   state_manager = make_shared<StateManager>(paths.second);
   bool state_file_available = state_manager->state_file_available();
   if (resume && state_file_available) { // Resuming download
@@ -47,6 +56,7 @@ void Node::run()
     state_manager->create_new_state(file_length);
   }
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   if (number_of_parts == 1)
     state_manager->set_chunk_size(file_length);
 
@@ -55,23 +65,29 @@ void Node::run()
                            placeholders::_1);
 
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   unique_ptr<RequestManager> request_manager;
 
   Protocol protocol = connection_manager->get_protocol();
   unique_ptr<Transceiver> transceiver;
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   switch (protocol) {
     case Protocol::HTTP:
       request_manager = make_unique<RequestManager>(move(connection_manager));
       transceiver = make_unique<HttpTransceiver>();
       break;
     case Protocol::HTTPS:
+      //request_manager = make_unique<HttpsRequestManager>(move(connection_manager));
+      request_manager = make_unique<RequestManager>(move(connection_manager));
+      transceiver = make_unique<HttpsTransceiver>();
       break;
     case Protocol::FTP:
       break;
   }
 
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
 
   Downloader downloader(move(request_manager), state_manager, move(file_io),
                         move(transceiver));

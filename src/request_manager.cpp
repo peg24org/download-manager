@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "socket_ops.h"
+#include "http_transceiver.h"
+#include "https_transceiver.h"
 
 using namespace std;
 
@@ -16,6 +18,8 @@ RequestManager::RequestManager(unique_ptr<ConnectionManager> connection_manager)
   , proxy_port(0)
   , keep_running(true)
 {
+  // FIXME add https and ftp
+  transceiver = make_unique<HttpsTransceiver>();
 }
 
 void RequestManager::stop()
@@ -36,6 +40,7 @@ void RequestManager::set_proxy(string& host, uint32_t port)
 void RequestManager::add_request(size_t start_pos, size_t end_pos,
                                  uint16_t request_index)
 {
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   lock_guard<mutex> lock(request_mutex);
   const Request request{0, end_pos, start_pos, request_index};
   requests.push_back(request);
@@ -67,18 +72,19 @@ bool RequestManager::send_requests()
   for (Request& request : requests ) {
     if (!request.sent) {
       unique_ptr<SocketOps> sock_ops = connection_manager->acquire_sock_ops();
-      const Buffer request_buf = generate_request_str(request);
+      Buffer request_buf = generate_request_str(request);
       cerr << string(const_cast<Buffer&>(request_buf), request_buf.length()) << endl;
       int sock = sock_ops->get_socket_descriptor();
       request.sent = send_request(request_buf, sock_ops.get());
+      cerr << "req sent zzzzzzzzz <<" << endl;
       notify_dwl_available(request.request_index, move(sock_ops));
     }
   }
 }
 
-bool RequestManager::send_request(const Buffer& request, SocketOps* sock_ops)
+bool RequestManager::send_request(Buffer& request, SocketOps* sock_ops)
 {
-  return transceiver.send(request, sock_ops);
+  return transceiver->send(request, sock_ops);
 }
 
 int RequestManager::connect()

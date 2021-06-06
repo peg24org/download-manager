@@ -58,6 +58,7 @@ void Downloader::run()
   const size_t kFileSize = state_manager->get_file_size();
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
+    cerr << __FILE__ << ":" << __LINE__ << endl;
     struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
     check_new_sock_ops();
     int max_fd = set_descriptors();
@@ -71,6 +72,7 @@ void Downloader::run()
           cerr << " [ " << index << " ] " << " connection null." << endl;
           continue;
         }
+        cerr << "recv from index:" << index << endl;
         size_t recvd_bytes = 0;
         receive_from_connection(index, recv_buffer);
         recvd_bytes = recv_buffer.length();
@@ -144,7 +146,7 @@ bool Downloader::send_data(const Connection& connection, const Buffer& buffer)
   int sock_desc = connection.socket_ops->get_socket_descriptor();
 
   while (sent_bytes < buffer.length()) {
-    tmp_sent_bytes = send(sock_desc, const_cast<Buffer&>(buffer)+sent_bytes,
+    tmp_sent_bytes = send(sock_desc, const_cast<Buffer&>(buffer) + sent_bytes,
                           buffer.length(), 0);
     if (tmp_sent_bytes >= 0)
       sent_bytes += tmp_sent_bytes;
@@ -160,10 +162,10 @@ int Downloader::set_descriptors()
   int max_fd = 0;
   FD_ZERO(&readfds);
   for (auto& [index, connection] : connections) {
-    if (connection.socket_ops.get() == nullptr) {
+    if (connection.socket_ops.get() == nullptr)
       continue;
-    }
     int socket_desc = connection.socket_ops->get_socket_descriptor();
+    cerr << "sock desc:" << socket_desc << endl;
     FD_SET(socket_desc, &readfds);
     max_fd = (max_fd < socket_desc) ? socket_desc : max_fd;
   }
@@ -177,9 +179,11 @@ void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
   Connection& connection = connections[_index];
 
   int sock_desc = connection.socket_ops->get_socket_descriptor();
-
-  if (FD_ISSET(sock_desc, &readfds))
+  cerr << "recv from connection sock:" << sock_desc << endl;
+  if (FD_ISSET(sock_desc, &readfds)) {
+    cerr << "sock in fdset:" << sock_desc << endl;
     transceiver->receive(buffer, connection);
+  }
 }
 
 void Downloader::init_connections()
@@ -285,13 +289,16 @@ void Downloader::on_dwl_available(uint16_t index,
                                   unique_ptr<SocketOps> sock_ops)
 {
   lock_guard<mutex> lock(new_available_parts_mutex);
+  cerr << "Dwl available in downloader." << endl;
   new_available_parts.push({index, move(sock_ops)});
 }
 
 void Downloader::check_new_sock_ops()
 {
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   lock_guard<mutex> lock(new_available_parts_mutex);
   while (!new_available_parts.empty()) {
+    cerr << __FILE__ << ":" << __LINE__ << endl;
     NewAvailPart& new_available_part = new_available_parts.front();
     connections[new_available_part.part_index].socket_ops = move(
         new_available_part.sock_ops);

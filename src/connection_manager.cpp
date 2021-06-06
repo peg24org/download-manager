@@ -9,6 +9,7 @@
 #include "transceiver.h"
 #include "pattern_finder.h"
 #include "https_socket_ops.h"
+#include "https_transceiver.h"
 
 using namespace std;
 
@@ -79,7 +80,8 @@ unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
       sock_ops = make_unique<SocketOps>(ip, url_parser.get_port());
       break;
     case Protocol::HTTPS:
-      sock_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port());
+      sock_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port(),
+                                             get_host_name());
       break;
   }
   sock_ops->connect();
@@ -98,10 +100,10 @@ pair<bool, string> ConnectionManager::check_redirection()
       return result;
       break;
     case Protocol::HTTP:
-      transceiver = make_unique<Transceiver>();
+      transceiver = make_unique<HttpTransceiver>();
       break;
     case Protocol::HTTPS:
-      // FIXME Implement https transceiver.
+      transceiver = make_unique<HttpsTransceiver>();
       break;
   }
 
@@ -119,16 +121,19 @@ pair<bool, string> ConnectionManager::check_redirection()
     << "\r\n"
     << "Connection: Keep-Alive\r\n\r\n";
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   constexpr static size_t MAX_HTTP_HEADER_LENGTH = 64 * 1024;
   Buffer header(MAX_HTTP_HEADER_LENGTH);
   if (!transceiver->send(request, socket_ops.get()))
     throw runtime_error(string("sending request failed, ") + __FUNCTION__);
   Buffer recvd_header;
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   PatternFinder pattern_finder;
   while (true) {
-    if (!transceiver->receive(recvd_header.seek(recvd_header.length()),
-                              socket_ops.get())) {
+   // if (!transceiver->receive(recvd_header.seek(recvd_header.length()),
+   //                           socket_ops)) {
+    if (!transceiver->receive(recvd_header, socket_ops.get())) {
       throw runtime_error(string("receiving failed, ") + __FUNCTION__);
     }
     if (pattern_finder.find_http_header_delimiter(recvd_header) > 0)
@@ -153,7 +158,9 @@ string ConnectionManager::get_ip(const string& host_name) const
   server = gethostbyname(host_name.c_str());
   if (!server)
     throw runtime_error("cannot get ip.");
-  string ip(inet_ntoa(*((struct in_addr*) server->h_addr)));
+ // string ip(inet_ntoa(*((struct in_addr*) server->h_addr)));
+
+  string ip(inet_ntoa(*((struct in_addr*)server->h_addr_list[0])));
 
   return ip;
 }
