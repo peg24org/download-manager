@@ -41,7 +41,7 @@ bool HttpTransceiver::send(const Buffer& buffer, Connection& connection)
   bool result = false;
   int sock_desc = connection.socket_ops->get_socket_descriptor();
   const char* raw_buffer = const_cast<Buffer&>(buffer);
-  result = plain_transceiver.send(raw_buffer, buffer.capacity(), sock_desc);
+  result = plain_transceiver.send(raw_buffer, buffer.length(), sock_desc);
 
   return result;
 }
@@ -75,7 +75,7 @@ bool HttpTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
 {
   bool result = false;
   int sock_desc = sock_ops->get_socket_descriptor();
-  result = plain_transceiver.send(buffer, buffer.capacity(), sock_desc);
+  result = plain_transceiver.send(buffer, buffer.length(), sock_desc);
 
   return result;
 }
