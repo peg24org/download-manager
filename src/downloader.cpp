@@ -56,16 +56,20 @@ void Downloader::run()
   Buffer recv_buffer;
   rate.last_recv_time_point = steady_clock::now();
   const size_t kFileSize = state_manager->get_file_size();
+  time_t temp_timeout_seconds = 0;
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
-    struct timeval timeout = {.tv_sec=timeout_seconds, .tv_usec=0};
+    struct timeval timeout = {.tv_sec=temp_timeout_seconds, .tv_usec=100'000};
     check_new_sock_ops();
     int max_fd = set_descriptors();
 
     int sel_retval = select(max_fd + 1, &readfds, nullptr, nullptr, &timeout);
     if (sel_retval == -1)
       cerr << "Select error occurred." << endl;
+    else if (sel_retval == 0)
+      continue;
     else if (sel_retval > 0) {
+      temp_timeout_seconds = timeout_seconds;
       for (auto& [index, connection] : connections) {
         if (connection.socket_ops.get() == nullptr) {
           cerr << " [ " << index << " ] " << " connection null." << endl;
@@ -86,7 +90,7 @@ void Downloader::run()
           callback(rate.speed);
         }
       }   // End of for loop
-      //survey_connections();
+      survey_connections();
     }   // End of else if
     else {    // Timeout
       // TODO: handle this
@@ -199,6 +203,7 @@ void Downloader::init_connection(size_t connection_index)
 
   const size_t length = part.second.end - part.second.current;
   const uint16_t index = state_manager->downloading_parts();
+  connections[connection_index] = Connection();
   connections[connection_index].chunk.end = part.second.end;
   connections[connection_index].chunk.current = start;
   request_manager->add_request(start, part.second.end, connection_index);
