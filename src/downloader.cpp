@@ -23,6 +23,7 @@ Downloader::Downloader(unique_ptr<RequestManager> request_manager,
   , number_of_parts(1)
   , file_io(move(file_io))
   , transceiver(move(transceiver))
+  , wait_first_conn_response(true)
 {
   DwlAvailNotifyCB callback = bind(&Downloader::on_dwl_available, this,
                                    placeholders::_1, placeholders::_2);
@@ -52,14 +53,14 @@ void Downloader::set_parts(uint16_t parts)
 void Downloader::run()
 {
   init_connections();
+  while (wait_first_conn_response)
+    this_thread::sleep_for(milliseconds(10));
 
   Buffer recv_buffer;
   rate.last_recv_time_point = steady_clock::now();
   const size_t kFileSize = state_manager->get_file_size();
-  time_t temp_timeout_seconds = 0;
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
-    struct timeval timeout = {.tv_sec=temp_timeout_seconds, .tv_usec=100'000};
     check_new_sock_ops();
     int max_fd = set_descriptors();
 
@@ -69,7 +70,7 @@ void Downloader::run()
     else if (sel_retval == 0)
       continue;
     else if (sel_retval > 0) {
-      temp_timeout_seconds = timeout_seconds;
+      timeout = {.tv_sec=timeout_seconds, .tv_usec=100'000};
       for (auto& [index, connection] : connections) {
         if (connection.socket_ops.get() == nullptr) {
           cerr << " [ " << index << " ] " << " connection null." << endl;
@@ -198,6 +199,7 @@ void Downloader::init_connections()
 
 void Downloader::init_connection(size_t connection_index)
 {
+  timeout = {.tv_sec=0, .tv_usec=100'000};
   pair<size_t, Chunk> part = state_manager->get_part();
   const size_t start = part.second.current;
 
@@ -290,6 +292,8 @@ void Downloader::on_dwl_available(uint16_t index,
 {
   lock_guard<mutex> lock(new_available_parts_mutex);
   new_available_parts.push({index, move(sock_ops)});
+  if (wait_first_conn_response)
+    wait_first_conn_response = false;
 }
 
 void Downloader::check_new_sock_ops()

@@ -129,6 +129,8 @@ class Downloader : public Thread {
     void check_new_sock_ops();
     
     std::unique_ptr<Transceiver> transceiver;
+    struct timeval timeout;
+    std::atomic<bool> wait_first_conn_response;
 };
 
 #endif
