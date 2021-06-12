@@ -190,25 +190,25 @@ void Downloader::init_connections()
 {
   for (uint16_t i = 0; i < number_of_parts; ++i) {
     if (state_manager->part_available())
-      init_connection(i);
+      init_connection();
     else
       {/*part not available.*/}
   }
   request_manager->start();
 }
 
-void Downloader::init_connection(size_t connection_index)
+void Downloader::init_connection()
 {
   timeout = {.tv_sec=0, .tv_usec=100'000};
   pair<size_t, Chunk> part = state_manager->get_part();
   const size_t start = part.second.current;
 
   const size_t length = part.second.end - part.second.current;
-  const uint16_t index = state_manager->downloading_parts();
-  connections[connection_index] = Connection();
-  connections[connection_index].chunk.end = part.second.end;
-  connections[connection_index].chunk.current = start;
-  request_manager->add_request(start, part.second.end, connection_index);
+  const size_t kConnectionIndex = part.first;
+  connections[kConnectionIndex] = Connection();
+  connections[kConnectionIndex].chunk.end = part.second.end;
+  connections[kConnectionIndex].chunk.current = start;
+  request_manager->add_request(start, part.second.end, kConnectionIndex);
 }
 
 Connection::Status Downloader::create_connection(bool info_connection)
@@ -284,7 +284,7 @@ void Downloader::survey_connections()
     connections.erase(index);
   // Create new connections
   while (connections.size() < number_of_parts && state_manager->part_available())
-    init_connection(connections.size());
+    init_connection();
 }
 
 void Downloader::on_dwl_available(uint16_t index,

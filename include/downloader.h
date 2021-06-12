@@ -77,7 +77,7 @@ class Downloader : public Thread {
 
     virtual void init_connections();
 
-    virtual void init_connection(size_t connection_index);
+    void init_connection();
 
     virtual Connection::Status create_connection(bool info_connection=false);
 
