@@ -86,7 +86,7 @@ void Node::run()
                         move(transceiver));
   downloader.register_callback(callback);
   downloader.set_parts(number_of_parts);
-  //downloader.set_speed_limit(speed_limit);
+  downloader.set_speed_limit(speed_limit);
 
   downloader.start();
   downloader.join();

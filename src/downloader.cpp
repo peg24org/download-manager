@@ -211,10 +211,6 @@ void Downloader::init_connection()
   request_manager->add_request(start, part.second.end, kConnectionIndex);
 }
 
-Connection::Status Downloader::create_connection(bool info_connection)
-{
-}
-
 vector<int> Downloader::check_timeout()
 {
   vector<int> result;

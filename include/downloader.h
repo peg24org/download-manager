@@ -79,8 +79,6 @@ class Downloader : public Thread {
 
     void init_connection();
 
-    virtual Connection::Status create_connection(bool info_connection=false);
-
     virtual std::vector<int> check_timeout();
     // Retry download in connections
     virtual void retry(const std::vector<int>& connection_indices);
