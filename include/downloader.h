@@ -49,38 +49,18 @@ class Downloader : public Thread {
 
     void set_parts(uint16_t parts);
 
-  protected:
-    bool regex_search_string(const std::string& input,
-                             const std::string& pattern,
-                             std::string& output, int pos_of_pattern = 2);
-
-    bool regex_search_string(const std::string& input,
-                             const std::string& pattern);
-
+  private:
     void run() override;
 
-    virtual bool receive_data(Connection& connection, Buffer& buffer);
-
-    virtual bool send_data(const Connection& connection, const Buffer& buffer);
-
     // Return max_fd
-    virtual int set_descriptors();
+    int set_descriptors();
 
-    virtual void receive_from_connection(size_t index, Buffer& buffer);
+    void receive_from_connection(size_t index, Buffer& buffer);
 
-    virtual void init_connections();
+    void init_connections();
 
     void init_connection();
 
-    virtual std::vector<int> check_timeout();
-    // Retry download in connections
-    virtual void retry(const std::vector<int>& connection_indices);
-
-    // <index, connection> [index: same as part index]
-    std::map<size_t, Connection> connections;
-    fd_set readfds;
-
-  private:
     struct RateParams {
       size_t limit = 0;
       size_t speed = 0;
@@ -102,12 +82,15 @@ class Downloader : public Thread {
 
     void check_new_sock_ops();
     
+    fd_set readfds;
     CallBack callback;
     struct timeval timeout;
     time_t timeout_seconds;
     uint16_t number_of_parts;
     std::unique_ptr<FileIO> file_io;
     std::mutex new_available_parts_mutex;
+    // <index, connection> [index: same as part index]
+    std::map<size_t, Connection> connections;
     std::unique_ptr<Transceiver> transceiver;
     std::atomic<bool> wait_first_conn_response;
     std::shared_ptr<StateManager> state_manager;

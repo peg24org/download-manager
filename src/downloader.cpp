@@ -105,60 +105,6 @@ void Downloader::run()
   request_manager->join();
 }   // End of downloader thread run()
 
-bool Downloader::regex_search_string(const string& input,
-                                     const string& pattern,
-                                     string& output, int pos_of_pattern)
-{
-  smatch m;
-  regex e(pattern);
-  bool retval = regex_search(input, m, e);
-  output = m[pos_of_pattern];
-
-  return retval;
-}
-
-bool Downloader::regex_search_string(const string& input, const string& pattern)
-{
-  string temp;
-
-  return regex_search_string(input, pattern, temp);
-}
-
-bool Downloader::receive_data(Connection& connection, Buffer& buffer)
-{
-  bool result = true;
-  int sock_desc = connection.socket_ops->get_socket_descriptor();
-  int64_t recv_len = recv(sock_desc, buffer, buffer.capacity(), 0);
-
-  if (recv_len >= 0)
-    buffer.set_length(recv_len);
-  else {
-    connection.status = OperationStatus::SOCKET_RECV_ERROR;
-    result = false;
-    buffer.clear();
-  }
-
-  return result;
-}
-
-bool Downloader::send_data(const Connection& connection, const Buffer& buffer)
-{
-  size_t sent_bytes = 0;
-  size_t tmp_sent_bytes = 0;
-  int sock_desc = connection.socket_ops->get_socket_descriptor();
-
-  while (sent_bytes < buffer.length()) {
-    tmp_sent_bytes = send(sock_desc, const_cast<Buffer&>(buffer) + sent_bytes,
-                          buffer.length(), 0);
-    if (tmp_sent_bytes >= 0)
-      sent_bytes += tmp_sent_bytes;
-    else
-      return false;
-  }
-
-  return true;
-}
-
 int Downloader::set_descriptors()
 {
   int max_fd = 0;
@@ -208,30 +154,30 @@ void Downloader::init_connection()
   request_manager->add_request(start, part.second.end, kConnectionIndex);
 }
 
-vector<int> Downloader::check_timeout()
-{
-  vector<int> result;
-  for (auto& connection_it : connections) {
-    Connection& connection = connection_it.second;
-    steady_clock::time_point now = steady_clock::now();
-    duration<double> time_span =
-      duration_cast<duration<double>>(now - connection.last_recv_time_point);
-    if (time_span.count() > timeout_seconds)
-      // Timeout index
-      result.push_back(connection_it.first);
-  }
+//vector<int> Downloader::check_timeout()
+//{
+//  vector<int> result;
+//  for (auto& connection_it : connections) {
+//    Connection& connection = connection_it.second;
+//    steady_clock::time_point now = steady_clock::now();
+//    duration<double> time_span =
+//      duration_cast<duration<double>>(now - connection.last_recv_time_point);
+//    if (time_span.count() > timeout_seconds)
+//      // Timeout index
+//      result.push_back(connection_it.first);
+//  }
+//
+//  return result;
+//}
 
-  return result;
-}
-
-void Downloader::retry(const vector<int>& connection_indices)
-{
+//void Downloader::retry(const vector<int>& connection_indices)
+//{
 //  for (const int index : connection_indices) {
 //    Connection& connection = connections[index];
 //    init_connection(connection);
 //    send_request(connection);
 //  }
-}
+//}
 
 void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
 {
