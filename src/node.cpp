@@ -34,8 +34,10 @@ void Node::run()
   const pair<string, string> paths= get_output_paths(
       connection_manager->get_file_name());
   const size_t file_length = connection_manager->get_file_length();
-  cerr << "FILE:" << file_length << endl;
-  cerr << "FILE:" << paths.first << endl;
+  const string& file_name = paths.first;
+
+  on_get_file_info(node_index, file_length, file_name);
+
   unique_ptr<FileIO> file_io = make_unique<FileIO>(paths.first);
 
   unique_ptr<FileIO> stat_file_io = make_unique<FileIO>(paths.second);
