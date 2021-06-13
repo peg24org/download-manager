@@ -102,7 +102,7 @@ pair<size_t, Chunk> StateManager::get_part()
 void StateManager::create_new_state(size_t download_file_size)
 {
   if (download_file_size == 0)
-    throw runtime_error(".stat file not available.");
+    throw runtime_error("StateManager: File size should not be zero.");
 
   parts.clear();
   this->download_file_size = download_file_size;

@@ -42,7 +42,8 @@ void Node::run()
 
   state_manager = make_shared<StateManager>(paths.second);
   bool state_file_available = state_manager->state_file_available();
-  if (resume && state_file_available) { // Resuming download
+  bool main_file_available = file_io->check_existence();
+  if (resume && state_file_available && main_file_available) { // Resuming download
     state_manager->retrieve();
     file_io->open();
   }
