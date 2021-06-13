@@ -17,13 +17,14 @@ Downloader::Downloader(unique_ptr<RequestManager> request_manager,
                        shared_ptr<StateManager> state_manager,
                        unique_ptr<FileIO> file_io,
                        unique_ptr<Transceiver> transceiver)
-  : request_manager(move(request_manager))
-  , state_manager(state_manager)
+  : timeout({.tv_sec=0, .tv_usec=100'000})
   , timeout_seconds(5)
   , number_of_parts(1)
   , file_io(move(file_io))
   , transceiver(move(transceiver))
   , wait_first_conn_response(true)
+  , state_manager(state_manager)
+  , request_manager(move(request_manager))
 {
   DwlAvailNotifyCB callback = bind(&Downloader::on_dwl_available, this,
                                    placeholders::_1, placeholders::_2);
@@ -72,10 +73,8 @@ void Downloader::run()
     else if (sel_retval > 0) {
       timeout = {.tv_sec=timeout_seconds, .tv_usec=100'000};
       for (auto& [index, connection] : connections) {
-        if (connection.socket_ops.get() == nullptr) {
-          cerr << " [ " << index << " ] " << " connection null." << endl;
+        if (connection.socket_ops.get() == nullptr)
           continue;
-        }
         size_t recvd_bytes = 0;
         receive_from_connection(index, recv_buffer);
         recvd_bytes = recv_buffer.length();
@@ -99,7 +98,7 @@ void Downloader::run()
     // Check each connection for timeout
 //    vector<int> timeout_indices = check_timeout();
 //    if (timeout_indices.size() > 0)
-//      retry(timeout_indices);
+// TODO:     retry(timeout_indices);
 //    callback(rate.speed);
   }   // End of while loop
   request_manager->stop();
@@ -199,11 +198,9 @@ void Downloader::init_connections()
 
 void Downloader::init_connection()
 {
-  timeout = {.tv_sec=0, .tv_usec=100'000};
   pair<size_t, Chunk> part = state_manager->get_part();
   const size_t start = part.second.current;
 
-  const size_t length = part.second.end - part.second.current;
   const size_t kConnectionIndex = part.first;
   connections[kConnectionIndex] = Connection();
   connections[kConnectionIndex].chunk.end = part.second.end;
@@ -229,11 +226,11 @@ vector<int> Downloader::check_timeout()
 
 void Downloader::retry(const vector<int>& connection_indices)
 {
-  for (const int index : connection_indices) {
-    Connection& connection = connections[index];
-    //init_connection(connection);
-    send_request(connection);
-  }
+//  for (const int index : connection_indices) {
+//    Connection& connection = connections[index];
+//    init_connection(connection);
+//    send_request(connection);
+//  }
 }
 
 void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)

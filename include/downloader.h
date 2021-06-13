@@ -39,9 +39,6 @@ class Downloader : public Thread {
      *  it will return -1
      */
 
-    // TODO: remove empty function.
-    virtual int check_link(std::string& redirect_url, size_t& size) {};
-
     void use_http_proxy(std::string proxy_host, uint16_t proxy_port);
 
     void register_callback(CallBack callback);
@@ -66,10 +63,6 @@ class Downloader : public Thread {
 
     virtual bool send_data(const Connection& connection, const Buffer& buffer);
 
-    // TODO: remove all empty functions.
-    virtual bool send_requests() {};
-
-    virtual bool send_request(Connection& connection) {};
     // Return max_fd
     virtual int set_descriptors();
 
@@ -83,28 +76,11 @@ class Downloader : public Thread {
     // Retry download in connections
     virtual void retry(const std::vector<int>& connection_indices);
 
-    std::unique_ptr<FileIO> file_io;
-    std::shared_ptr<StateManager> state_manager;
-    time_t timeout_seconds;
     // <index, connection> [index: same as part index]
     std::map<size_t, Connection> connections;
     fd_set readfds;
-    uint16_t number_of_parts;
 
   private:
-    std::unique_ptr<RequestManager> request_manager;
-    CallBack callback;
-    // <index, chunk>
-    std::queue<std::pair<size_t, Chunk>> initial_parts;
-
-    struct NewAvailPart {
-      uint16_t part_index;
-      std::unique_ptr<SocketOps> sock_ops;
-    };
-    // part index, socket
-    std::mutex new_available_parts_mutex;
-    std::queue<NewAvailPart> new_available_parts;
-
     struct RateParams {
       size_t limit = 0;
       size_t speed = 0;
@@ -126,9 +102,25 @@ class Downloader : public Thread {
 
     void check_new_sock_ops();
     
-    std::unique_ptr<Transceiver> transceiver;
+    CallBack callback;
     struct timeval timeout;
+    time_t timeout_seconds;
+    uint16_t number_of_parts;
+    std::unique_ptr<FileIO> file_io;
+    std::mutex new_available_parts_mutex;
+    std::unique_ptr<Transceiver> transceiver;
     std::atomic<bool> wait_first_conn_response;
+    std::shared_ptr<StateManager> state_manager;
+    std::unique_ptr<RequestManager> request_manager;
+    // <index, chunk>
+    std::queue<std::pair<size_t, Chunk>> initial_parts;
+
+    struct NewAvailPart {
+      uint16_t part_index;
+      std::unique_ptr<SocketOps> sock_ops;
+    };
+    // part index, socket
+    std::queue<NewAvailPart> new_available_parts;
 };
 
 #endif
