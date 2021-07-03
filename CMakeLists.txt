@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 project (Downloader)
 
 find_library(SSL ssl)
@@ -18,11 +18,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/libs)
 
 include_directories(${PROJECT_SOURCE_DIR} include)
 include_directories(${PROJECT_SOURCE_DIR} thread/include)
+
 add_subdirectory(src)
+add_subdirectory(test)
 add_subdirectory(thread/src)
-
-add_executable(main main.cpp )
-target_link_libraries(main thread_static downloader_static pthread ssl crypto)
-
-add_subdirectory(tests)
 

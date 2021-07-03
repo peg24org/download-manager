@@ -12,7 +12,6 @@ class TransceiverTest : public ::testing::Test
   protected:
 };
 
-TEST_F(TransceiverTest, buffer_should_able_treat_like_raw_buffer)
+TEST_F(TransceiverTest, _)
 {
-  Transceiver transv;
 }
