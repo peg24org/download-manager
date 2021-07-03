@@ -54,6 +54,7 @@ void Downloader::set_parts(uint16_t parts)
 void Downloader::run()
 {
   init_connections();
+  // TODO: implement using conditional variable.
   while (wait_first_conn_response)
     this_thread::sleep_for(milliseconds(10));
 
@@ -206,6 +207,9 @@ void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
 
 void Downloader::update_connection_stat(size_t recvd_bytes, size_t index)
 {
+  if (connections[index].chunk.current + recvd_bytes > connections[index].chunk.end)
+    recvd_bytes = connections[index].chunk.end - connections[index].chunk.current + 1;
+
   connections[index].chunk.current += recvd_bytes;
   connections[index].last_recv_time_point = steady_clock::now();
   state_manager->update(index, recvd_bytes);
