@@ -71,11 +71,12 @@ bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
     return false;
 }
 
-bool HttpTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
+bool HttpTransceiver::send(const Buffer& buffer, SocketOps* sock_ops)
 {
   bool result = false;
   int sock_desc = sock_ops->get_socket_descriptor();
-  result = plain_transceiver.send(buffer, buffer.length(), sock_desc);
+  result = plain_transceiver.send(const_cast<Buffer&>(buffer), buffer.length(),
+                                  sock_desc);
 
   return result;
 }

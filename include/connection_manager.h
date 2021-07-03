@@ -5,6 +5,7 @@
 
 #include "url_parser.h"
 #include "socket_ops.h"
+#include "transceiver.h"
 
 class ConnectionManager
 {
@@ -23,8 +24,9 @@ class ConnectionManager
 
   private:
     std::unique_ptr<SocketOps> get_socket_ops();
-    std::pair<bool, std::string> check_redirection();
+    std::pair<bool, std::string> check_link();
     std::string get_ip(const std::string& host_name) const;
+    size_t get_file_length_ftp(Transceiver* transceiver, SocketOps* socket_ops);
 
     UrlParser url_parser;
     std::string ip;

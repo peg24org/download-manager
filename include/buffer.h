@@ -2,12 +2,15 @@
 #define _BUFFER_H
 
 #include <memory>
+#include <ostream>
 
 class Buffer
 {
   public:
     // C-tor.
     Buffer(size_t capacity = kDefaultCapacity);
+
+    Buffer(const std::string& contents);
 
     // Copy C-tor.
     Buffer(const Buffer& src);

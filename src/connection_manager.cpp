@@ -6,8 +6,9 @@
 #include <cstring>
 #include <iostream>
 
-#include "transceiver.h"
 #include "pattern_finder.h"
+#include "ftp_transceiver.h"
+#include "http_transceiver.h"
 #include "https_socket_ops.h"
 #include "https_transceiver.h"
 
@@ -19,7 +20,7 @@ ConnectionManager::ConnectionManager(const string& url)
   while (true) {
     try {
       ip = get_ip(url_parser.get_host_name());
-      if (!check_redirection().first)
+      if (!check_link().first)
         break;
     } catch (const runtime_error& e) {
       cerr << "Exception occurred, " << e.what() << endl;
@@ -89,7 +90,7 @@ unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
   return move(sock_ops);
 }
 
-pair<bool, string> ConnectionManager::check_redirection()
+pair<bool, string> ConnectionManager::check_link()
 {
   unique_ptr<Transceiver> transceiver;
   socket_ops = get_socket_ops();
@@ -97,6 +98,8 @@ pair<bool, string> ConnectionManager::check_redirection()
 
   switch (url_parser.get_protocol()) {
     case Protocol::FTP:
+      transceiver = make_unique<FtpTransceiver>();
+      file_length = get_file_length_ftp(transceiver.get(), socket_ops.get());
       return result;
       break;
     case Protocol::HTTP:
@@ -161,5 +164,26 @@ string ConnectionManager::get_ip(const string& host_name) const
   string ip(inet_ntoa(*((struct in_addr*)server->h_addr_list[0])));
 
   return ip;
+}
+
+size_t ConnectionManager::get_file_length_ftp(Transceiver* transceiver,
+                                              SocketOps* socket_ops)
+{
+  FtpTransceiver* ftp_transceiver = dynamic_cast<FtpTransceiver*>(transceiver);
+  ftp_transceiver->send_init_commands(socket_ops);
+
+  Buffer size_command(string("SIZE ") + url_parser.get_path() +
+                      url_parser.get_file_name()+ "\r\n");
+  ftp_transceiver->send(size_command, socket_ops);
+
+  Buffer recv_buffer;
+  if (!ftp_transceiver->receive(recv_buffer, socket_ops))
+      cerr << "Ftp receive error " << endl;
+
+  string response(recv_buffer, recv_buffer.length());
+  const string size_str = response.substr(response.find(' '), response.length());
+  const size_t kFileSize = stoi(size_str);
+
+  return kFileSize;
 }
 

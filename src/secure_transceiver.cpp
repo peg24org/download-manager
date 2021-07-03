@@ -15,7 +15,7 @@ ssize_t SecureTransceiver::receive(SSL* ssl, char* buffer, const size_t len)
   return recvd_bytes;
 }
 
-bool SecureTransceiver::send(BIO* bio, char* buffer, const size_t len)
+bool SecureTransceiver::send(BIO* bio, const char* buffer, const size_t len)
 {
   bool result = true;
   int64_t sent_bytes = 0;

@@ -7,7 +7,7 @@
 class HttpsTransceiver : public HttpTransceiver
 {
   public:
-    bool send(Buffer& buffer, SocketOps* sock_ops) final;
+    bool send(const Buffer& buffer, SocketOps* sock_ops) final;
     bool receive(Buffer& buffer, SocketOps* sock_ops) final;
 
   private:

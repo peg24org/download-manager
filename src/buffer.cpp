@@ -11,6 +11,13 @@ Buffer::Buffer(size_t capacity) : buffer_length(0), index_position(0)
   allocate(capacity);
 }
 
+Buffer::Buffer(const string& contents)
+  : Buffer(contents.length())
+{
+  memcpy(buffer.get(), contents.c_str(), contents.length());
+  buffer_length = contents.length();
+}
+
 Buffer::Buffer(const Buffer& src) : buffer_length(src.buffer_length)
 {
   allocate(src.buffer_capacity);

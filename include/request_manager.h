@@ -11,10 +11,7 @@
 #include "buffer.h"
 #include "socket_ops.h"
 #include "transceiver.h"
-#include "http_transceiver.h"
 #include "connection_manager.h"
-
-constexpr time_t kDefaultTimeoutSeconds = 5;
 
 // index, socket
 using DwlAvailNotifyCB =
@@ -43,25 +40,18 @@ class RequestManager : public Thread
     RequestManager(std::unique_ptr<ConnectionManager> connection_manager,
                    std::unique_ptr<Transceiver> transceiver);
     void stop();
-    bool resumable();
-    size_t get_size();
-    void set_timeout(int timeout);
-    void set_connections(int connections);
     void set_proxy(std::string& host, uint32_t port);
-    void add_request(size_t start_pos, size_t length,
-                     uint16_t request_index);
+    void add_request(size_t start_pos, size_t length, uint16_t request_index);
 
     void register_dwl_notify_cb(DwlAvailNotifyCB dwl_notify_cb);
 
   protected:
     std::unique_ptr<ConnectionManager> connection_manager;
-    time_t timeout_seconds;
-    int connections;
+    std::unique_ptr<Transceiver> transceiver;
 
     std::string proxy_host;
     uint32_t proxy_port;
 
-    fd_set writefds;
     std::mutex request_mutex;
     std::vector<Request> requests;
 
@@ -69,15 +59,9 @@ class RequestManager : public Thread
 
   private:
     void run() override;
-    std::pair<bool, std::string> check_redirected();
-    bool send_requests();
-    virtual bool send_request(Buffer& request, SocketOps* sock_ops);
-    // Connect to address and return socket.
-    int connect();
+    virtual void send_requests() = 0;
     bool request_available();
-    Buffer generate_request_str(const Request& request);
     std::atomic<bool> keep_running;
-    std::unique_ptr<Transceiver> transceiver;
 };
 
 #endif

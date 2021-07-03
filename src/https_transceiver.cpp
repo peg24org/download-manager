@@ -24,11 +24,11 @@ bool HttpsTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
   return result;
 }
 
-bool HttpsTransceiver::send(Buffer& buffer, SocketOps* sock_ops)
+bool HttpsTransceiver::send(const Buffer& buffer, SocketOps* sock_ops)
 {
   bool result = true;
   BIO* bio = dynamic_cast<HttpsSocketOps*>(sock_ops)->get_bio();
-  secure_transceiver.send(bio, buffer, buffer.length());
+  secure_transceiver.send(bio, const_cast<Buffer&>(buffer), buffer.length());
 
   return result;
 }

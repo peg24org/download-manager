@@ -8,7 +8,9 @@
 #include <functional>
 
 #include "node.h"
-#include "request_manager.h"
+#include "ftp_request_manager.h"
+#include "http_request_manager.h"
+#include "ftp_transceiver.h"
 #include "http_transceiver.h"
 #include "https_transceiver.h"
 #include "connection_manager.h"
@@ -69,16 +71,19 @@ void Node::run()
 
   switch (protocol) {
     case Protocol::HTTP:
-      request_manager = make_unique<RequestManager>(move(connection_manager),
+      request_manager = make_unique<HttpRequestManager>(move(connection_manager),
                                                     make_unique<HttpTransceiver>());
       transceiver = make_unique<HttpTransceiver>();
       break;
     case Protocol::HTTPS:
-      request_manager = make_unique<RequestManager>(move(connection_manager),
+      request_manager = make_unique<HttpRequestManager>(move(connection_manager),
                                                     make_unique<HttpsTransceiver>());
       transceiver = make_unique<HttpsTransceiver>();
       break;
     case Protocol::FTP:
+      request_manager = make_unique<FtpRequestManager>(move(connection_manager),
+                                                    make_unique<FtpTransceiver>());
+      transceiver = make_unique<FtpTransceiver>();
       break;
   }
 
