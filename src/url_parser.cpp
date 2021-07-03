@@ -58,7 +58,7 @@ UrlParser::UrlParameters UrlParser::parse_url()
       throw invalid_argument("unknown protocol");
   }
 
-  string url_ = url.substr(protocol_pos+3, url_.length());
+  string url_ = url.substr(protocol_pos+3, url.length());
   size_t colon_pos = url_.find(":");
   const size_t first_slash = url_.find("/");
   size_t last_slash = url_.find_last_of("/");
