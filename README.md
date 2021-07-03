@@ -25,10 +25,10 @@ make
 
 Usage:
 ```
-./main http://www.example.com/file.dat
+bin/demo http://www.example.com/file.dat
 ```
 Download with four threads:
 ```
-./main -n 4 http://www.example.com/file.dat
+bin/demo -n 4 http://www.example.com/file.dat
 
 ```
