@@ -2,12 +2,15 @@
 #define _BUFFER_H
 
 #include <memory>
+#include <ostream>
 
 class Buffer
 {
   public:
     // C-tor.
     Buffer(size_t capacity = kDefaultCapacity);
+
+    Buffer(const std::string& contents);
 
     // Copy C-tor.
     Buffer(const Buffer& src);
@@ -28,6 +31,8 @@ class Buffer
      */
     operator char*();
 
+    // TODO: implement << operator for Buffer
+    // TODO: implement << operator for size_t
     // Caution: always gets null terminated c-string.
     Buffer& operator<<(const char* input);
 
@@ -60,6 +65,8 @@ class Buffer
      * @return Capacity of buffer
      */
     size_t capacity() const noexcept;
+
+    size_t total_capacity() const noexcept;
 
     // Gets length of buffer.
     size_t length() const noexcept;

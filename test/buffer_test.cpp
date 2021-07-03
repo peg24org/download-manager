@@ -33,11 +33,13 @@ TEST_F(BufferTest, buffer_should_able_treat_like_raw_buffer)
 
 TEST_F(BufferTest, capacity_setter_should_set_values_correctly)
 {
+  Buffer cap_test_buffer;
   constexpr static size_t kTestBufferSize = 2000;
-  EXPECT_EQ(buffer.kDefaultCapacity, buffer.capacity());
-  buffer.set_capacity(kTestBufferSize);
+  EXPECT_EQ(Buffer::kDefaultCapacity, cap_test_buffer.capacity());
+  cap_test_buffer.set_capacity(kTestBufferSize);
 
-  EXPECT_EQ(kTestBufferSize, buffer.capacity());
+  EXPECT_EQ(kTestBufferSize, cap_test_buffer.capacity());
+  EXPECT_EQ(0, cap_test_buffer.length());
 }
 
 TEST_F(BufferTest, buffer_after_resizing_should_have_correct_amount_of_storage)
@@ -63,7 +65,7 @@ TEST_F(BufferTest, contents_of_two_buffer_should_be_same_after_copy)
   EXPECT_EQ(0, strncmp(buffer, buffer_1, buffer.kDefaultCapacity));
 }
 
-TEST_F(BufferTest, using_copy_assignment_should_copy_data_and_params)
+TEST_F(BufferTest, copy_assignment_should_copy_data_and_params)
 {
   constexpr static size_t kLowCapacitySize = 1024;
   unique_ptr<char[]> test_data = get_random_buffer(buffer.kDefaultCapacity);
@@ -151,9 +153,10 @@ TEST_F(BufferTest, extending_the_buffer_should_not_change_the_contents_and_len)
 {
   unique_ptr<char[]> old_contents = make_unique<char[]>(buffer.length());
   size_t old_len = buffer.length();
+  size_t old_cap = buffer.capacity();
   memcpy(old_contents.get(), buffer, buffer.length());
 
-  buffer.extend(old_len * 3);
+  buffer.extend((old_len + old_cap) * 3);
 
   size_t new_len = buffer.length();
 
@@ -161,18 +164,18 @@ TEST_F(BufferTest, extending_the_buffer_should_not_change_the_contents_and_len)
   EXPECT_EQ(old_len, new_len);
 }
 
-TEST_F(BufferTest, extending_the_buffer_should_increase_capasity)
+TEST_F(BufferTest, extending_the_buffer_should_increase_capacity)
 {
   size_t old_len = buffer.length();
   size_t old_cap = buffer.capacity();
-  size_t new_cap = old_cap * 4;
+  size_t new_cap = (old_cap + old_len) * 4;
 
   buffer.extend(new_cap);
 
   size_t cap = buffer.capacity();
   size_t len = buffer.length();
 
-  EXPECT_EQ(cap, new_cap);
+  EXPECT_EQ(cap, new_cap - len);
   EXPECT_NE(cap, old_cap);
   EXPECT_EQ(len, old_len);
 }
@@ -212,7 +215,7 @@ TEST_F(BufferTest, buffer_should_preserve_inserted_chars_order)
 }
 
 template<typename T>
-struct InsertionOperatorTest : public testing::Test
+struct BufferInsertionOperatorTest : public testing::Test
 {
   using ParamType = T;
   void SetUp()
@@ -226,7 +229,7 @@ struct InsertionOperatorTest : public testing::Test
 };
 
 using MyTypes = testing::Types<string, char*, char, int>;
-TYPED_TEST_CASE(InsertionOperatorTest, MyTypes);
+TYPED_TEST_CASE(BufferInsertionOperatorTest, MyTypes);
 
 template<typename T>
 size_t insert_data(Buffer& buffer, char* random_data)
@@ -249,7 +252,7 @@ size_t insert_data(Buffer& buffer, char* random_data)
   return insertion_len;
 }
 
-TYPED_TEST(InsertionOperatorTest, should_insert_data_and_update_length)
+TYPED_TEST(BufferInsertionOperatorTest, should_insert_data_and_update_length)
 {
   using ParamType  = typename TestFixture::ParamType;
 
@@ -271,7 +274,7 @@ TYPED_TEST(InsertionOperatorTest, should_insert_data_and_update_length)
   EXPECT_STREQ(random_data.get(), test_buffer);
 }
 
-TYPED_TEST(InsertionOperatorTest, should_append_the_end_of_contents)
+TYPED_TEST(BufferInsertionOperatorTest, should_append_the_end_of_contents)
 {
   using ParamType  = typename TestFixture::ParamType;
 
@@ -297,3 +300,4 @@ TYPED_TEST(InsertionOperatorTest, should_append_the_end_of_contents)
   EXPECT_EQ(insertion_len+initial_buffer_len, this->buffer.length());
   EXPECT_STREQ(expected_contents.get(), this->buffer);
 }
+

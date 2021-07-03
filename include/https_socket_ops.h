@@ -4,19 +4,14 @@
 #include <openssl/ssl.h>
 #include <unistd.h>
 
-#include "url_ops.h"
 #include "socket_ops.h"
 
 // Socket operations for secure connection.
 class HttpsSocketOps : public SocketOps
 {
   public:
-    /**
-     *  The c-tor.
-     *
-     *  @see SocketOps::SocketOps()
-     */
-    using SocketOps::SocketOps;
+    HttpsSocketOps(const std::string& ip, uint16_t port,
+                   const std::string& host);
 
     /**
      *  @see SocketOps::connect()
@@ -38,6 +33,7 @@ class HttpsSocketOps : public SocketOps
     SSL* ssl;
     SSL_CTX* ctx{nullptr};
     X509 *cert{nullptr};
+    std::string host;
 };
 
 #endif

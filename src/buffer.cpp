@@ -11,6 +11,13 @@ Buffer::Buffer(size_t capacity) : buffer_length(0), index_position(0)
   allocate(capacity);
 }
 
+Buffer::Buffer(const string& contents)
+  : Buffer(contents.length())
+{
+  memcpy(buffer.get(), contents.c_str(), contents.length());
+  buffer_length = contents.length();
+}
+
 Buffer::Buffer(const Buffer& src) : buffer_length(src.buffer_length)
 {
   allocate(src.buffer_capacity);
@@ -100,6 +107,7 @@ void Buffer::set_capacity(size_t capacity)
 {
   this->buffer_capacity = capacity;
   buffer = make_unique<char[]>(capacity);
+  buffer_length = 0;
 }
 
 void Buffer::extend(size_t capacity)
@@ -112,9 +120,13 @@ void Buffer::extend(size_t capacity)
 
 size_t Buffer::capacity() const noexcept
 {
-  return buffer_capacity;
+  return buffer_capacity - buffer_length;
 }
 
+size_t Buffer::total_capacity() const noexcept
+{
+  return buffer_capacity;
+}
 size_t Buffer::length() const noexcept
 {
   return buffer_length;

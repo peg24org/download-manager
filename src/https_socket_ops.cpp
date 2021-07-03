@@ -3,6 +3,13 @@
 #include "https_socket_ops.h"
 
 using namespace std;
+   
+HttpsSocketOps::HttpsSocketOps(const std::string& ip, uint16_t port,
+                               const std::string& host)
+  : SocketOps(ip, port)
+  , host(host)
+{
+}
 
 bool HttpsSocketOps::connect()
 {
@@ -10,7 +17,7 @@ bool HttpsSocketOps::connect()
     if (SSL_CTX_set_default_verify_paths(ctx) != 1) 
       cerr << "Error setting up trust store" << endl;
 
-    string destination = ip + ":" + to_string(port);
+    string destination = host + ":" + to_string(port);
     bio = BIO_new_connect(destination.c_str());
     if (BIO_do_connect(bio) <= 0)
       cerr << "Error in BIO_do_connect" << endl;
@@ -19,14 +26,15 @@ bool HttpsSocketOps::connect()
     BIO* new_bio = BIO_new_ssl(ctx, 1);
     BIO_push(new_bio, bio);
 
-    SSL_set_tlsext_host_name(retrieve_ssl(new_bio), ip.c_str());
-    SSL_set1_host(retrieve_ssl(new_bio), ip.c_str());
+    SSL_set_tlsext_host_name(retrieve_ssl(new_bio), host.c_str());
+    SSL_set1_host(retrieve_ssl(new_bio), host.c_str());
     if (BIO_do_handshake(new_bio) <= 0)
       cerr << "Error in BIO_do_handshake" << endl;
 
     // Verify the certificate.
     SSL* verfy_ssl = retrieve_ssl(new_bio);
     int err = SSL_get_verify_result(verfy_ssl);
+    cerr << destination << endl;
     if (err != X509_V_OK)
       cerr << "Certificate verification error: " <<
               X509_verify_cert_error_string(err) << "(" << err << ")" << endl;
@@ -73,3 +81,4 @@ SSL* HttpsSocketOps::get_ssl() const
 {
   return ssl;
 }
+

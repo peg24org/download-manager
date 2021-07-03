@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 
+#include "units.h"
 #include "file_io.h"
 
 struct Chunk {
@@ -64,11 +65,25 @@ class StateManager
      */
     void update(size_t index, size_t recvd_butes);
 
+    /**
+     *  Number of currently downloading parts
+     *
+     * @return Number of opened and non completed parts.
+     */
+    size_t downloading_parts() const;
+
+    /**
+     *
+     * @param index Index of part
+     * @return Current position of part
+     */
+    size_t get_current_pos(size_t index) const;
+
   protected:
     std::unique_ptr<FileIO> state_file;
 
   private:
-    constexpr static size_t kMinChunkSize = pow(2, 20);
+    constexpr static size_t kMinChunkSize = 1_MB;
     void read_raw_data();
     void store();
     Chunk generate_new_chunk();

@@ -35,7 +35,7 @@ StateManager::StateManager(const string& file_path)
   , chunk_size(kMinChunkSize)
   , inited(false)
 {
-  state_file = make_unique<FileIO>("." + file_path + ".stat");
+  state_file = make_unique<FileIO>(file_path);
 }
 
 bool StateManager::state_file_available() const
@@ -50,7 +50,6 @@ bool StateManager::state_file_available() const
 bool StateManager::part_available() const
 {
   bool new_part = true;
-
   if (parts.size() > 0) {
     Chunk last_chunk = parts.rbegin()->second;
     size_t last_chunk_size = last_chunk.end - last_chunk.current;
@@ -92,7 +91,7 @@ pair<size_t, Chunk> StateManager::get_part()
       size_t end = last_chunk.end + chunk_size;
       if (end > download_file_size) // Check for last chunk
         end = download_file_size;
-      new_part.second = Chunk(last_chunk.end, last_chunk.end, end);
+      new_part.second = Chunk(last_chunk.end, last_chunk.end + 1, end);
     }
     parts[new_part.first] = new_part.second;
   }
@@ -103,7 +102,7 @@ pair<size_t, Chunk> StateManager::get_part()
 void StateManager::create_new_state(size_t download_file_size)
 {
   if (download_file_size == 0)
-    throw runtime_error(".stat file not available.");
+    throw runtime_error("StateManager: File size should not be zero.");
 
   parts.clear();
   this->download_file_size = download_file_size;
@@ -170,6 +169,16 @@ void StateManager::update(size_t index, size_t recvd_bytes)
   total_recvd_bytes += recvd_bytes;
 
   store();
+}
+
+size_t StateManager::downloading_parts() const
+{
+  return parts.size() + initial_parts.size();
+}
+
+size_t StateManager::get_current_pos(size_t index) const
+{
+  return parts.at(index).current;
 }
 
 void StateManager::store()

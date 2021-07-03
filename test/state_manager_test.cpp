@@ -63,7 +63,7 @@ TEST_F(StateManagerTest, set_chunk_size_should_work_properly)
   EXPECT_EQ(kNewChunkSize, state_manager.get_chunk_size());
 }
 
-TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size)
+TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size_0)
 {
   size_t chunk_size = state_manager.get_chunk_size();
   pair<size_t, Chunk> part = state_manager.get_part();
@@ -71,7 +71,24 @@ TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size)
   EXPECT_EQ(chunk_size, part_size);
 }
 
-TEST_F(StateManagerTest, new_chunk_should_start_from_last_chunk)
+TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size_1)
+{
+  size_t chunk_size = state_manager.get_chunk_size();
+  size_t kNumberOfParts = kFileSize / chunk_size;
+  size_t number_of_parts = 0;
+
+  while (state_manager.part_available()) {
+    pair<size_t, Chunk> part = state_manager.get_part();
+    size_t part_size = part.second.end - part.second.start;
+    EXPECT_EQ(chunk_size, part_size);
+
+    ++number_of_parts;
+  }
+
+  EXPECT_EQ(kNumberOfParts, number_of_parts);
+}
+
+TEST_F(StateManagerTest, new_chunk_should_start_from_last_chunk_plus_one)
 {
   // -2 for creating non-dividable chunk
   constexpr size_t kFileSize = pow(2, 30) - 2;
@@ -86,7 +103,7 @@ TEST_F(StateManagerTest, new_chunk_should_start_from_last_chunk)
     static bool first_position = true;
     if (!first_position) {
       auto previous_position = position - 1;
-      size_t end_of_prev_pos = previous_position->second.end;
+      size_t end_of_prev_pos = previous_position->second.end + 1;
       EXPECT_EQ(end_of_prev_pos, position->second.current);
     }
     else
@@ -150,7 +167,7 @@ TEST_F(StateManagerTest, retrived_state_file_contents_check_0)
   }
 
   auto last_datum = data.end() - 1;
-  EXPECT_EQ(last_part.second.current, get<3>(*last_datum));
+  EXPECT_EQ(last_part.second.current - 1, get<3>(*last_datum));
 }
 
 TEST_F(StateManagerTest, retrived_state_file_contents_check_1)
@@ -176,7 +193,8 @@ TEST_F(StateManagerTest, retrived_state_file_contents_check_1)
   }
 }
 
-TEST(ChunkNotAvailableTest, chunk_should_be_available_by_creating_new_state)
+TEST(StateManagerTestChunkNotAvailable,
+     chunk_should_be_available_by_creating_new_state)
 {
   static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
   StateManagerTestClass state_manager;
@@ -185,3 +203,17 @@ TEST(ChunkNotAvailableTest, chunk_should_be_available_by_creating_new_state)
   state_manager.create_new_state(kFileSize);
   EXPECT_TRUE(state_manager.part_available());
 }
+
+TEST(StateManagerTestGetParts,
+     parts_number_should_be_equal_to_created_and_not_completed_parts)
+{
+  static constexpr size_t kParts = 123;
+  static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
+  StateManagerTestClass state_manager;
+
+  state_manager.create_new_state(kFileSize);
+  for (size_t i = 0; i < kParts; ++i)
+    state_manager.get_part();
+  EXPECT_EQ(kParts, state_manager.downloading_parts());
+}
+

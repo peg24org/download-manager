@@ -3,8 +3,6 @@
 
 #include <string>
 
-#include "url_ops.h"
-
 // Socket operations class.
 class SocketOps
 {
@@ -34,12 +32,16 @@ class SocketOps
      *  Gets the socket descriptor for send/recv.
      *  @return The socket descriptor.
      */
-    int get_socket_descriptor() const noexcept;
+    virtual int get_socket_descriptor() const noexcept;
+
+    void set_http_proxy(const std::string& host, uint16_t port);
 
   protected:
     int socket_descriptor;
     const std::string ip;
     const uint16_t port;
+    uint16_t proxy_port;
+    std::string http_proxy_host;
 };
 
 #endif
