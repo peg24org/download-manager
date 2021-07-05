@@ -49,6 +49,7 @@ void RequestManager::run()
       continue;
     }
     send_requests();
+    remove_sent_requests();
   }
 }
 
@@ -56,5 +57,18 @@ bool RequestManager::request_available()
 {
   lock_guard<mutex> lock(request_mutex);
   return !requests.empty();
+}
+
+void RequestManager::remove_sent_requests()
+{
+  using RequestIt = vector<Request>::iterator;
+  vector<RequestIt> sent_requests;
+
+  for (RequestIt it = requests.begin(); it != requests.end(); ++it)
+    if (it->sent)
+      sent_requests.push_back(it);
+
+  for (auto it : sent_requests)
+    requests.erase(it);
 }
 

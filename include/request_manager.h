@@ -60,6 +60,7 @@ class RequestManager : public Thread
   private:
     void run() override;
     virtual void send_requests() = 0;
+    void remove_sent_requests();
     bool request_available();
     std::atomic<bool> keep_running;
 };
