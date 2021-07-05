@@ -34,7 +34,6 @@ bool HttpsSocketOps::connect()
     // Verify the certificate.
     SSL* verfy_ssl = retrieve_ssl(new_bio);
     int err = SSL_get_verify_result(verfy_ssl);
-    cerr << destination << endl;
     if (err != X509_V_OK)
       cerr << "Certificate verification error: " <<
               X509_verify_cert_error_string(err) << "(" << err << ")" << endl;
