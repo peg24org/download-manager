@@ -18,5 +18,12 @@ set (SOURCES ${SOURCES}
   state_manager_test.cpp)
 
 add_executable(unit_tests ${SOURCES})
-target_link_libraries(unit_tests gtest gtest_main pthread ssl crypto downloader_static)
+
+target_link_libraries(unit_tests ssl)
+target_link_libraries(unit_tests crypto)
+target_link_libraries(unit_tests gtest)
+target_link_libraries(unit_tests gtest_main)
+target_link_libraries(unit_tests downloader_shared)
+target_link_libraries(unit_tests thread_static)
+
 
