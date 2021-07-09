@@ -204,16 +204,3 @@ TEST(StateManagerTestChunkNotAvailable,
   EXPECT_TRUE(state_manager.part_available());
 }
 
-TEST(StateManagerTestGetParts,
-     parts_number_should_be_equal_to_created_and_not_completed_parts)
-{
-  static constexpr size_t kParts = 123;
-  static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
-  StateManagerTestClass state_manager;
-
-  state_manager.create_new_state(kFileSize);
-  for (size_t i = 0; i < kParts; ++i)
-    state_manager.get_part();
-  EXPECT_EQ(kParts, state_manager.downloading_parts());
-}
-

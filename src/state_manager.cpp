@@ -85,9 +85,9 @@ pair<size_t, Chunk> StateManager::get_part()
       new_part.second = Chunk(0, 0, chunk_size);
     }
     else {
-      new_part.first = parts.size();
-      Chunk last_chunk = (--parts.end())->second;
-      
+      map<size_t, Chunk>::reverse_iterator last_part = parts.rbegin();
+      Chunk last_chunk = last_part->second;
+      new_part.first = last_part->first + 1;
       size_t end = last_chunk.end + chunk_size;
       if (end > download_file_size) // Check for last chunk
         end = download_file_size;
@@ -147,7 +147,8 @@ void StateManager::retrieve()
 
   Chunk chunk;
   size_t index;
-  while(file_contents >> index >> chunk.start >> chunk.current >> chunk.end) {
+  while(file_contents.str() != "#") {
+    file_contents >> index >> chunk.start >> chunk.current >> chunk.end;
     total_recvd_bytes += (chunk.current - chunk.start);
     parts[index] = chunk;
     if (chunk.current < chunk.end)
@@ -161,24 +162,16 @@ void StateManager::retrieve()
 void StateManager::update(size_t index, size_t recvd_bytes)
 {
   parts[index].current += recvd_bytes;
-  if (parts[index].end == parts[index].current) {
+  if (parts[index].current >= parts[index].end) {
     parts[index].finished = true;
     parts[index].busy = false;
   }
 
   total_recvd_bytes += recvd_bytes;
 
+  remove_finished_parts();
+
   store();
-}
-
-size_t StateManager::downloading_parts() const
-{
-  return parts.size() + initial_parts.size();
-}
-
-size_t StateManager::get_current_pos(size_t index) const
-{
-  return parts.at(index).current;
 }
 
 void StateManager::store()
@@ -195,21 +188,25 @@ void StateManager::store()
     // End position
     download_state += to_string(chunk.second.end) + "\n";
   }
+  download_state += "#\n";
   state_file->write(download_state.c_str(), download_state.length());
 }
 
-Chunk StateManager::generate_new_chunk()
+void StateManager::remove_finished_parts()
 {
-  //TODO CONTINUE
-  Chunk last_chunk = (parts.rbegin())->second;
+  vector<size_t> finished_parts;
 
-  if (last_chunk.end - last_chunk.current > chunk_size)
-    last_chunk.end = last_chunk.current + chunk_size;
+  for (const auto& part : parts)
+    if (part.second.finished) {
+      finished_parts.push_back(part.first);
+    }
 
-  size_t end = last_chunk.end + chunk_size;
-  if (end > download_file_size) // Check for last chunk
-    end = download_file_size;
-  Chunk new_chunk(last_chunk.end, last_chunk.end, end);
-
-  return new_chunk;
+  if (finished_parts.size() >= 2) {
+    if (parts[finished_parts[0]].end == parts[finished_parts[1]].start) {
+      parts[finished_parts[0]].end = parts[finished_parts[1]].end;
+      parts[finished_parts[0]].current = parts[finished_parts[1]].current;
+      parts.erase(finished_parts[1]);
+    }
+  }
 }
+
