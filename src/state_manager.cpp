@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Chunk::Chunk() : start(0), current(0), end(0)
+Chunk::Chunk() : start(0), current(0), end(0), finished(false)
 {
 }
 
@@ -76,7 +76,6 @@ pair<size_t, Chunk> StateManager::get_part()
       if (new_chunk_size > chunk_size)
         pop_part.second.end = pop_part.second.current + chunk_size;
     }
-    parts[pop_part.first] = pop_part.second;
     new_part = pop_part;
   }
   else {
@@ -93,8 +92,8 @@ pair<size_t, Chunk> StateManager::get_part()
         end = download_file_size;
       new_part.second = Chunk(last_chunk.end, last_chunk.end + 1, end);
     }
-    parts[new_part.first] = new_part.second;
   }
+  parts[new_part.first] = new_part.second;
 
   return new_part;
 }
@@ -146,10 +145,13 @@ void StateManager::retrieve()
   file_contents >> download_file_size;
 
   Chunk chunk;
-  size_t index;
-  while(file_contents.str() != "#") {
-    file_contents >> index >> chunk.start >> chunk.current >> chunk.end;
+  ssize_t index;
+  while(file_contents >> index >> chunk.start >> chunk.current >> chunk.end) {
+    if (index < 0)
+      break;
+
     total_recvd_bytes += (chunk.current - chunk.start);
+
     parts[index] = chunk;
     if (chunk.current < chunk.end)
       initial_parts.push(make_pair(index, chunk));
@@ -188,7 +190,7 @@ void StateManager::store()
     // End position
     download_state += to_string(chunk.second.end) + "\n";
   }
-  download_state += "#\n";
+  download_state += "-1 0 0 0\n";
   state_file->write(download_state.c_str(), download_state.length());
 }
 
