@@ -32,7 +32,7 @@ void RequestManager::add_request(size_t start_pos, size_t end_pos,
 {
   lock_guard<mutex> lock(request_mutex);
   const Request request{0, end_pos, start_pos, request_index};
-  requests.push_back(request);
+  requests.insert(pair(requests.size(), request));
 }
 
 void RequestManager::register_dwl_notify_cb(DwlAvailNotifyCB dwl_notify_cb)
@@ -61,14 +61,11 @@ bool RequestManager::request_available()
 
 void RequestManager::remove_sent_requests()
 {
-  using RequestIt = vector<Request>::iterator;
-  vector<RequestIt> sent_requests;
-
-  for (RequestIt it = requests.begin(); it != requests.end(); ++it)
-    if (it->sent)
-      sent_requests.push_back(it);
-
-  for (auto it : sent_requests)
-    requests.erase(it);
+  vector<size_t> sent_requests;
+  for (const auto& [index, request] : requests)
+    if (request.sent)
+      sent_requests.push_back(index);
+  for (const size_t index : sent_requests)
+    requests.erase(index);
 }
 

@@ -7,7 +7,7 @@ using namespace std;
 void HttpRequestManager::send_requests()
 {
   lock_guard<mutex> lock(request_mutex);
-  for (Request& request : requests ) {
+  for (auto& [_, request] : requests ) {
     if (!request.sent) {
       unique_ptr<SocketOps> sock_ops = connection_manager->acquire_sock_ops();
       Buffer request_buf = generate_request_str(request);

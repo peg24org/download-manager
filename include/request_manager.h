@@ -53,7 +53,7 @@ class RequestManager : public Thread
     uint32_t proxy_port;
 
     std::mutex request_mutex;
-    std::vector<Request> requests;
+    std::map<size_t, Request> requests;
 
     DwlAvailNotifyCB notify_dwl_available;
 
