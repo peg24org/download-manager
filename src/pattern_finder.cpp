@@ -63,7 +63,7 @@ pair<bool, string> PatternFinder::find_redirection(const string& buffer)
     const string kDelimiter =   "\r\n";
     const size_t kStrEnd = buffer.find(kDelimiter, kStrPos);
     const size_t kStrLength = kStrEnd - (kStrPos + kLocStrLen - 1);
-    result.second = buffer.substr(kStrPos + kLocStrLen + 1, kStrLength);
+    result.second = buffer.substr(kStrPos + kLocStrLen + 1, kStrLength - 2);
   }
 
   return result;
