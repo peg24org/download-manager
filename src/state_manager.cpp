@@ -90,7 +90,7 @@ pair<size_t, Chunk> StateManager::get_part()
       size_t end = last_chunk.end + chunk_size;
       if (end > download_file_size) // Check for last chunk
         end = download_file_size;
-      new_part.second = Chunk(last_chunk.end, last_chunk.end + 1, end);
+      new_part.second = Chunk(last_chunk.end, last_chunk.end, end);
     }
   }
   parts[new_part.first] = new_part.second;
