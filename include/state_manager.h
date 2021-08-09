@@ -69,7 +69,7 @@ class StateManager
     std::unique_ptr<FileIO> state_file;
 
   private:
-    constexpr static size_t kMinChunkSize = 1_MB;
+    constexpr static size_t kMinChunkSize = 20_MB;
     void read_raw_data();
     void store();
     void remove_finished_parts();
