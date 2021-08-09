@@ -6,7 +6,6 @@
 class PatternFinder
 {
   public:
-    bool find_http_header(const std::string& buffer);
     size_t find_http_header_delimiter(const Buffer& buffer);
     size_t find_file_length(const Buffer& buffer);
     std::pair<bool, std::string> find_redirection(const std::string& buffer);

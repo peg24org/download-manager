@@ -35,6 +35,8 @@ struct Connection {
     , header_skipped(false)
     , inited(false)
     , request_sent(false)
+    , scheduled(false)
+    , substitute_created(false)
   {
   }
 
@@ -59,6 +61,8 @@ struct Connection {
   bool header_skipped;
   bool inited;
   bool request_sent;
+  bool scheduled;
+  bool substitute_created;
 };
 
 #endif

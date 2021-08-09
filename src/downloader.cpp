@@ -64,6 +64,7 @@ void Downloader::run()
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
     check_new_sock_ops();
+    survey_connections();
     int max_fd = set_descriptors();
 
     int sel_retval = select(max_fd + 1, &readfds, nullptr, nullptr, &timeout);
@@ -74,7 +75,7 @@ void Downloader::run()
     else if (sel_retval > 0) {
       timeout = {.tv_sec=timeout_seconds, .tv_usec=100'000};
       for (auto& [index, connection] : connections) {
-        if (connection.socket_ops.get() == nullptr)
+        if (connection.socket_ops.get() == nullptr || connection.scheduled)
           continue;
         size_t recvd_bytes = 0;
         receive_from_connection(index, recv_buffer);
@@ -91,7 +92,6 @@ void Downloader::run()
           callback(rate.speed);
         }
       }   // End of for loop
-      survey_connections();
     }   // End of else if
     else {    // Timeout
       // TODO: handle this
@@ -101,7 +101,9 @@ void Downloader::run()
 //    if (timeout_indices.size() > 0)
 // TODO:     retry(timeout_indices);
 //    callback(rate.speed);
+    survey_connections();
   }   // End of while loop
+
   request_manager->stop();
   request_manager->join();
 }   // End of downloader thread run()
@@ -111,7 +113,7 @@ int Downloader::set_descriptors()
   int max_fd = 0;
   FD_ZERO(&readfds);
   for (auto& [index, connection] : connections) {
-    if (connection.socket_ops.get() == nullptr)
+    if (connection.socket_ops.get() == nullptr || connection.scheduled)
       continue;
     int socket_desc = connection.socket_ops->get_socket_descriptor();
     FD_SET(socket_desc, &readfds);
@@ -143,15 +145,17 @@ void Downloader::init_connections()
   request_manager->start();
 }
 
-void Downloader::init_connection()
+void Downloader::init_connection(bool schedule)
 {
   pair<size_t, Chunk> part = state_manager->get_part();
   const size_t start = part.second.current;
 
   const size_t kConnectionIndex = part.first;
   connections[kConnectionIndex] = Connection();
-  connections[kConnectionIndex].chunk.end = part.second.end;
+  connections[kConnectionIndex].chunk.start = start;
   connections[kConnectionIndex].chunk.current = start;
+  connections[kConnectionIndex].chunk.end = part.second.end;
+  connections[kConnectionIndex].scheduled = schedule;
   request_manager->add_request(start, part.second.end, kConnectionIndex);
 }
 
@@ -219,15 +223,42 @@ void Downloader::survey_connections()
 {
   // Remove finished connections
   vector<size_t> finished_connections;
-  for (auto& [index, connection] : connections)
-    if (connection.chunk.current >= connection.chunk.end)
+  for (auto& [index, connection] : connections) {
+    if (connection.scheduled == true)
+      continue;
+    const int64_t rem_len = connection.chunk.end - connection.chunk.current;
+    if ( rem_len <= 0)
       finished_connections.push_back(index);
-
+  }
   for (size_t index : finished_connections)
     connections.erase(index);
-  // Create new connections
-  while (connections.size() < number_of_parts && state_manager->part_available())
-    init_connection();
+
+
+  uint16_t active_connections = 0;
+  for (auto& [index, connection] : connections)
+    if (!connection.scheduled)
+      active_connections++;
+  if (active_connections < number_of_parts)
+    for (auto& [_, connection] : connections)
+      if (connection.scheduled)
+        connection.scheduled = false;
+
+  for (auto& [_, connection] : connections) {
+    if (connection.scheduled || connection.substitute_created)
+      continue;
+    const int64_t delta = connection.chunk.current - connection.chunk.start;
+    const int64_t len = connection.chunk.end - connection.chunk.start;
+
+    if (delta >= 6 * len / 10) {
+      if (state_manager->part_available())
+        init_connection(true);
+      connection.substitute_created = true;
+    }
+  }
+
+  if (connections.size() < number_of_parts)
+    if (state_manager->part_available())
+      init_connection();
 }
 
 void Downloader::on_dwl_available(uint16_t index,

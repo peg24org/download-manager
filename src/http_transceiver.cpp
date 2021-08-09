@@ -51,7 +51,7 @@ ssize_t HttpTransceiver::get_header_terminator_pos(const char* buffer,
 {
   const char* head_position = strstr(buffer, kHeaderTerminator);
   if (head_position != nullptr)
-    //return head_position - buffer + strlen(kHeaderTerminator);
+    // strlen(kHeaderTerminator) = 4
     return head_position - buffer + 4;
   else
     return -1;
