@@ -6,6 +6,7 @@
 #include <iostream>
 #include <exception>
 #include <streambuf>
+#include <filesystem>
 
 using namespace std;
 
@@ -30,11 +31,9 @@ void FileIO::open()
 void FileIO::create(size_t file_length)
 {
   // TODO: check error
-  // Open new file
   file_stream.open(path, fstream::in | fstream::out | fstream::trunc);
-
-  for (size_t i = 1; i <= file_length; i++)
-    file_stream << '\0';
+  filesystem::path fs_path(path);
+  filesystem::resize_file(fs_path, file_length);
   file_stream.clear();
   file_stream.seekg(0);
 }
