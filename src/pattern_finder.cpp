@@ -6,16 +6,6 @@
 
 using namespace std;
 
-bool PatternFinder::find_http_header(const string& buffer)
-{
-  return true;
-//  static constexpr char kHttpHeader[] =
-//    "(HTTP\\/\\d\\.\\d\\s*)(\\d+\\s)([\\w|\\s]+\\n)";
-//  string output;
-//
-//  return regex_search_string(buffer, kHttpHeader, output, 2);
-}
-
 size_t PatternFinder::find_http_header_delimiter(const Buffer& buffer)
 {
   size_t result = 0;
