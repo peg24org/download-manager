@@ -87,7 +87,7 @@ unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
   }
   sock_ops->connect();
 
-  return move(sock_ops);
+  return sock_ops;
 }
 
 pair<bool, string> ConnectionManager::check_link()
