@@ -56,6 +56,8 @@ class FileIO {
      */
     virtual std::string get_file_contents();
 
+    std::fstream& get_file_stream();
+
     virtual void remove();
 
   private:

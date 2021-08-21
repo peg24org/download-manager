@@ -1,6 +1,7 @@
 #include "state_manager.h"
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
 
@@ -141,23 +142,27 @@ void StateManager::retrieve()
 
   state_file->open();
   parts.clear();
-  istringstream file_contents(state_file->get_file_contents());
-  file_contents >> download_file_size;
 
-  Chunk chunk;
-  ssize_t index;
-  while(file_contents >> index >> chunk.start >> chunk.current >> chunk.end) {
-    if (index < 0)
-      break;
+  fstream& file_stream = state_file->get_file_stream();
+  file_stream.read(reinterpret_cast<char*>(&download_file_size), sizeof(size_t));
+  size_t blocks_size;
+  file_stream.read(reinterpret_cast<char*>(&blocks_size), sizeof(size_t));
+  size_t temp_index = 0;
+  Chunk temp_chunk;
 
-    total_recvd_bytes += (chunk.current - chunk.start);
+  for (size_t i = 0; i < blocks_size; ++i) {
+    file_stream.read(reinterpret_cast<char*>(&temp_index), sizeof(size_t));
+    file_stream.read(reinterpret_cast<char*>(&temp_chunk.start), sizeof(size_t));
+    file_stream.read(reinterpret_cast<char*>(&temp_chunk.current), sizeof(size_t));
+    file_stream.read(reinterpret_cast<char*>(&temp_chunk.end), sizeof(size_t));
 
-    parts[index] = chunk;
-    if (chunk.current < chunk.end)
-      initial_parts.push(make_pair(index, chunk));
+    total_recvd_bytes += (temp_chunk.current - temp_chunk.start);
+    parts[temp_index] = temp_chunk;
+
+    if (temp_chunk.current < temp_chunk.end)
+      initial_parts.push(make_pair(temp_index, temp_chunk));
   }
-
-  initial_index = index;
+  initial_index = temp_index;
   inited = true;
 }
 
@@ -178,20 +183,35 @@ void StateManager::update(size_t index, size_t recvd_bytes)
 
 void StateManager::store()
 {
-  // <index> <start position> <current position> <end position>
-  string download_state = to_string(download_file_size) + "\n";
+  // <file_size: size_t> <number_of_blocks: size_t>
+  // <blocks: 4 x size_t x number_of_blocks>
+  size_t buff_total_size = 2 * sizeof(size_t);
+  size_t buff_pos = 0;
+  buff_total_size += parts.size() * 4 * sizeof(size_t);
+  char* buffer = new char[buff_total_size];
+  memcpy(buffer, reinterpret_cast<char*>(&download_file_size), sizeof(size_t));
+  buff_pos = sizeof(size_t);
+  size_t records_size = parts.size();
+  memcpy(buffer + buff_pos, reinterpret_cast<char*>(&records_size), sizeof(size_t));
+  buff_pos += sizeof(size_t);
   for (auto chunk : parts) {
     // Chunk index
-    download_state += to_string(chunk.first) + " ";
+    memcpy(buffer + buff_pos, reinterpret_cast<const char*>(&chunk.first), sizeof(size_t));
+    buff_pos += sizeof(size_t);
     // Start position
-    download_state += to_string(chunk.second.start) + " ";
+    memcpy(buffer + buff_pos, reinterpret_cast<const char*>(&chunk.second.start), sizeof(size_t));
+    buff_pos += sizeof(size_t);
     // Current position
-    download_state += to_string(chunk.second.current) + " ";
+    memcpy(buffer + buff_pos, reinterpret_cast<const char*>(&chunk.second.current), sizeof(size_t));
+    buff_pos += sizeof(size_t);
     // End position
-    download_state += to_string(chunk.second.end) + "\n";
+    memcpy(buffer + buff_pos, reinterpret_cast<char*>(&chunk.second.end), sizeof(size_t));
+    buff_pos += sizeof(size_t);
   }
-  download_state += "-1 0 0 0\n";
-  state_file->write(download_state.c_str(), download_state.length());
+
+  state_file->write(buffer, buff_total_size);
+
+  delete[] buffer;
 }
 
 void StateManager::remove_finished_parts()

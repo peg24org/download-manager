@@ -25,13 +25,14 @@ void FileIO::open()
   if (!check_existence())
     create(0);
   else
-    file_stream.open(path, fstream::in | fstream::out);
+    file_stream.open(path, fstream::in | fstream::out | fstream::binary);
 }
 
 void FileIO::create(size_t file_length)
 {
   // TODO: check error
-  file_stream.open(path, fstream::in | fstream::out | fstream::trunc);
+  file_stream.open(path,
+      fstream::in | fstream::out | fstream::trunc | fstream::binary);
   filesystem::path fs_path(path);
   filesystem::resize_file(fs_path, file_length);
   file_stream.clear();
@@ -81,6 +82,15 @@ string FileIO::get_file_contents()
   file_stream.seekp(0);
   return string((istreambuf_iterator<char>(file_stream)),
       istreambuf_iterator<char>());
+}
+
+fstream& FileIO::get_file_stream()
+{
+  if (!file_stream.is_open())
+    throw runtime_error("FileIO is not open.");
+
+  file_stream.seekp(0);
+  return file_stream;
 }
 
 void FileIO::remove()
