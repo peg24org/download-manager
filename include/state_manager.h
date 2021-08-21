@@ -54,6 +54,8 @@ class StateManager
 
     size_t get_total_recvd_bytes() const;
 
+    size_t get_chunks_max() const;
+
     std::queue<std::pair<size_t, Chunk>> get_initial_parts() const;
 
     void retrieve();
@@ -66,6 +68,7 @@ class StateManager
     void update(size_t index, size_t recvd_butes);
 
   protected:
+    size_t get_min_chunk_size() const;
     std::unique_ptr<FileIO> state_file;
 
   private:
@@ -81,6 +84,7 @@ class StateManager
     size_t download_file_size;
     size_t total_recvd_bytes;
     size_t chunk_size;
+    size_t max_chunks_number;
     bool inited;
 };
 

@@ -1,5 +1,6 @@
 #include "state_manager.h"
-#include <iostream>
+
+#include <cmath>
 #include <sstream>
 #include <cstring>
 
@@ -34,6 +35,7 @@ StateManager::StateManager(const string& file_path)
   : download_file_size(0)
   , total_recvd_bytes(0)
   , chunk_size(kMinChunkSize)
+  , max_chunks_number(0)
   , inited(false)
 {
   state_file = make_unique<FileIO>(file_path);
@@ -103,10 +105,11 @@ void StateManager::create_new_state(size_t download_file_size)
 {
   if (download_file_size == 0)
     throw runtime_error("StateManager: File size should not be zero.");
-
   parts.clear();
   this->download_file_size = download_file_size;
   inited = true;
+  max_chunks_number = ceil(
+      static_cast<double>(download_file_size) / kMinChunkSize);
 }
 
 void StateManager::set_chunk_size(size_t chunk_size)
@@ -128,6 +131,11 @@ size_t StateManager::get_file_size() const
 size_t StateManager::get_total_recvd_bytes() const
 {
   return total_recvd_bytes;
+}
+
+size_t StateManager::get_chunks_max() const
+{
+  return max_chunks_number;
 }
 
 queue<pair<size_t, Chunk>> StateManager::get_initial_parts() const

@@ -34,15 +34,24 @@ class StateManagerTestClass : public StateManager
 
 class StateManagerTest : public ::testing::Test
 {
-  void SetUp()
-  {
-    state_manager.create_new_state(kFileSize);
-  }
-
   protected:
+    void SetUp(size_t file_size = kFileSize)
+    {
+      state_manager.create_new_state(file_size);
+    }
+
     static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
     StateManagerTestClass state_manager;
 };
+
+TEST_F(StateManagerTest, chunks_max_should_be_round_up_float_coefficient_0)
+{
+  constexpr double coefficients[] = {12.5, 12.3, 12.8, 12};
+  for (size_t coefficient : coefficients) {
+    state_manager.create_new_state(state_manager.get_chunk_size() * coefficient);
+    EXPECT_EQ(ceil(coefficient), state_manager.get_chunks_max());
+  }
+}
 
 TEST_F(StateManagerTest,
     retrieving_from_non_existing_file_should_throw_exception)
@@ -193,8 +202,7 @@ TEST_F(StateManagerTest, retrived_state_file_contents_check_1)
   }
 }
 
-TEST(StateManagerTestChunkNotAvailable,
-     chunk_should_be_available_by_creating_new_state)
+TEST(StateManagerTestChunks, chunk_should_be_available_by_creating_new_state)
 {
   static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
   StateManagerTestClass state_manager;
