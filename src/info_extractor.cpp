@@ -1,4 +1,4 @@
-#include "connection_manager.h"
+#include "info_extractor.h"
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -14,7 +14,7 @@
 
 using namespace std;
 
-ConnectionManager::ConnectionManager(const string& url)
+InfoExtractor::InfoExtractor(const string& url)
   : url_parser(UrlParser(url))
 {
   while (true) {
@@ -28,37 +28,37 @@ ConnectionManager::ConnectionManager(const string& url)
   }
 }
 
-Protocol ConnectionManager::get_protocol() const
+Protocol InfoExtractor::get_protocol() const
 {
   return url_parser.get_protocol();
 }
 
-string ConnectionManager::get_path() const
+string InfoExtractor::get_path() const
 {
   return url_parser.get_path();
 }
 
-string ConnectionManager::get_file_name() const
+string InfoExtractor::get_file_name() const
 {
   return url_parser.get_file_name();
 }
 
-size_t ConnectionManager::get_file_length() const
+size_t InfoExtractor::get_file_length() const
 {
   return file_length;
 }
 
-string ConnectionManager::get_host_name() const
+string InfoExtractor::get_host_name() const
 {
   return url_parser.get_host_name();
 }
 
-uint16_t ConnectionManager::get_port() const
+uint16_t InfoExtractor::get_port() const
 {
   return url_parser.get_port();
 }
 
-int ConnectionManager::get_one_socket_descriptor()
+int InfoExtractor::get_one_socket_descriptor()
 {
   if (socket_ops->connect())
     return socket_ops->get_socket_descriptor();
@@ -66,12 +66,12 @@ int ConnectionManager::get_one_socket_descriptor()
   return -1;
 }
 
-unique_ptr<SocketOps> ConnectionManager::acquire_sock_ops()
+unique_ptr<SocketOps> InfoExtractor::acquire_sock_ops()
 {
   return get_socket_ops();
 }
 
-unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
+unique_ptr<SocketOps> InfoExtractor::get_socket_ops()
 {
   unique_ptr<SocketOps> sock_ops;
   Protocol protocol = url_parser.get_protocol();
@@ -90,7 +90,7 @@ unique_ptr<SocketOps> ConnectionManager::get_socket_ops()
   return sock_ops;
 }
 
-pair<bool, string> ConnectionManager::check_link()
+pair<bool, string> InfoExtractor::check_link()
 {
   unique_ptr<Transceiver> transceiver;
   socket_ops = get_socket_ops();
@@ -153,7 +153,7 @@ pair<bool, string> ConnectionManager::check_link()
   return redirection;
 }
 
-string ConnectionManager::get_ip(const string& host_name) const
+string InfoExtractor::get_ip(const string& host_name) const
 {
   struct hostent *server;
   server = gethostbyname(host_name.c_str());
@@ -166,7 +166,7 @@ string ConnectionManager::get_ip(const string& host_name) const
   return ip;
 }
 
-size_t ConnectionManager::get_file_length_ftp(Transceiver* transceiver,
+size_t InfoExtractor::get_file_length_ftp(Transceiver* transceiver,
                                               SocketOps* socket_ops)
 {
   FtpTransceiver* ftp_transceiver = dynamic_cast<FtpTransceiver*>(transceiver);

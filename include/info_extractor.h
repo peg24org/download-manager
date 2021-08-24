@@ -1,5 +1,5 @@
-#ifndef _CONNECTIONION_MANAGER_HH
-#define _CONNECTIONION_MANAGER_HH
+#ifndef INFO_EXTRACTOR_H
+#define INFO_EXTRACTOR_H
 
 #include <memory>
 
@@ -7,10 +7,10 @@
 #include "socket_ops.h"
 #include "transceiver.h"
 
-class ConnectionManager
+class InfoExtractor
 {
   public:
-    ConnectionManager(const std::string& url);
+    InfoExtractor(const std::string& url);
 
     Protocol get_protocol() const;
     std::string get_path() const;

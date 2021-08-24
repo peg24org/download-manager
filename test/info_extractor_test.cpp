@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "connection_manager.h"
+#include "info_extractor.h"
 
 using namespace std;
 
@@ -34,7 +34,7 @@ class ConnectionManagerTest : public ::testing::Test
 {
   void SetUp()
   {
-    ConnectionManager connection_manager("http://www.example.com/file.dat");
+    InfoExtractor connection_manager("http://www.example.com/file.dat");
    // cout << connection_manager.get_path() << endl;
    // cout << connection_manager.get_file_name() << endl;
   }
@@ -46,7 +46,7 @@ TEST_F(ConnectionManagerTest, _)
 {
 }
 //
-//TEST_F(ConnectionManager, set_chunk_size_should_work_properly)
+//TEST_F(InfoExtractor, set_chunk_size_should_work_properly)
 //{
 //  constexpr size_t kNewChunkSize = pow(2, 20) + 1;
 //  constexpr size_t kSmallerThanMinimum = 100;
@@ -58,7 +58,7 @@ TEST_F(ConnectionManagerTest, _)
 //  EXPECT_EQ(kNewChunkSize, state_manager.get_chunk_size());
 //}
 //
-//TEST_F(ConnectionManager, size_of_part_should_be_equal_to_current_chunk_size)
+//TEST_F(InfoExtractor, size_of_part_should_be_equal_to_current_chunk_size)
 //{
 //  size_t chunk_size = state_manager.get_chunk_size();
 //  pair<size_t, Chunk> part = state_manager.get_part();
@@ -66,7 +66,7 @@ TEST_F(ConnectionManagerTest, _)
 //  EXPECT_EQ(chunk_size, part_size);
 //}
 //
-//TEST_F(ConnectionManager, new_chunk_should_start_from_last_chunk)
+//TEST_F(InfoExtractor, new_chunk_should_start_from_last_chunk)
 //{
 //  // -2 for creating non-dividable chunk
 //  constexpr size_t kFileSize = pow(2, 30) - 2;
@@ -91,7 +91,7 @@ TEST_F(ConnectionManagerTest, _)
 //  EXPECT_EQ(kFileSize, (positions_vecror.end()-1)->second.end);
 //}
 //
-//TEST_F(ConnectionManager, state_file_available_should_return_correct_value)
+//TEST_F(InfoExtractor, state_file_available_should_return_correct_value)
 //{
 //  state_manager.get_file_io()->set_existence(true);
 //  EXPECT_TRUE(state_manager.state_file_available());
@@ -119,7 +119,7 @@ TEST_F(ConnectionManagerTest, _)
 //  file_io->set_existence(true);
 //}
 //
-//TEST_F(ConnectionManager, retrived_state_file_contents_check_0)
+//TEST_F(InfoExtractor, retrived_state_file_contents_check_0)
 //{
 //
 //  constexpr size_t kFileSize = 3592673;
@@ -148,7 +148,7 @@ TEST_F(ConnectionManagerTest, _)
 //  EXPECT_EQ(last_part.second.current, get<3>(*last_datum));
 //}
 //
-//TEST_F(ConnectionManager, retrived_state_file_contents_check_1)
+//TEST_F(InfoExtractor, retrived_state_file_contents_check_1)
 //{
 //  FileIOMock* file_io = state_manager.get_file_io();
 //

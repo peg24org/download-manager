@@ -15,7 +15,7 @@
 #include "state_manager.h"
 #include "request_manager.h"
 #include "http_transceiver.h"
-#include "connection_manager.h"
+#include "info_extractor.h"
 
 using CallBack = std::function<void(size_t)>;
 

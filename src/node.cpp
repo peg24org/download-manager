@@ -8,12 +8,12 @@
 #include <functional>
 
 #include "node.h"
+#include "info_extractor.h"
 #include "ftp_request_manager.h"
 #include "http_request_manager.h"
 #include "ftp_transceiver.h"
 #include "http_transceiver.h"
 #include "https_transceiver.h"
-#include "connection_manager.h"
 
 using namespace std;
 
@@ -30,8 +30,8 @@ Node::Node(const string& url, const string& optional_path,
 
 void Node::run()
 {
-  unique_ptr<ConnectionManager> connection_manager;
-  connection_manager = make_unique<ConnectionManager>(url);
+  unique_ptr<InfoExtractor> connection_manager;
+  connection_manager = make_unique<InfoExtractor>(url);
 
   const pair<string, string> paths= get_output_paths(
       connection_manager->get_file_name());

@@ -12,7 +12,7 @@ set (SOURCES ${SOURCES}
   units_tests.cpp
   buffer_test.cpp
   url_parser_test.cpp
-  connection_manager_test.cpp
+  info_extractor_test.cpp
   file_io_test.cpp
   transceiver_test.cpp
   state_manager_test.cpp)

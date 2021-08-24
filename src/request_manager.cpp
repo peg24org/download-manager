@@ -6,7 +6,7 @@
 
 using namespace std;
 
-RequestManager::RequestManager(unique_ptr<ConnectionManager> connection_manager,
+RequestManager::RequestManager(unique_ptr<InfoExtractor> connection_manager,
                                unique_ptr<Transceiver> transceiver)
   : connection_manager(move(connection_manager))
   , transceiver(move(transceiver))
