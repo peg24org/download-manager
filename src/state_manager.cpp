@@ -27,105 +27,97 @@ bool Chunk::operator==(const Chunk& rhs) const
 
 StateManager::~StateManager()
 {
-  if (total_recvd_bytes >= download_file_size)
+  if (total_recvd_bytes >= file_size)
     state_file->remove();
 }
 
-StateManager::StateManager(const string& file_path)
-  : download_file_size(0)
+StateManager::StateManager(const string& file_path, size_t chunk_len)
+  : file_size(0)
   , total_recvd_bytes(0)
-  , chunk_size(kMinChunkSize)
-  , max_chunks_number(0)
+  , chunk_len(chunk_len)
+  , chunks_num(0)
   , inited(false)
+  , chunks_num_max(0)
 {
   state_file = make_unique<FileIO>(file_path);
+  const bool kExist = state_file->check_existence();
+  if (kExist)
+    retrieve();
+  else
+    state_file->create();
 }
 
 bool StateManager::state_file_available() const
 {
   bool exist = state_file->check_existence();
-  if (!exist)
-    state_file->create();
-
   return exist;
 }
 
-bool StateManager::part_available() const
+void StateManager::generate_parts()
 {
-  bool new_part = true;
-  if (parts.size() > 0) {
-    Chunk last_chunk = parts.rbegin()->second;
-    size_t last_chunk_size = last_chunk.end - last_chunk.current;
-    new_part = (last_chunk.end != download_file_size) || 
-               (last_chunk_size > chunk_size);
+  for (uint16_t i = 0; i < chunks_num; ++i) {
+    const size_t start = i * chunk_len;
+    const size_t end = i < chunks_num - 1 ? start + chunk_len - 1 : file_size;
+    const size_t& current = start;
+    Chunk new_chunk(start, current, end);
+    parts[i] = new_chunk;
   }
-
-  return (new_part && download_file_size > 0) ||
-          initial_parts.size() > 0;
 }
 
-pair<size_t, Chunk> StateManager::get_part()
+size_t StateManager::get_chunks_num() const
 {
-  if (!part_available())
-    throw runtime_error("new part not available.");
-
-  pair<size_t, Chunk> new_part;
-
-  if (initial_parts.size() > 0) {
-    pair<size_t, Chunk> pop_part = initial_parts.front();
-    initial_parts.pop();
-    if (pop_part.second.end == download_file_size) {
-      size_t new_chunk_size = pop_part.second.end - pop_part.second.current;
-      if (new_chunk_size > chunk_size)
-        pop_part.second.end = pop_part.second.current + chunk_size;
-    }
-    new_part = pop_part;
-  }
-  else {
-    if (parts.size() == 0) {
-      new_part.first = 0;
-      new_part.second = Chunk(0, 0, chunk_size);
-    }
-    else {
-      map<size_t, Chunk>::reverse_iterator last_part = parts.rbegin();
-      Chunk last_chunk = last_part->second;
-      new_part.first = last_part->first + 1;
-      size_t end = last_chunk.end + chunk_size;
-      if (end > download_file_size) // Check for last chunk
-        end = download_file_size;
-      new_part.second = Chunk(last_chunk.end, last_chunk.end, end);
-    }
-  }
-  parts[new_part.first] = new_part.second;
-
-  return new_part;
+  return parts.size();
+}
+uint16_t StateManager::get_chunks_num_max() const
+{
+  return chunks_num_max;
 }
 
-void StateManager::create_new_state(size_t download_file_size)
+vector<uint16_t> StateManager::get_parts() const
 {
-  if (download_file_size == 0)
+  vector<uint16_t> result;
+  result.resize(parts.size());
+  size_t vec_index = 0;
+  for (const auto& part : parts)
+    result[vec_index++] = part.first;
+  return result;
+}
+
+size_t StateManager::get_end_pos(uint16_t index) const
+{
+  return parts.at(index).end;
+}
+
+size_t StateManager::get_start_pos(uint16_t index) const
+{
+  return parts.at(index).start;
+}
+
+size_t StateManager::get_current_pos(uint16_t index) const
+{
+  return parts.at(index).current;
+}
+
+void StateManager::create_new_state(size_t file_size)
+{
+  if (file_size == 0)
     throw runtime_error("StateManager: File size should not be zero.");
+  chunks_num_max = file_size / chunk_len;
   parts.clear();
-  this->download_file_size = download_file_size;
+  this->file_size = file_size;
   inited = true;
-  max_chunks_number = ceil(
-      static_cast<double>(download_file_size) / kMinChunkSize);
 }
 
-void StateManager::set_chunk_size(size_t chunk_size)
+void StateManager::set_chunks_num(uint16_t chunks_num)
 {
-  if (chunk_size > kMinChunkSize)
-    this->chunk_size = chunk_size;
-}
-
-size_t StateManager::get_chunk_size() const
-{
-  return chunk_size;
+  this->chunks_num = (chunks_num>=chunks_num_max) ? chunks_num_max : chunks_num;
+  this->chunk_len = file_size / this->chunks_num;
+  generate_parts();
 }
 
 size_t StateManager::get_file_size() const
 {
-  return download_file_size;
+  return file_size;
 }
 
 size_t StateManager::get_total_recvd_bytes() const
@@ -135,12 +127,7 @@ size_t StateManager::get_total_recvd_bytes() const
 
 size_t StateManager::get_chunks_max() const
 {
-  return max_chunks_number;
-}
-
-queue<pair<size_t, Chunk>> StateManager::get_initial_parts() const
-{
-  return initial_parts;
+  return chunks_num;
 }
 
 void StateManager::retrieve()
@@ -152,7 +139,7 @@ void StateManager::retrieve()
   parts.clear();
 
   fstream& file_stream = state_file->get_file_stream();
-  file_stream.read(reinterpret_cast<char*>(&download_file_size), sizeof(size_t));
+  file_stream.read(reinterpret_cast<char*>(&file_size), sizeof(size_t));
   size_t blocks_size;
   file_stream.read(reinterpret_cast<char*>(&blocks_size), sizeof(size_t));
   size_t temp_index = 0;
@@ -168,7 +155,7 @@ void StateManager::retrieve()
     parts[temp_index] = temp_chunk;
 
     if (temp_chunk.current < temp_chunk.end)
-      initial_parts.push(make_pair(temp_index, temp_chunk));
+      parts[temp_index] = temp_chunk;
   }
   initial_index = temp_index;
   inited = true;
@@ -197,7 +184,7 @@ void StateManager::store()
   size_t buff_pos = 0;
   buff_total_size += parts.size() * 4 * sizeof(size_t);
   char* buffer = new char[buff_total_size];
-  memcpy(buffer, reinterpret_cast<char*>(&download_file_size), sizeof(size_t));
+  memcpy(buffer, reinterpret_cast<char*>(&file_size), sizeof(size_t));
   buff_pos = sizeof(size_t);
   size_t records_size = parts.size();
   memcpy(buffer + buff_pos, reinterpret_cast<char*>(&records_size), sizeof(size_t));
@@ -239,4 +226,3 @@ void StateManager::remove_finished_parts()
     }
   }
 }
-
