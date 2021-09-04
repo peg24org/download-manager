@@ -5,6 +5,36 @@
 
 using namespace std;
 
+bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops,
+                              bool& header_skipped)
+{
+  bool result = true;
+  if (header_skipped) {
+      result = receive(buffer, sock_ops);
+      return result;
+  }
+
+  Buffer header_buffer;
+  while (!header_skipped) {
+    result = receive(header_buffer, sock_ops);
+    if (result == false) {
+      break;
+    }
+    const ssize_t header_pos = get_header_terminator_pos(header_buffer,
+                                                         header_buffer.length());
+    if (header_pos > -1) {
+      buffer = header_buffer;
+      memcpy(buffer, static_cast<char*>(header_buffer) + header_pos,
+             header_buffer.length() - header_pos);
+      buffer.set_length(header_buffer.length() - header_pos);
+      header_skipped = true;
+      break;
+    }
+  }
+
+  return result;
+}
+
 bool HttpTransceiver::receive(Buffer& buffer, Connection& connection)
 {
   bool result = true;
@@ -18,7 +48,6 @@ bool HttpTransceiver::receive(Buffer& buffer, Connection& connection)
   while (!connection.header_skipped) {
     result = receive(header_buffer, sock_ops);
     if (result == false) {
-      cerr << "RECV ERROR" << endl;
       break;
     }
     const ssize_t header_pos = get_header_terminator_pos(header_buffer,

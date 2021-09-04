@@ -45,7 +45,7 @@ class Downloader : public Thread {
 
     void set_speed_limit(size_t speed_limit);
 
-    void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
+    //void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
 
     void set_parts(uint16_t parts);
 
@@ -96,7 +96,7 @@ class Downloader : public Thread {
     std::shared_ptr<StateManager> state_manager;
     std::unique_ptr<RequestManager> request_manager;
     // <index, chunk>
-    std::queue<std::pair<size_t, Chunk>> initial_parts;
+    //std::queue<std::pair<size_t, Chunk>> initial_parts;
 
     struct NewAvailPart {
       uint16_t part_index;
@@ -104,6 +104,7 @@ class Downloader : public Thread {
     };
     // part index, socket
     std::queue<NewAvailPart> new_available_parts;
+    ConnectionManager connection_mngr;
 };
 
 #endif

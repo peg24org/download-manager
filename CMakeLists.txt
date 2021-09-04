@@ -22,6 +22,6 @@ include_directories(${PROJECT_SOURCE_DIR} include)
 include_directories(${PROJECT_SOURCE_DIR} thread/include)
 
 add_subdirectory(src)
-add_subdirectory(test)
+#add_subdirectory(test)
 add_subdirectory(thread/src)
 

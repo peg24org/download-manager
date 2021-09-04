@@ -1,6 +1,7 @@
 #ifndef _CONNECTION_H
 #define _CONNECTION_H
 
+#include <vector>
 #include <memory>
 #include <chrono>
 
@@ -48,7 +49,6 @@ struct Connection {
   };
 
   OperationStatus status;
-  Chunk chunk;
   BIO* bio;
   SSL* ssl;
   // Used for http, https and ftp command channel.
@@ -63,6 +63,27 @@ struct Connection {
   bool request_sent;
   bool scheduled;
   bool substitute_created;
+};
+
+class ConnectionManager {
+  public:
+  ConnectionManager(std::shared_ptr<StateManager> state_manager);
+  void set_parts_max(uint16_t parts_max);
+  void init();
+  std::vector<uint16_t> get_indices_list() const;
+  bool& get_header_skipped_stat(uint16_t index);
+  SocketOps* get_sock_ops(uint16_t index) const;
+  void set_sock_ops(std::unique_ptr<SocketOps> socket_ops, size_t index);
+  ssize_t get_end_pos(int16_t index) const;
+  ssize_t get_start_pos(int16_t index) const;
+  ssize_t get_current_pos(int16_t index) const;
+  void survey_connections();
+
+  private:
+  void generate_one_connection(uint16_t index);
+  std::map<uint16_t, Connection> connections;
+  std::shared_ptr<StateManager> state_manager;
+  std::vector<uint16_t> parts_list;
 };
 
 #endif
