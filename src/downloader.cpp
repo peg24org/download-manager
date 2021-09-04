@@ -167,9 +167,10 @@ void Downloader::init_connections()
   vector<uint16_t> indices_list = connection_mngr.get_indices_list();
   for (uint16_t i: indices_list) {
     size_t end = connection_mngr.get_end_pos(i);
+    size_t current = connection_mngr.get_current_pos(i);
     size_t start = connection_mngr.get_start_pos(i);
-    cout << "init :" << i << " " << start << " " << end << endl;
-    request_manager->add_request(start, end, i);
+    cout << "init :" << i << " " << start << " " << current << endl;
+    request_manager->add_request(current, end, i);
   }
   request_manager->start();
 //  for (uint16_t i = 0; i < number_of_parts; ++i) {

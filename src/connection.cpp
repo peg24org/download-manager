@@ -81,6 +81,6 @@ void ConnectionManager::survey_connections()
 void ConnectionManager::generate_one_connection(uint16_t index)
 {
   //pair<size_t, Chunk> part = state_manager->get_part();
-  const size_t start = state_manager->get_start_pos(index);
+  // const size_t start = state_manager->get_start_pos(index);
   connections[index] = Connection();
 }

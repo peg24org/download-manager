@@ -35,6 +35,7 @@ class StateManager
     StateManager(const std::string& file_path,
                  size_t chunk_len = kDefaultMinChunkLen);
 
+    void retrieve();
     void generate_part();
     size_t get_file_size() const;
     size_t get_chunks_max() const;
@@ -50,12 +51,9 @@ class StateManager
     size_t get_current_pos(uint16_t index) const;
     void update(size_t index, size_t recvd_butes);
 
-  protected:
-
   private:
-    static constexpr size_t kDefaultMinChunkLen = 20_MB;
+    static constexpr size_t kDefaultMinChunkLen = 10_MB;
     void store();
-    void retrieve();
     void read_raw_data();
     void generate_parts();
     void remove_finished_parts();

@@ -49,7 +49,7 @@ void Node::run()
   bool main_file_available = file_io->check_existence();
 
   if (resume && state_file_available && main_file_available) { // Resuming download
-    //state_manager->retrieve();
+    state_manager->retrieve();
     file_io->open();
   }
   else {  // Not resuming download, create chunks collection

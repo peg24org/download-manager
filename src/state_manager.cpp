@@ -56,6 +56,10 @@ bool StateManager::state_file_available() const
 
 void StateManager::generate_parts()
 {
+  if (parts.size() > 0) {
+    cout << "parts size:" << parts.size() << " returning." << endl;
+    return;
+  }
   for (uint16_t i = 0; i < chunks_num; ++i) {
     const size_t start = i * chunk_len;
     const size_t end = i < chunks_num - 1 ? start + chunk_len - 1 : file_size;
@@ -107,6 +111,7 @@ void StateManager::create_new_state(size_t file_size)
   chunks_num_max = file_size / chunk_len;
   parts.clear();
   this->file_size = file_size;
+  state_file->create();
   inited = true;
 }
 
