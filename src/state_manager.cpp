@@ -56,7 +56,7 @@ bool StateManager::state_file_available() const
 
 void StateManager::generate_parts()
 {
-  if (parts.size() > 0) {
+  if (parts.size() >= chunks_num) {
     cout << "parts size:" << parts.size() << " returning." << endl;
     return;
   }
