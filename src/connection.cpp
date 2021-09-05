@@ -44,24 +44,34 @@ SocketOps* ConnectionManager::get_sock_ops(uint16_t index) const
 }
 
 void ConnectionManager::set_sock_ops(unique_ptr<SocketOps> socket_ops,
-                                     size_t index)
+                                     uint16_t index)
 {
   connections[index].socket_ops = move(socket_ops);
 }
 
-ssize_t ConnectionManager::get_end_pos(int16_t index) const
+ssize_t ConnectionManager::get_end_pos(uint16_t index) const
 {
   return state_manager->get_end_pos(index);
 }
 
-ssize_t ConnectionManager::get_start_pos(int16_t index) const
+ssize_t ConnectionManager::get_start_pos(uint16_t index) const
 {
   return state_manager->get_start_pos(index);
 }
 
-ssize_t ConnectionManager::get_current_pos(int16_t index) const
+ssize_t ConnectionManager::get_current_pos(uint16_t index) const
 {
   return state_manager->get_current_pos(index);
+}
+
+bool ConnectionManager::get_init_stat(uint16_t index) const
+{
+  return connections.at(index).inited;
+}
+
+void ConnectionManager::set_init_stat(bool init_stat, uint16_t index)
+{
+  connections.at(index).inited = init_stat;
 }
 
 void ConnectionManager::survey_connections()

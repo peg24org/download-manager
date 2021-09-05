@@ -73,10 +73,12 @@ class ConnectionManager {
   std::vector<uint16_t> get_indices_list() const;
   bool& get_header_skipped_stat(uint16_t index);
   SocketOps* get_sock_ops(uint16_t index) const;
-  void set_sock_ops(std::unique_ptr<SocketOps> socket_ops, size_t index);
-  ssize_t get_end_pos(int16_t index) const;
-  ssize_t get_start_pos(int16_t index) const;
-  ssize_t get_current_pos(int16_t index) const;
+  void set_sock_ops(std::unique_ptr<SocketOps> socket_ops, uint16_t index);
+  ssize_t get_end_pos(uint16_t index) const;
+  ssize_t get_start_pos(uint16_t index) const;
+  ssize_t get_current_pos(uint16_t index) const;
+  bool get_init_stat(uint16_t index) const;
+  void set_init_stat(bool init_stat, uint16_t index);
   void survey_connections();
 
   private:
