@@ -42,11 +42,6 @@ void Downloader::set_speed_limit(size_t speed_limit)
   rate.limit = speed_limit;
 }
 
-//void Downloader::set_download_parts(queue<pair<size_t, Chunk>> initial_parts)
-//{
-//  this->initial_parts = initial_parts;
-//}
-
 void Downloader::set_parts(uint16_t parts)
 {
   number_of_parts = parts;
@@ -161,17 +156,11 @@ void Downloader::init_connections()
 //      connections[i] = Connection();
 //  }
 
-
   connection_mngr.set_parts_max(number_of_parts);
   connection_mngr.init();
   vector<uint16_t> indices_list = connection_mngr.get_indices_list();
-  for (uint16_t i: indices_list) {
-    size_t end = connection_mngr.get_end_pos(i);
-    size_t current = connection_mngr.get_current_pos(i);
-    size_t start = connection_mngr.get_start_pos(i);
-    cout << "init :" << i << " " << start << " " << current << endl;
-    request_manager->add_request(current, end, i);
-  }
+  for (uint16_t i: indices_list)
+    init_connection(i);
   request_manager->start();
 //  for (uint16_t i = 0; i < number_of_parts; ++i) {
 //    if (state_manager->part_available())
@@ -182,18 +171,14 @@ void Downloader::init_connections()
 //  request_manager->start();
 }
 
-void Downloader::init_connection(bool schedule)
+void Downloader::init_connection(uint16_t index)
 {
-//  pair<size_t, Chunk> part = state_manager->get_part();
-//  const size_t start = part.second.current;
-//
-//  const size_t kConnectionIndex = part.first;
-//  connections[kConnectionIndex] = Connection();
-//  connections[kConnectionIndex].chunk.start = start;
-//  connections[kConnectionIndex].chunk.current = start;
-//  connections[kConnectionIndex].chunk.end = part.second.end;
-//  connections[kConnectionIndex].scheduled = schedule;
-//  request_manager->add_request(start, part.second.end, kConnectionIndex);
+    size_t end = connection_mngr.get_end_pos(index);
+    size_t current = connection_mngr.get_current_pos(index);
+    size_t start = connection_mngr.get_start_pos(index);
+    cout << "init :" << index << " " << start << " " << current << endl;
+    request_manager->add_request(current, end, index);
+    connection_mngr.set_init_stat(true, index);
 }
 
 //vector<int> Downloader::check_timeout()

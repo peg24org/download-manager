@@ -59,6 +59,7 @@ class Downloader : public Thread {
 
     void init_connections();
 
+    void init_connection(uint16_t index);
     void init_connection(bool schedule = false);
 
     struct RateParams {
