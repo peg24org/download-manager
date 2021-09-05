@@ -39,13 +39,7 @@ StateManager::StateManager(const string& file_path, size_t chunk_len)
   , inited(false)
   , chunks_num_max(1)
 {
-  cout << "****************************** STM *************" << endl;
   state_file = make_unique<FileIO>(file_path);
-  //const bool kExist = state_file->check_existence();
-  //if (kExist)
-  //  retrieve();
-  //else
-  //  state_file->create();
 }
 
 bool StateManager::state_file_available() const
@@ -105,7 +99,6 @@ size_t StateManager::get_current_pos(uint16_t index) const
 
 void StateManager::create_new_state(size_t file_size)
 {
-  cerr << __FUNCTION__ << "  *********************************" <<endl;
   if (file_size == 0)
     throw runtime_error("StateManager: File size should not be zero.");
   chunks_num_max = file_size / chunk_len;
@@ -117,15 +110,9 @@ void StateManager::create_new_state(size_t file_size)
 
 void StateManager::set_chunks_num(uint16_t chunks_num)
 {
-  cerr << __FILE__ << ":" << __LINE__ << endl;
-  cerr << "VAL:" << this->chunks_num << endl;
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   this->chunks_num = (chunks_num>=chunks_num_max) ? chunks_num_max : chunks_num;
-  cerr << "fsize:" << file_size << "\tnum:" << this->chunks_num << endl;
   this->chunk_len = file_size / this->chunks_num;
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   generate_parts();
-  cerr << __FILE__ << ":" << __LINE__ << endl;
 }
 
 size_t StateManager::get_file_size() const
