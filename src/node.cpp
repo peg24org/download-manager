@@ -57,14 +57,11 @@ void Node::run()
     state_manager->create_new_state(file_length);
   }
 
-  cerr << "node parts:"  << number_of_parts << endl;
   state_manager->set_chunks_num(number_of_parts);
-  cerr << "node after chunks num" << endl;
 
   // Create and register callback
   CallBack callback = bind(&Node::on_data_received_node, this,
                            placeholders::_1);
-
 
   unique_ptr<RequestManager> request_manager;
 
