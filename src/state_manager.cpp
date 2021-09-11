@@ -101,7 +101,9 @@ void StateManager::create_new_state(size_t file_size)
 {
   if (file_size == 0)
     throw runtime_error("StateManager: File size should not be zero.");
-  chunks_num_max = file_size / chunk_len;
+
+  chunks_num_max = file_size / chunk_len ;
+  chunks_num_max = chunks_num_max > 0 ? chunks_num_max : 1;
   parts.clear();
   this->file_size = file_size;
   state_file->create();
