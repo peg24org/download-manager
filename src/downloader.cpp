@@ -59,7 +59,12 @@ void Downloader::run()
   const size_t kFileSize = state_manager->get_file_size();
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
-    //cout << "in loop" << endl;
+    {
+      vector<uint16_t> indices_list = connection_mngr.get_indices_list();
+      for (uint16_t index : indices_list)
+        if (connection_mngr.get_init_stat(index) == false)
+          init_connection(index);
+    }
     check_new_sock_ops();
     connection_mngr.survey_connections();
     int max_fd = set_descriptors();
@@ -139,6 +144,7 @@ void Downloader::init_connections()
   connection_mngr.set_parts_max(number_of_parts);
   connection_mngr.init();
   vector<uint16_t> indices_list = connection_mngr.get_indices_list();
+
   for (uint16_t i: indices_list)
     init_connection(i);
   request_manager->start();
@@ -148,8 +154,6 @@ void Downloader::init_connection(uint16_t index)
 {
     size_t end = connection_mngr.get_end_pos(index);
     size_t current = connection_mngr.get_current_pos(index);
-    size_t start = connection_mngr.get_start_pos(index);
-    cout << "init :" << index << " " << start << " " << current << endl;
     request_manager->add_request(current, end, index);
     connection_mngr.set_init_stat(true, index);
 }
@@ -182,7 +186,6 @@ void Downloader::rate_process(RateParams& rate, size_t recvd_bytes)
 void Downloader::on_dwl_available(uint16_t index,
                                   unique_ptr<SocketOps> sock_ops)
 {
-  cout << __FUNCTION__ << endl;
   lock_guard<mutex> lock(new_available_parts_mutex);
   new_available_parts.push({index, move(sock_ops)});
   if (wait_first_conn_response)

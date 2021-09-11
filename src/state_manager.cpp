@@ -36,7 +36,6 @@ StateManager::StateManager(const string& file_path, size_t chunk_len)
   , total_recvd_bytes(0)
   , chunk_len(chunk_len)
   , chunks_num(0)
-  , inited(false)
   , chunks_num_max(1)
 {
   state_file = make_unique<FileIO>(file_path);
@@ -50,16 +49,14 @@ bool StateManager::state_file_available() const
 
 void StateManager::generate_parts()
 {
-  if (parts.size() >= chunks_num) {
-    cout << "parts size:" << parts.size() << " returning." << endl;
-    return;
-  }
-  for (uint16_t i = 0; i < chunks_num; ++i) {
-    const size_t start = i * chunk_len;
-    const size_t end = i < chunks_num - 1 ? start + chunk_len - 1 : file_size;
-    const size_t& current = start;
-    Chunk new_chunk(start, current, end);
-    parts[i] = new_chunk;
+  if (parts.size() == 0) {
+    for (uint16_t i = 0; i < chunks_num; ++i) {
+      const size_t start = i * chunk_len;
+      const size_t end = i < chunks_num - 1 ? start + chunk_len - 1 : file_size;
+      const size_t& current = start;
+      Chunk new_chunk(start, current, end);
+      parts[i] = new_chunk;
+    }
   }
 }
 
@@ -67,18 +64,21 @@ size_t StateManager::get_chunks_num() const
 {
   return parts.size();
 }
+
 uint16_t StateManager::get_chunks_num_max() const
 {
   return chunks_num_max;
 }
 
-vector<uint16_t> StateManager::get_parts() const
+vector<uint16_t> StateManager::get_parts()
 {
   vector<uint16_t> result;
-  result.resize(parts.size());
-  size_t vec_index = 0;
-  for (const auto& part : parts)
-    result[vec_index++] = part.first;
+  for (const auto& part : parts) {
+    if (result.size() < chunks_num)
+      result.push_back(part.first);
+    else
+      break;
+  }
   return result;
 }
 
@@ -105,7 +105,6 @@ void StateManager::create_new_state(size_t file_size)
   parts.clear();
   this->file_size = file_size;
   state_file->create();
-  inited = true;
 }
 
 void StateManager::set_chunks_num(uint16_t chunks_num)
@@ -157,8 +156,6 @@ void StateManager::retrieve()
     if (temp_chunk.current < temp_chunk.end)
       parts[temp_index] = temp_chunk;
   }
-  initial_index = temp_index;
-  inited = true;
 }
 
 void StateManager::update(size_t index, size_t recvd_bytes)
@@ -168,12 +165,13 @@ void StateManager::update(size_t index, size_t recvd_bytes)
     parts[index].finished = true;
     parts[index].busy = false;
   }
-
   total_recvd_bytes += recvd_bytes;
-
-  remove_finished_parts();
-
   store();
+}
+
+void StateManager::erase_part(uint32_t index)
+{
+  parts.erase(index);
 }
 
 void StateManager::store()
@@ -203,26 +201,18 @@ void StateManager::store()
     memcpy(buffer + buff_pos, reinterpret_cast<char*>(&chunk.second.end), sizeof(size_t));
     buff_pos += sizeof(size_t);
   }
-
   state_file->write(buffer, buff_total_size);
-
   delete[] buffer;
 }
 
 void StateManager::remove_finished_parts()
 {
-  vector<size_t> finished_parts;
+  vector<uint16_t> finished_parts;
 
   for (const auto& part : parts)
-    if (part.second.finished) {
+    if (part.second.finished)
       finished_parts.push_back(part.first);
-    }
 
-  if (finished_parts.size() >= 2) {
-    if (parts[finished_parts[0]].end == parts[finished_parts[1]].start) {
-      parts[finished_parts[0]].end = parts[finished_parts[1]].end;
-      parts[finished_parts[0]].current = parts[finished_parts[1]].current;
-      parts.erase(finished_parts[1]);
-    }
-  }
+  for (uint16_t i : finished_parts)
+    parts.erase(i);
 }

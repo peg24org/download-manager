@@ -70,7 +70,7 @@ class ConnectionManager {
   ConnectionManager(std::shared_ptr<StateManager> state_manager);
   void set_parts_max(uint16_t parts_max);
   void init();
-  std::vector<uint16_t> get_indices_list() const;
+  std::vector<uint16_t> get_indices_list();
   bool& get_header_skipped_stat(uint16_t index);
   SocketOps* get_sock_ops(uint16_t index) const;
   void set_sock_ops(std::unique_ptr<SocketOps> socket_ops, uint16_t index);

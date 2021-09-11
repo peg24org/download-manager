@@ -1,7 +1,6 @@
 #include "https_transceiver.h"
 
 #include <cstring>
-#include <iostream>
 
 #include "https_socket_ops.h"
 
@@ -27,7 +26,6 @@ bool HttpsTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
 
 bool HttpsTransceiver::send(const Buffer& buffer, SocketOps* sock_ops)
 {
-  cout << "#################REQ:" << string(const_cast<Buffer&>(buffer), buffer.length()) << endl;
   bool result = true;
   BIO* bio = dynamic_cast<HttpsSocketOps*>(sock_ops)->get_bio();
   secure_transceiver.send(bio, const_cast<Buffer&>(buffer), buffer.length());

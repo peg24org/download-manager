@@ -5,10 +5,6 @@ using namespace std;
 ConnectionManager::ConnectionManager(shared_ptr<StateManager> state_manager)
   : state_manager(state_manager)
 {
-  cerr << "Constructed....." << endl;
-  cerr << __FILE__ << ":" << __LINE__ << endl;
-  cerr << "Stat file siaz:" << state_manager->get_file_size() << endl;
-  cerr << __FILE__ << ":" << __LINE__ << endl;
 }
 
 void ConnectionManager::set_parts_max(uint16_t parts_max)
@@ -23,8 +19,10 @@ void ConnectionManager::init()
       generate_one_connection(i);
 }
 
-vector<uint16_t> ConnectionManager::get_indices_list() const
+vector<uint16_t> ConnectionManager::get_indices_list()
 {
+  if (connections.size() == 0)
+    init();
   vector<uint16_t> result;
   result.resize(connections.size());
   size_t vector_index = 0;
@@ -77,20 +75,21 @@ void ConnectionManager::set_init_stat(bool init_stat, uint16_t index)
 void ConnectionManager::survey_connections()
 {
   // Remove finished connections
-  vector<size_t> finished_connections;
+  vector<uint16_t> finished_connections;
   for (auto& [index, connection] : connections) {
     const int64_t rem_len = state_manager->get_end_pos(index) -
                             state_manager->get_current_pos(index);
     if ( rem_len <= 0)
       finished_connections.push_back(index);
   }
-  for (size_t index : finished_connections)
+  for (size_t index : finished_connections) {
+    state_manager->erase_part(index);
     connections.erase(index);
+  }
 }
 
 void ConnectionManager::generate_one_connection(uint16_t index)
 {
-  //pair<size_t, Chunk> part = state_manager->get_part();
-  // const size_t start = state_manager->get_start_pos(index);
   connections[index] = Connection();
 }
+
