@@ -47,6 +47,7 @@ void Node::run()
   state_manager = make_shared<StateManager>(paths.second);
   bool state_file_available = state_manager->state_file_available();
   bool main_file_available = file_io->check_existence();
+
   if (resume && state_file_available && main_file_available) { // Resuming download
     state_manager->retrieve();
     file_io->open();
@@ -56,13 +57,11 @@ void Node::run()
     state_manager->create_new_state(file_length);
   }
 
-  if (number_of_parts == 1)
-    state_manager->set_chunk_size(file_length);
+  state_manager->set_chunks_num(number_of_parts);
 
   // Create and register callback
   CallBack callback = bind(&Node::on_data_received_node, this,
                            placeholders::_1);
-
 
   unique_ptr<RequestManager> request_manager;
 

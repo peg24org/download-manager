@@ -1,214 +1,157 @@
 #include <tuple>
 #include <cmath>
 #include <memory>
+#include <limits>
+#include <algorithm>
 #include <exception>
 
 #include <gtest/gtest.h>
 
+#include "units.h"
 #include "file_io.h"
 #include "test_utils.h"
 #include "state_manager.h"
 
 using namespace std;
 
-class StateManagerTestClass : public StateManager
-{
-  public:
-  StateManagerTestClass()
-    : StateManager("null path")
-    {
-      state_file = make_unique<FileIOMock>();
-    }
-
-  void set_raw_stat_data(string data)
-  {
-    state_file->create(data.length());
-    state_file->write(data.c_str(), data.length(), 0);
-  }
-
-  FileIOMock* get_file_io() const
-  {
-    return dynamic_cast<FileIOMock*>(state_file.get());
-  }
-};
-
-class StateManagerTest : public ::testing::Test
+class StateManagerChunkingTest : public ::testing::Test
 {
   protected:
-    void SetUp(size_t file_size = kFileSize)
+    void SetUp(uint16_t number_of_chunks, size_t file_size = kFileSize)
     {
-      state_manager.create_new_state(file_size);
+      state_manager = make_unique<StateManager>("null_file");
+      state_manager->create_new_state(file_size);
+      state_manager->set_chunks_num(number_of_chunks);
+    }
+    void TearDown()
+    {
+      system("rm null_file");
     }
 
-    static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
-    StateManagerTestClass state_manager;
+    static constexpr size_t kFileSize = 4 * pow(2, 30);
+    unique_ptr<StateManager> state_manager;
 };
 
-TEST_F(StateManagerTest, chunks_max_should_be_round_up_float_coefficient_0)
+TEST_F(StateManagerChunkingTest, chunks_number_should_be_non_zero)
 {
-  constexpr double coefficients[] = {12.5, 12.3, 12.8, 12};
-  for (size_t coefficient : coefficients) {
-    state_manager.create_new_state(state_manager.get_chunk_size() * coefficient);
-    EXPECT_EQ(ceil(coefficient), state_manager.get_chunks_max());
-  }
+  static constexpr uint16_t kChunksMax = 21;
+  SetUp(kChunksMax);
+  EXPECT_EQ(kChunksMax, state_manager->get_chunks_num());
 }
 
-TEST_F(StateManagerTest,
-    retrieving_from_non_existing_file_should_throw_exception)
+TEST_F(StateManagerChunkingTest, chunks_number_should_be_less_than_max)
 {
-  state_manager.get_file_io()->set_existence(false);
-  EXPECT_THROW(state_manager.retrieve(), runtime_error);
+  static constexpr uint16_t kChunksMax = 21;
+  SetUp(kChunksMax);
+  EXPECT_LE(state_manager->get_chunks_num(), state_manager->get_chunks_num());
 }
 
-TEST_F(StateManagerTest, set_chunk_size_should_work_properly)
+TEST_F(StateManagerChunkingTest, chunks_number_should_be_equal_to_max)
 {
-  constexpr size_t kNewChunkSize = pow(2, 20) + 1;
-  constexpr size_t kSmallerThanMinimum = 100;
-
-  state_manager.set_chunk_size(kSmallerThanMinimum);
-  EXPECT_NE(kSmallerThanMinimum, state_manager.get_chunk_size());
-
-  state_manager.set_chunk_size(kNewChunkSize);
-  EXPECT_EQ(kNewChunkSize, state_manager.get_chunk_size());
+  static constexpr uint16_t kChunksMax = numeric_limits<uint16_t>::max();
+  SetUp(kChunksMax);
+  EXPECT_EQ(state_manager->get_chunks_num_max(), state_manager->get_chunks_num());
 }
 
-TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size_0)
+TEST_F(StateManagerChunkingTest, chunk_len_should_be_non_negative)
 {
-  size_t chunk_size = state_manager.get_chunk_size();
-  pair<size_t, Chunk> part = state_manager.get_part();
-  size_t part_size = part.second.end - part.second.start;
-  EXPECT_EQ(chunk_size, part_size);
+  static constexpr uint16_t kChunksMax = 21;
+  SetUp(kChunksMax);
+  vector<uint16_t> parts_list = state_manager->get_parts();
+  for (uint16_t part_index : parts_list)
+    EXPECT_NE(state_manager->get_end_pos(part_index) -
+              state_manager->get_start_pos(part_index), 0);
 }
 
-TEST_F(StateManagerTest, size_of_part_should_be_equal_to_current_chunk_size_1)
+TEST_F(StateManagerChunkingTest, chunk_start_pos_should_be_less_than_end_pos)
 {
-  size_t chunk_size = state_manager.get_chunk_size();
-  size_t kNumberOfParts = kFileSize / chunk_size;
-  size_t number_of_parts = 0;
-
-  while (state_manager.part_available()) {
-    pair<size_t, Chunk> part = state_manager.get_part();
-    size_t part_size = part.second.end - part.second.start;
-    EXPECT_EQ(chunk_size, part_size);
-
-    ++number_of_parts;
-  }
-
-  EXPECT_EQ(kNumberOfParts, number_of_parts);
+  static constexpr uint16_t kChunksMax = 21;
+  SetUp(kChunksMax);
+  vector<uint16_t> parts_list = state_manager->get_parts();
+  for (uint16_t part_index : parts_list)
+    EXPECT_LE(state_manager->get_start_pos(part_index),
+              state_manager->get_start_pos(part_index));
 }
 
-TEST_F(StateManagerTest, new_chunk_should_start_from_last_chunk_plus_one)
+TEST_F(StateManagerChunkingTest, chunk_end_pos_should_be_equal_file_size)
 {
-  // -2 for creating non-dividable chunk
-  constexpr size_t kFileSize = pow(2, 30) - 2;
+  static constexpr uint16_t kChunksMax = 1;
+  SetUp(kChunksMax);
+  vector<uint16_t> parts_list = state_manager->get_parts();
+  sort(parts_list.begin(), parts_list.end());
+  size_t last_index = parts_list.at(parts_list.size() - 1);
+  EXPECT_EQ(kFileSize, state_manager->get_end_pos(last_index));
+}
 
-  state_manager.create_new_state(kFileSize);
-  vector<pair<size_t, Chunk>> positions_vecror;
+TEST_F(StateManagerChunkingTest, last_chunk_end_pos_should_be_equal_file_size)
+{
+  static constexpr uint16_t kChunksMax = 4005;
+  SetUp(kChunksMax);
+  vector<uint16_t> parts_list = state_manager->get_parts();
+  sort(parts_list.begin(), parts_list.end());
+  size_t last_index = parts_list.at(parts_list.size() - 1);
+  EXPECT_EQ(kFileSize, state_manager->get_end_pos(last_index));
+}
 
-  while (state_manager.part_available())
-    positions_vecror.push_back(state_manager.get_part());
-
-  for (auto position = positions_vecror.begin(); position != positions_vecror.end(); ++position) {
-    static bool first_position = true;
-    if (!first_position) {
-      auto previous_position = position - 1;
-      size_t end_of_prev_pos = previous_position->second.end + 1;
-      EXPECT_EQ(end_of_prev_pos, position->second.current);
+class StateManagerStoringTest : public ::testing::Test
+{
+  protected:
+    void SetUp(uint16_t number_of_chunks, map<uint16_t, size_t> samples)
+    {
+      StateManager state_manager = StateManager(kFilePath);
+      state_manager.create_new_state(kFileSize);
+      state_manager.set_chunks_num(number_of_chunks);
+      for (const auto sample : samples)
+        state_manager.update(sample.first, sample.second);
     }
-    else
-      first_position = false;
-  }
-  
-  EXPECT_EQ(kFileSize, (positions_vecror.end()-1)->second.end);
-}
-
-TEST_F(StateManagerTest, state_file_available_should_return_correct_value)
-{
-  state_manager.get_file_io()->set_existence(true);
-  EXPECT_TRUE(state_manager.state_file_available());
-
-  state_manager.get_file_io()->set_existence(false);
-  EXPECT_FALSE(state_manager.state_file_available());
-}
-
-void store_fake_data(vector<tuple<size_t, size_t, size_t, size_t>>& data,
-                     FileIOMock* file_io, size_t kFileSize)
-{
-  string state_data;
-  state_data = to_string(kFileSize) + "\n";
-  for (auto datum  : data) {
-    string index = to_string(get<0>(datum));
-    string start = to_string(get<1>(datum));
-    string current = to_string(get<2>(datum));
-    string end = to_string(get<3>(datum));
-
-    state_data += index + " " + start + " " + current + " " + end + "\n";
-  }
-
-  file_io->create(state_data.size());
-  file_io->write(state_data.c_str(), state_data.size());
-  file_io->set_existence(true);
-}
-
-TEST_F(StateManagerTest, retrived_state_file_contents_check_0)
-{
-
-  constexpr size_t kFileSize = 3592673;
-  vector<tuple<size_t, size_t, size_t, size_t>> data = {
-    {0 ,0 ,398088 ,1167557},
-    {1 ,1167558 ,1687398 ,2335114},
-    {2 ,2335115 ,2599139 ,3502673},
-    {3 ,3502673 ,3502828 ,3552673}
-  };
-
-  FileIOMock* file_io = state_manager.get_file_io();
-  store_fake_data(data, file_io, kFileSize);
-  state_manager.retrieve();
-
-  pair<size_t, Chunk> last_part;
-  while(true) {
-    try {
-      last_part = state_manager.get_part();
+    void TearDown()
+    {
+      string rm_command = string("rm ") + kFilePath;
+      system(rm_command.c_str());
     }
-    catch (const runtime_error& e) {
-      break;
-    }
-  }
+    static constexpr char kFilePath[] = ".temp_state";
+    static constexpr size_t kFileSize = 4 * pow(2, 30);  // 1 GB
 
-  auto last_datum = data.end() - 1;
-  EXPECT_EQ(last_part.second.current - 1, get<3>(*last_datum));
-}
+};
 
-TEST_F(StateManagerTest, retrived_state_file_contents_check_1)
+TEST_F(StateManagerStoringTest, retrieved_file_size_should_be_correct)
 {
-  FileIOMock* file_io = state_manager.get_file_io();
-
-  constexpr size_t kFileSize = 3592673;
-  vector<tuple<size_t, size_t, size_t, size_t>> data = {
-    {0 ,0 ,398088 ,1167557},
-    {1 ,1167558 ,1687398 ,2335114},
-    {2 ,2335115 ,2599139 ,3502673},
-    {3 ,3502673 ,3502828 ,3592673}
-  };
-
-  store_fake_data(data, file_io, kFileSize);
-  state_manager.retrieve();
-
-  while(state_manager.part_available()) {
-    pair<size_t, Chunk> part = state_manager.get_part();
-    size_t index = part.first;
-    Chunk& chunk = part.second;
-    EXPECT_EQ(get<2>(data.at(index)), chunk.current);
-  }
+  static constexpr uint16_t kChunksMax = 5;
+  const map<uint16_t, size_t> kSamples = {{0, 1234}};
+  SetUp(kChunksMax, kSamples);
+  StateManager state_manager(kFilePath);
+  EXPECT_EQ(kFileSize, state_manager.get_file_size());
 }
 
-TEST(StateManagerTestChunks, chunk_should_be_available_by_creating_new_state)
+TEST_F(StateManagerStoringTest, retrieved_parts_should_be_correct)
 {
-  static constexpr size_t kFileSize = pow(2, 30);  // 1 GB
-  StateManagerTestClass state_manager;
-  EXPECT_FALSE(state_manager.part_available());
-
-  state_manager.create_new_state(kFileSize);
-  EXPECT_TRUE(state_manager.part_available());
+  static constexpr uint16_t kChunksMax = 3;
+  const map<uint16_t, size_t> kSamples = {
+    {0, 1234},
+    {1, 1345},
+    {2, 1499}};
+  SetUp(kChunksMax, kSamples);
+  StateManager state_manager(kFilePath);
+  vector<uint16_t> parts_list = state_manager.get_parts();
+  EXPECT_EQ(parts_list.size(), kSamples.size());
+  for (uint16_t i : parts_list)
+    EXPECT_EQ(state_manager.get_current_pos(i),
+              kSamples.at(i) + state_manager.get_start_pos(i));
 }
 
+TEST_F(StateManagerStoringTest, total_downloaded_bytes_should_be_correct)
+{
+  static constexpr uint16_t kChunksMax = 3;
+  const map<uint16_t, size_t> kSamples = {
+    {0, 1234},
+    {1, 1345},
+    {2, 1499}};
+  SetUp(kChunksMax, kSamples);
+  StateManager state_manager(kFilePath);
+  vector<uint16_t> parts_list = state_manager.get_parts();
+  EXPECT_EQ(parts_list.size(), kSamples.size());
+  size_t total_bytes = 0;
+  for (auto sample : kSamples)
+    total_bytes += sample.second;
+  EXPECT_EQ(total_bytes, state_manager.get_total_recvd_bytes());
+}

@@ -45,20 +45,17 @@ class Downloader : public Thread {
 
     void set_speed_limit(size_t speed_limit);
 
-    void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
+    //void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
 
     void set_parts(uint16_t parts);
 
   private:
     void run() override;
-
     // Return max_fd
     int set_descriptors();
-
     void receive_from_connection(size_t index, Buffer& buffer);
-
     void init_connections();
-
+    void init_connection(uint16_t index);
     void init_connection(bool schedule = false);
 
     struct RateParams {
@@ -71,10 +68,6 @@ class Downloader : public Thread {
     } rate;
 
     void rate_process(RateParams& rate, size_t recvd_bytes);
-
-    void update_connection_stat(size_t recvd_bytes, size_t index);
-
-    void survey_connections();
 
     // <index, socket_ops object>
     void on_dwl_available(uint16_t index,
@@ -90,20 +83,17 @@ class Downloader : public Thread {
     std::unique_ptr<FileIO> file_io;
     std::mutex new_available_parts_mutex;
     // <index, connection> [index: same as part index]
-    std::map<size_t, Connection> connections;
     std::unique_ptr<Transceiver> transceiver;
     std::atomic<bool> wait_first_conn_response;
     std::shared_ptr<StateManager> state_manager;
     std::unique_ptr<RequestManager> request_manager;
-    // <index, chunk>
-    std::queue<std::pair<size_t, Chunk>> initial_parts;
-
     struct NewAvailPart {
       uint16_t part_index;
       std::unique_ptr<SocketOps> sock_ops;
     };
     // part index, socket
     std::queue<NewAvailPart> new_available_parts;
+    ConnectionManager connection_mngr;
 };
 
 #endif

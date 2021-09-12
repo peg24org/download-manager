@@ -41,7 +41,8 @@ class RequestManager : public Thread
                    std::unique_ptr<Transceiver> transceiver);
     void stop();
     void set_proxy(std::string& host, uint32_t port);
-    void add_request(size_t start_pos, size_t length, uint16_t request_index);
+    //void add_request(size_t start_pos, size_t length, uint16_t request_index);
+    void add_request(size_t start_pos, size_t end_pos, uint16_t request_index);
 
     void register_dwl_notify_cb(DwlAvailNotifyCB dwl_notify_cb);
 
