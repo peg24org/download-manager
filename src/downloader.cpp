@@ -142,7 +142,7 @@ void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
 
 void Downloader::init_connections()
 {
-  connection_mngr.set_parts_max(number_of_parts);
+  //connection_mngr.set_parts_max(number_of_parts);
   connection_mngr.init();
   vector<uint16_t> indices_list = connection_mngr.get_indices_list();
 

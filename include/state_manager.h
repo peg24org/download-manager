@@ -54,7 +54,7 @@ class StateManager
     static constexpr size_t kDefaultMinChunkLen = 10_MB;
     void store();
     void generate_parts();
-    void remove_finished_parts();
+    void set_chunks_max_num();
 
     std::unique_ptr<FileIO> state_file;
     // <index, chunk>

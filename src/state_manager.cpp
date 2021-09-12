@@ -57,7 +57,35 @@ void StateManager::generate_parts()
       Chunk new_chunk(start, current, end);
       parts[i] = new_chunk;
     }
+  } else { // add extra parts.
+    // Find biggest part and divide it.
+    bool splittable_parts_finished  = false;
+    while(!splittable_parts_finished && parts.size() < chunks_num) {
+      splittable_parts_finished = true;
+      for (auto it = parts.begin(); it != parts.end(); ++it) {
+        const uint16_t index = it->first;
+        size_t end_pos = get_end_pos(index);
+        size_t cur_pos = get_current_pos(index);
+        size_t len = end_pos - cur_pos;
+        if (len > kDefaultMinChunkLen * 2) {
+          splittable_parts_finished = false;
+          const size_t new_start = cur_pos + len / 2;
+          const size_t new_end = end_pos;
+          const size_t& new_current = new_start;
+          parts.at(index).end = new_start - 1;
+          Chunk new_chunk(new_start, new_current, new_end);
+          parts[parts.size()] = new_chunk;
+          break;
+        }
+      }
+    }
   }
+}
+
+void StateManager::set_chunks_max_num()
+{
+  chunks_num_max = file_size / chunk_len ;
+  chunks_num_max = chunks_num_max > 0 ? chunks_num_max : 1;
 }
 
 size_t StateManager::get_chunks_num() const
@@ -102,10 +130,9 @@ void StateManager::create_new_state(size_t file_size)
   if (file_size == 0)
     throw runtime_error("StateManager: File size should not be zero.");
 
-  chunks_num_max = file_size / chunk_len ;
-  chunks_num_max = chunks_num_max > 0 ? chunks_num_max : 1;
   parts.clear();
   this->file_size = file_size;
+  set_chunks_max_num();
   state_file->create();
 }
 
@@ -158,6 +185,7 @@ void StateManager::retrieve()
     if (temp_chunk.current < temp_chunk.end)
       parts[temp_index] = temp_chunk;
   }
+  set_chunks_max_num();
 }
 
 void StateManager::update(size_t index, size_t recvd_bytes)
@@ -207,14 +235,3 @@ void StateManager::store()
   delete[] buffer;
 }
 
-void StateManager::remove_finished_parts()
-{
-  vector<uint16_t> finished_parts;
-
-  for (const auto& part : parts)
-    if (part.second.finished)
-      finished_parts.push_back(part.first);
-
-  for (uint16_t i : finished_parts)
-    parts.erase(i);
-}

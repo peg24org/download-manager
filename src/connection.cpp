@@ -44,7 +44,7 @@ SocketOps* ConnectionManager::get_sock_ops(uint16_t index) const
 void ConnectionManager::set_sock_ops(unique_ptr<SocketOps> socket_ops,
                                      uint16_t index)
 {
-  connections[index].socket_ops = move(socket_ops);
+  connections.at(index).socket_ops = move(socket_ops);
 }
 
 ssize_t ConnectionManager::get_end_pos(uint16_t index) const

@@ -1,7 +1,5 @@
 #include "http_request_manager.h"
 
-#include <iostream>
-
 using namespace std;
 
 void HttpRequestManager::send_requests()
