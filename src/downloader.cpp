@@ -20,6 +20,7 @@ Downloader::Downloader(unique_ptr<RequestManager> request_manager,
                        unique_ptr<Transceiver> transceiver)
   : timeout({.tv_sec=0, .tv_usec=100'000})
   , timeout_seconds(5)
+  , pause(false)
   , number_of_parts(1)
   , file_io(move(file_io))
   , transceiver(move(transceiver))
