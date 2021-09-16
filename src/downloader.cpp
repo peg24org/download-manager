@@ -48,6 +48,16 @@ void Downloader::set_parts(uint16_t parts)
   number_of_parts = parts;
 }
 
+void Downloader::pause_download()
+{
+  pause = true;
+}
+
+void Downloader::resume_download()
+{
+  pause = false;
+}
+
 void Downloader::run()
 {
   init_connections();
@@ -60,7 +70,11 @@ void Downloader::run()
   const size_t kFileSize = state_manager->get_file_size();
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
-    {
+    if (pause) {
+      this_thread::sleep_for(milliseconds(200));
+      continue;
+    }
+    { // check connection if not inited.
       vector<uint16_t> indices_list = connection_mngr.get_indices_list();
       for (uint16_t index : indices_list)
         if (connection_mngr.get_init_stat(index) == false)

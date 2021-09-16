@@ -2,6 +2,7 @@
 #define _NODE_H
 
 #include <map>
+#include <memory>
 
 #include "units.h"
 #include "thread.h"
@@ -42,6 +43,10 @@ class Node : public Thread {
      */
     void set_parts(uint16_t parts);
 
+    void pause_download();
+
+    void resume_download();
+
   protected:
     // callback refresh interval in milliseconds
     size_t callback_refresh_interval = 500;
@@ -75,6 +80,7 @@ class Node : public Thread {
     std::string proxy_url;
     size_t speed_limit;
     bool resume;
+    std::unique_ptr<Downloader> downloader;
 };
 
 #endif

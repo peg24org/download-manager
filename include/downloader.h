@@ -2,6 +2,7 @@
 #define _DOWNLOADER_H
 
 #include <map>
+#include <atomic>
 #include <vector>
 #include <functional>
 
@@ -48,6 +49,8 @@ class Downloader : public Thread {
     //void set_download_parts(std::queue<std::pair<size_t, Chunk>> initial_parts);
 
     void set_parts(uint16_t parts);
+    void pause_download();
+    void resume_download();
 
   private:
     void run() override;
@@ -79,6 +82,7 @@ class Downloader : public Thread {
     CallBack callback;
     struct timeval timeout;
     time_t timeout_seconds;
+    std::atomic<bool> pause;
     uint16_t number_of_parts;
     std::unique_ptr<FileIO> file_io;
     std::mutex new_available_parts_mutex;

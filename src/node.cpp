@@ -86,14 +86,14 @@ void Node::run()
       break;
   }
 
-  Downloader downloader(move(request_manager), state_manager, move(file_io),
-                        move(transceiver));
-  downloader.register_callback(callback);
-  downloader.set_parts(number_of_parts);
-  downloader.set_speed_limit(speed_limit);
+  downloader = make_unique<Downloader>(move(request_manager), state_manager,
+                                       move(file_io), move(transceiver));
+  downloader->register_callback(callback);
+  downloader->set_parts(number_of_parts);
+  downloader->set_speed_limit(speed_limit);
 
-  downloader.start();
-  downloader.join();
+  downloader->start();
+  downloader->join();
 }
 
 pair<string, string> Node::get_output_paths(const string& file_name)
@@ -158,6 +158,16 @@ void Node::set_resume(bool resume)
 void Node::set_parts(uint16_t parts)
 {
   number_of_parts = parts;
+}
+
+void Node::pause_download()
+{
+  downloader->pause_download();
+}
+
+void Node::resume_download()
+{
+  downloader->resume_download();
 }
 
 void Node::on_data_received_node(size_t speed)
