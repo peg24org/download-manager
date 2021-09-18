@@ -12,7 +12,6 @@ bool HttpsTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
   ssize_t recvd_bytes = 0;
   SSL* ssl = static_cast<HttpsSocketOps*>(sock_ops)->get_ssl();
   recvd_bytes = secure_transceiver.receive(ssl, buffer, buffer.capacity());
-  string strbuf = string(buffer, recvd_bytes);
 
   if (recvd_bytes >= 0) {
     buffer.set_length(recvd_bytes);
