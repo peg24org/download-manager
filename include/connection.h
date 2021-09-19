@@ -5,8 +5,6 @@
 #include <memory>
 #include <chrono>
 
-#include <openssl/bio.h>
-
 #include "socket_ops.h"
 #include "state_manager.h"
 
@@ -29,8 +27,6 @@ enum class OperationStatus {
 
 struct Connection {
   Connection() : status(OperationStatus::NOT_STARTED)
-    , bio(nullptr)
-    , ssl(nullptr)
     , last_recv_time_point(std::chrono::steady_clock::now())
 //    , http_proxy(nullptr)
     , header_skipped(false)
@@ -49,8 +45,6 @@ struct Connection {
   };
 
   OperationStatus status;
-  BIO* bio;
-  SSL* ssl;
   // Used for http, https and ftp command channel.
   std::unique_ptr<SocketOps> socket_ops;
   // Used for ftp media channel.
