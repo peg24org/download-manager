@@ -67,6 +67,13 @@ bool ConnectionManager::get_init_stat(uint16_t index) const
   return connections.at(index).inited;
 }
 
+void ConnectionManager:: set_error(uint16_t index)
+{
+  set_init_stat(false, index);
+  set_sock_ops(nullptr, index);
+  connections.at(index).header_skipped = false;
+}
+
 void ConnectionManager::set_init_stat(bool init_stat, uint16_t index)
 {
   connections.at(index).inited = init_stat;
@@ -77,6 +84,8 @@ void ConnectionManager::survey_connections()
   // Remove finished connections
   vector<uint16_t> finished_connections;
   for (auto& [index, connection] : connections) {
+    if (connection.inited == false)
+      continue;
     const int64_t rem_len = state_manager->get_end_pos(index) -
                             state_manager->get_current_pos(index);
     if ( rem_len <= 0)

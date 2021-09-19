@@ -71,6 +71,7 @@ void Downloader::run()
   const size_t kFileSize = state_manager->get_file_size();
 
   while (state_manager->get_total_recvd_bytes() < kFileSize) {
+    check_new_sock_ops();
     if (pause) {
       this_thread::sleep_for(milliseconds(200));
       continue;
@@ -81,7 +82,6 @@ void Downloader::run()
         if (connection_mngr.get_init_stat(index) == false)
           init_connection(index);
     }
-    check_new_sock_ops();
     connection_mngr.survey_connections();
     int max_fd = set_descriptors();
     int sel_retval = select(max_fd + 1, &readfds, nullptr, nullptr, &timeout);
@@ -143,15 +143,19 @@ int Downloader::set_descriptors()
   return max_fd;
 }
 
-void Downloader::receive_from_connection(size_t _index, Buffer& buffer)
+void Downloader::receive_from_connection(size_t index, Buffer& buffer)
 {
   buffer.clear();
 
-  SocketOps* sock_ops = connection_mngr.get_sock_ops(_index);
+  SocketOps* sock_ops = connection_mngr.get_sock_ops(index);
   int sock_desc = sock_ops->get_socket_descriptor();
   if (FD_ISSET(sock_desc, &readfds)) {
-    transceiver->receive(buffer, sock_ops,
-                         connection_mngr.get_header_skipped_stat(_index));
+    bool transive_res = transceiver->receive(
+        buffer, sock_ops, connection_mngr.get_header_skipped_stat(index));
+    if (transive_res == false) {
+      buffer.set_length(0);
+      connection_mngr.set_error(index);
+    }
   }
 }
 

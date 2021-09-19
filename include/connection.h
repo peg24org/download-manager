@@ -72,6 +72,7 @@ class ConnectionManager {
   ssize_t get_start_pos(uint16_t index) const;
   ssize_t get_current_pos(uint16_t index) const;
   bool get_init_stat(uint16_t index) const;
+  void set_error(uint16_t index);
   void set_init_stat(bool init_stat, uint16_t index);
   void survey_connections();
 
