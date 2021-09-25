@@ -14,8 +14,8 @@ void FtpRequestManager::send_requests()
   lock_guard<mutex> lock(request_mutex);
   for (auto& [_, request] : requests ) {
     if (!request.sent) {
-      unique_ptr<SocketOps> sock_ops = connection_manager->acquire_sock_ops();
-      initialize(sock_ops.get(), connection_manager->get_path());
+      unique_ptr<SocketOps> sock_ops = info_extractor->acquire_sock_ops();
+      initialize(sock_ops.get(), info_extractor->get_path());
       string ip_port_str = get_data_channel_addr(sock_ops.get());
       pair<string, uint16_t> ip_port = get_ip_port_pair(ip_port_str);
       unique_ptr<SocketOps> data_sock_ops = open_data_channel(ip_port.first,
@@ -93,7 +93,7 @@ bool FtpRequestManager::send_ftp_requst(const Request& request,
   bool result = true;
   const array<Buffer, 2> commands = {
     Buffer(string("REST " + to_string(request.start_pos) + "\r\n")),
-    Buffer(string("RETR " + connection_manager->get_file_name()+ "\r\n"))
+    Buffer(string("RETR " + info_extractor->get_file_name()+ "\r\n"))
   };
 
   for (Buffer command : commands) {

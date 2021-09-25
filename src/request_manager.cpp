@@ -6,9 +6,9 @@
 
 using namespace std;
 
-RequestManager::RequestManager(unique_ptr<InfoExtractor> connection_manager,
+RequestManager::RequestManager(unique_ptr<InfoExtractor> info_extractor,
                                unique_ptr<Transceiver> transceiver)
-  : connection_manager(move(connection_manager))
+  : info_extractor(move(info_extractor))
   , transceiver(move(transceiver))
   , proxy_host("")
   , proxy_port(0)

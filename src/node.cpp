@@ -30,12 +30,12 @@ Node::Node(const string& url, const string& optional_path,
 
 void Node::run()
 {
-  unique_ptr<InfoExtractor> connection_manager;
-  connection_manager = make_unique<InfoExtractor>(url);
+  unique_ptr<InfoExtractor> info_extractor;
+  info_extractor = make_unique<InfoExtractor>(url);
 
   const pair<string, string> paths= get_output_paths(
-      connection_manager->get_file_name());
-  const size_t file_length = connection_manager->get_file_length();
+      info_extractor->get_file_name());
+  const size_t file_length = info_extractor->get_file_length();
   const string& file_name = paths.first;
 
   on_get_file_info(node_index, file_length, file_name);
@@ -65,22 +65,22 @@ void Node::run()
 
   unique_ptr<RequestManager> request_manager;
 
-  Protocol protocol = connection_manager->get_protocol();
+  Protocol protocol = info_extractor->get_protocol();
   unique_ptr<Transceiver> transceiver;
 
   switch (protocol) {
     case Protocol::HTTP:
-      request_manager = make_unique<HttpRequestManager>(move(connection_manager),
+      request_manager = make_unique<HttpRequestManager>(move(info_extractor),
                                                     make_unique<HttpTransceiver>());
       transceiver = make_unique<HttpTransceiver>();
       break;
     case Protocol::HTTPS:
-      request_manager = make_unique<HttpRequestManager>(move(connection_manager),
+      request_manager = make_unique<HttpRequestManager>(move(info_extractor),
                                                     make_unique<HttpsTransceiver>());
       transceiver = make_unique<HttpsTransceiver>();
       break;
     case Protocol::FTP:
-      request_manager = make_unique<FtpRequestManager>(move(connection_manager),
+      request_manager = make_unique<FtpRequestManager>(move(info_extractor),
                                                     make_unique<FtpTransceiver>());
       transceiver = make_unique<FtpTransceiver>();
       break;

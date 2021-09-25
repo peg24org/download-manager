@@ -37,7 +37,7 @@ struct Request
 class RequestManager : public Thread
 {
   public: RequestManager(std::string url);
-    RequestManager(std::unique_ptr<InfoExtractor> connection_manager,
+    RequestManager(std::unique_ptr<InfoExtractor> info_extractor,
                    std::unique_ptr<Transceiver> transceiver);
     void stop();
     void set_proxy(std::string& host, uint32_t port);
@@ -47,7 +47,7 @@ class RequestManager : public Thread
     void register_dwl_notify_cb(DwlAvailNotifyCB dwl_notify_cb);
 
   protected:
-    std::unique_ptr<InfoExtractor> connection_manager;
+    std::unique_ptr<InfoExtractor> info_extractor;
     std::unique_ptr<Transceiver> transceiver;
 
     std::string proxy_host;
