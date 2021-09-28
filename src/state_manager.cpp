@@ -190,11 +190,14 @@ void StateManager::retrieve()
 
 void StateManager::update(size_t index, size_t recvd_bytes)
 {
-  parts[index].current += recvd_bytes;
-  if (parts[index].current >= parts[index].end) {
+  if (parts[index].current + recvd_bytes >= parts[index].end) {
+    recvd_bytes = parts[index].end - parts[index].current + 1;
+    parts[index].current = parts[index].end;
     parts[index].finished = true;
     parts[index].busy = false;
   }
+  else
+    parts[index].current += recvd_bytes;
   total_recvd_bytes += recvd_bytes;
   store();
 }

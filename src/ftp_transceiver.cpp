@@ -37,7 +37,6 @@ bool FtpTransceiver::send_init_commands(SocketOps* sock_ops)
         // RFC9559:
         // A reply is defined to contain the 3-digit code, followed by space.
         // string response_code_str(recv_buffer, 3);
-
         if (strstr(recv_buffer, "\r\n") != nullptr)
           break;
       }
@@ -77,6 +76,13 @@ bool FtpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
     return true;
   else
     return false;
+}
+
+bool FtpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops,
+                             bool& header_skipped)
+{
+  header_skipped = true;
+  return receive(buffer, sock_ops);
 }
 
 bool FtpTransceiver::send(const Buffer& buffer, SocketOps* sock_ops)

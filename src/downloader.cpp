@@ -100,6 +100,11 @@ void Downloader::run()
         receive_from_connection(index, recv_buffer);
         recvd_bytes = recv_buffer.length();
         if (recvd_bytes) {
+          if (state_manager->get_end_pos(index) <
+              state_manager->get_current_pos(index) + recvd_bytes)
+            recvd_bytes = state_manager->get_end_pos(index) -
+                          state_manager->get_current_pos(index) + 1;
+
           // Write data
           size_t pos = connection_mngr.get_current_pos(index);
           file_io->write(recv_buffer, pos);

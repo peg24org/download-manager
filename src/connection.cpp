@@ -88,7 +88,7 @@ void ConnectionManager::survey_connections()
       continue;
     const int64_t rem_len = state_manager->get_end_pos(index) -
                             state_manager->get_current_pos(index);
-    if ( rem_len <= 0)
+    if (rem_len <= 0)
       finished_connections.push_back(index);
   }
   for (size_t index : finished_connections) {
