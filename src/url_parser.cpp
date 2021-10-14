@@ -68,8 +68,10 @@ UrlParser::UrlParameters UrlParser::parse_url()
   if (colon_pos != string::npos && first_slash != string::npos) {
     port_str = url_.substr(colon_pos+1, first_slash-colon_pos-1);
     port = stoi(port_str);
-  }
-  else {
+  } else if (colon_pos != string::npos && first_slash == string::npos) {
+    port_str = url_.substr(colon_pos+1, url_.length()-colon_pos-1);
+    port = stoi(port_str);
+  } else {
     colon_pos = first_slash;
     auto it = kStandardPorts.find(protocol_str);
     if (it != kStandardPorts.end())
@@ -78,11 +80,14 @@ UrlParser::UrlParameters UrlParser::parse_url()
       throw invalid_argument("unknown protocol");
   }
 
-//  if (proxy)
-//    return make_tuple("_", "_", host_name, port, protocol);
   string host_name = url_.substr(0, colon_pos);
-  string file_path = url_.substr(first_slash, last_slash-first_slash+1);
-  string file_name = url_.substr(last_slash+1);
+  string file_path;
+  string file_name;
+
+  if (first_slash != string::npos && last_slash != string::npos) {
+    file_path = url_.substr(first_slash, last_slash-first_slash+1);
+    file_name = url_.substr(last_slash+1);
+  }
 
   return make_tuple(file_path, file_name, host_name, port, protocol);
 }

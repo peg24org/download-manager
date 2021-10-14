@@ -23,6 +23,7 @@ Node::Node(const string& url, const string& optional_path,
   , optional_path(optional_path)
   , number_of_parts(number_of_parts)
   , timeout(timeout)
+  , proxy_url("")
   , resume(false)
 {
   ++node_index;
@@ -31,7 +32,7 @@ Node::Node(const string& url, const string& optional_path,
 void Node::run()
 {
   unique_ptr<InfoExtractor> info_extractor;
-  info_extractor = make_unique<InfoExtractor>(url);
+  info_extractor = make_unique<InfoExtractor>(url, proxy_url);
 
   const pair<string, string> paths= get_output_paths(
       info_extractor->get_file_name());

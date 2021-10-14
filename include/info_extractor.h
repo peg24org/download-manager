@@ -10,7 +10,7 @@
 class InfoExtractor
 {
   public:
-    InfoExtractor(const std::string& url);
+    InfoExtractor(const std::string& url, const std::string& http_proxy_url);
 
     Protocol get_protocol() const;
     std::string get_path() const;
@@ -27,11 +27,14 @@ class InfoExtractor
     std::pair<bool, std::string> check_link();
     std::string get_ip(const std::string& host_name) const;
     size_t get_file_length_ftp(Transceiver* transceiver, SocketOps* socket_ops);
+    std::unique_ptr<SocketOps> connect_to_proxy(const std::string& dest_host,
+                                                uint16_t dest_port);
 
     UrlParser url_parser;
     std::string ip;
     size_t file_length;
     std::unique_ptr<SocketOps> socket_ops;
+    std::string http_proxy_url;
 };
 
 #endif

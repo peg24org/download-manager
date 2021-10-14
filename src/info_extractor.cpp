@@ -14,8 +14,9 @@
 
 using namespace std;
 
-InfoExtractor::InfoExtractor(const string& url)
+InfoExtractor::InfoExtractor(const string& url, const string& http_proxy_url)
   : url_parser(UrlParser(url))
+  , http_proxy_url(http_proxy_url)
 {
   while (true) {
     try {
@@ -78,14 +79,18 @@ unique_ptr<SocketOps> InfoExtractor::get_socket_ops()
   switch (protocol) {
     case Protocol::HTTP:
     case Protocol::FTP:
-      sock_ops = make_unique<SocketOps>(ip, url_parser.get_port());
+      if (http_proxy_url.empty() == false)
+        sock_ops = connect_to_proxy(ip, url_parser.get_port());
+      else {
+        sock_ops = make_unique<SocketOps>(ip, url_parser.get_port());
+        sock_ops->connect();
+      }
       break;
     case Protocol::HTTPS:
       sock_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port(),
                                              get_host_name());
       break;
   }
-  sock_ops->connect();
 
   return sock_ops;
 }
@@ -181,9 +186,37 @@ size_t InfoExtractor::get_file_length_ftp(Transceiver* transceiver,
       cerr << "Ftp receive error " << endl;
 
   string response(recv_buffer, recv_buffer.length());
-  const string size_str = response.substr(response.find(' '), response.length());
+  const string size_str = response.substr(response.find(' '),
+                                          response.length());
   const size_t kFileSize = stoi(size_str);
 
   return kFileSize;
 }
 
+unique_ptr<SocketOps> InfoExtractor::connect_to_proxy(const string& dest_host,
+                                                      uint16_t dest_port)
+{
+  UrlParser proxy_url_parser(http_proxy_url);
+  const string proxy_ip = proxy_url_parser.get_host_name();//get_ip(http_proxy_url);
+  const uint16_t proxy_port = proxy_url_parser.get_port();
+  unique_ptr<SocketOps> proxy_sock_ops = make_unique<SocketOps>("127.0.0.1",
+                                                                8080);
+  const string proxy_connection_request =
+    "CONNECT " + dest_host + ":" + to_string(dest_port) + " HTTP/1.0\r\n\r\n";
+  HttpTransceiver proxy_transceiver;
+
+  proxy_sock_ops->connect();
+  Buffer proxy_req(proxy_connection_request);
+  if (!proxy_transceiver.send(proxy_req, proxy_sock_ops.get()))
+    throw runtime_error(string("sending request failed, ") + __FUNCTION__);
+  Buffer recvd_header;
+  PatternFinder pattern_finder;
+  while (true) {
+    if (!proxy_transceiver.receive(recvd_header, proxy_sock_ops.get()))
+      throw runtime_error(string("receiving failed, ") + __FUNCTION__);
+    if (pattern_finder.find_http_header_delimiter(recvd_header) > 0)
+      break;
+  }
+
+  return proxy_sock_ops;
+}
