@@ -89,6 +89,7 @@ unique_ptr<SocketOps> InfoExtractor::get_socket_ops()
     case Protocol::HTTPS:
       sock_ops = make_unique<HttpsSocketOps>(ip, url_parser.get_port(),
                                              get_host_name());
+      sock_ops->connect();
       break;
   }
 
