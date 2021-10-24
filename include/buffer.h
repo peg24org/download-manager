@@ -31,7 +31,6 @@ class Buffer
      */
     operator char*();
 
-    // TODO: implement << operator for Buffer
     // TODO: implement << operator for size_t
     // Caution: always gets null terminated c-string.
     Buffer& operator<<(const char* input);
@@ -41,6 +40,8 @@ class Buffer
     Buffer& operator<<(char input);
 
     Buffer& operator<<(int input);
+
+    Buffer& operator<<(Buffer& input);
 
     /**
      * Resizes the buffer capacity.
@@ -79,8 +80,6 @@ class Buffer
     // Clears buffer, set contents to null and length to 0.
     void deep_clear() noexcept;
 
-    Buffer& seek(size_t position);
-
     // Default capacity of buffer.
     constexpr static size_t kDefaultCapacity = 40 * 1024;
 
@@ -90,7 +89,6 @@ class Buffer
     size_t buffer_length;
     size_t buffer_capacity;
     std::unique_ptr<char[]> buffer;
-    size_t index_position;
 };
 
 #endif
