@@ -135,18 +135,16 @@ pair<bool, string> InfoExtractor::check_link()
   if (!transceiver->send(request, socket_ops.get()))
     throw runtime_error(string("sending request failed, ") + __FUNCTION__);
   Buffer recvd_header;
-
   PatternFinder pattern_finder;
   while (true) {
-   // if (!transceiver->receive(recvd_header.seek(recvd_header.length()),
-   //                           socket_ops)) {
-    if (!transceiver->receive(recvd_header, socket_ops.get())) {
+    Buffer temp_recv_buffer;
+    if (!transceiver->receive(temp_recv_buffer, socket_ops.get())) {
       throw runtime_error(string("receiving failed, ") + __FUNCTION__);
     }
+    recvd_header << temp_recv_buffer;
     if (pattern_finder.find_http_header_delimiter(recvd_header) > 0)
       break;
   }
-
   // Check header
   pair<bool, string> redirection;
   // Check redirection
@@ -198,14 +196,13 @@ unique_ptr<SocketOps> InfoExtractor::connect_to_proxy(const string& dest_host,
                                                       uint16_t dest_port)
 {
   UrlParser proxy_url_parser(http_proxy_url);
-  const string proxy_ip = proxy_url_parser.get_host_name();//get_ip(http_proxy_url);
+  const string proxy_ip = proxy_url_parser.get_host_name();
   const uint16_t proxy_port = proxy_url_parser.get_port();
-  unique_ptr<SocketOps> proxy_sock_ops = make_unique<SocketOps>("127.0.0.1",
-                                                                8080);
+  unique_ptr<SocketOps> proxy_sock_ops = make_unique<SocketOps>(proxy_ip,
+                                                                proxy_port);
   const string proxy_connection_request =
-    "CONNECT " + dest_host + ":" + to_string(dest_port) + " HTTP/1.0\r\n\r\n";
+    "CONNECT " + dest_host + ":" + to_string(dest_port) + " HTTP/1.1\r\n\r\n";
   HttpTransceiver proxy_transceiver;
-
   proxy_sock_ops->connect();
   Buffer proxy_req(proxy_connection_request);
   if (!proxy_transceiver.send(proxy_req, proxy_sock_ops.get()))
@@ -213,8 +210,10 @@ unique_ptr<SocketOps> InfoExtractor::connect_to_proxy(const string& dest_host,
   Buffer recvd_header;
   PatternFinder pattern_finder;
   while (true) {
-    if (!proxy_transceiver.receive(recvd_header, proxy_sock_ops.get()))
+    Buffer temp_recv_buffer;
+    if (!proxy_transceiver.receive(temp_recv_buffer, proxy_sock_ops.get()))
       throw runtime_error(string("receiving failed, ") + __FUNCTION__);
+    recvd_header << temp_recv_buffer;
     if (pattern_finder.find_http_header_delimiter(recvd_header) > 0)
       break;
   }
