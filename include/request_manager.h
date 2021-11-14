@@ -27,6 +27,11 @@ struct Request
     , sent(false)
   {
   }
+  Request() : socket(0), end_pos(0), start_pos(0), request_index(0)
+            , sent(false)
+  {
+  }
+
   int socket;
   size_t end_pos;
   size_t start_pos;
