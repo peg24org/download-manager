@@ -89,8 +89,7 @@ ssize_t HttpTransceiver::get_header_terminator_pos(const char* buffer,
 bool HttpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
 {
   ssize_t recvd_bytes = 0;
-  recvd_bytes = plain_transceiver.receive(buffer,
-                                          buffer.capacity(),
+  recvd_bytes = plain_transceiver.receive(buffer, buffer.capacity(),
                                           sock_ops->get_socket_descriptor());
   buffer.set_length(recvd_bytes);
 
