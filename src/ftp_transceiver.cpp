@@ -78,13 +78,6 @@ bool FtpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops)
     return false;
 }
 
-bool FtpTransceiver::receive(Buffer& buffer, SocketOps* sock_ops,
-                             bool& header_skipped)
-{
-  header_skipped = true;
-  return receive(buffer, sock_ops);
-}
-
 bool FtpTransceiver::send(const Buffer& buffer, SocketOps* sock_ops)
 {
   bool result = false;

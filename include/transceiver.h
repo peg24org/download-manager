@@ -10,8 +10,6 @@ class Transceiver
   public:
   virtual bool receive(Buffer& buffer, Connection& connection) = 0;
   virtual bool receive(Buffer& buffer, SocketOps* sock_ops) = 0;
-  virtual bool receive(Buffer& buffer, SocketOps* sock_ops,
-                       bool& header_skipped) = 0;
   virtual bool send(const Buffer& buffer, Connection& socket_ops) = 0;
   virtual bool send(const Buffer& buffer, SocketOps* sock_ops) = 0;
 };

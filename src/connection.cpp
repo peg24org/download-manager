@@ -31,11 +31,6 @@ vector<uint16_t> ConnectionManager::get_indices_list()
   return result;
 }
 
-bool& ConnectionManager::get_header_skipped_stat(uint16_t index)
-{
-  return connections.at(index).header_skipped;
-}
-
 SocketOps* ConnectionManager::get_sock_ops(uint16_t index) const
 {
   return connections.at(index).socket_ops.get();
@@ -71,7 +66,6 @@ void ConnectionManager:: set_error(uint16_t index)
 {
   set_init_stat(false, index);
   set_sock_ops(nullptr, index);
-  connections.at(index).header_skipped = false;
 }
 
 void ConnectionManager::set_init_stat(bool init_stat, uint16_t index)

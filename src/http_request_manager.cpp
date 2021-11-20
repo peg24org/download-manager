@@ -24,8 +24,7 @@ void HttpRequestManager::send_requests()
     Buffer header_buffer;
     while(true) {
       Buffer temp_buffer(1);
-      bool header_skipped = true;
-      if (transceiver->receive(temp_buffer, sock_ops.get(), header_skipped)) {
+      if (transceiver->receive(temp_buffer, sock_ops.get())) {
         header_buffer << temp_buffer;
         PatternFinder pattern_finder;
         if (pattern_finder.find_http_header_delimiter(header_buffer) > 0) {
