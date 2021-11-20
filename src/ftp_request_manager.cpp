@@ -11,19 +11,23 @@ using namespace std;
 
 void FtpRequestManager::send_requests()
 {
-  lock_guard<mutex> lock(request_mutex);
-  for (auto& [_, request] : requests ) {
-    if (!request.sent) {
-      unique_ptr<SocketOps> sock_ops = info_extractor->acquire_sock_ops();
-      initialize(sock_ops.get(), info_extractor->get_path());
-      string ip_port_str = get_data_channel_addr(sock_ops.get());
-      pair<string, uint16_t> ip_port = get_ip_port_pair(ip_port_str);
-      unique_ptr<SocketOps> data_sock_ops = open_data_channel(ip_port.first,
-                                                              ip_port.second);
-      request.sent = send_ftp_requst(request, sock_ops.get());
-      notify_dwl_available(request.request_index, move(data_sock_ops));
-    }
+  Request request;
+  {
+    if (requests.size() == 0)
+      return;
+    lock_guard<mutex> lock(request_mutex);
+    request = requests.begin()->second;;
+    requests.erase(requests.begin());
   }
+
+  unique_ptr<SocketOps> sock_ops = info_extractor->acquire_sock_ops();
+  initialize(sock_ops.get(), info_extractor->get_path());
+  string ip_port_str = get_data_channel_addr(sock_ops.get());
+  pair<string, uint16_t> ip_port = get_ip_port_pair(ip_port_str);
+  unique_ptr<SocketOps> data_sock_ops = open_data_channel(ip_port.first,
+                                                          ip_port.second);
+  if (send_ftp_requst(request, sock_ops.get()))
+    notify_dwl_available(request.request_index, move(data_sock_ops));
 }
 
 string FtpRequestManager::get_data_channel_addr(SocketOps* sock_ops)
@@ -99,6 +103,11 @@ bool FtpRequestManager::send_ftp_requst(const Request& request,
   for (Buffer command : commands) {
     pair<bool, string> response = send_ftp_command(command, sock_ops);
     result &= response.first;
+    const uint16_t kResponseCode = stoi(response.second.substr(0, 3));
+    static constexpr uint16_t kFileStatOk = 150;
+    static constexpr uint16_t kReqPosAcceppted = 350;
+    if (kResponseCode != kFileStatOk && kResponseCode != kReqPosAcceppted)
+      result = false;
   }
   return result;
 }
