@@ -29,7 +29,6 @@ struct Connection {
   Connection() : status(OperationStatus::NOT_STARTED)
     , last_recv_time_point(std::chrono::steady_clock::now())
 //    , http_proxy(nullptr)
-    , header_skipped(false)
     , inited(false)
     , request_sent(false)
     , scheduled(false)
@@ -52,7 +51,6 @@ struct Connection {
   std::chrono::steady_clock::time_point last_recv_time_point;
   std::string temp_http_header;
   //std::unique_ptr<HttpProxy> http_proxy;
-  bool header_skipped;
   bool inited;
   bool request_sent;
   bool scheduled;
@@ -65,7 +63,6 @@ class ConnectionManager {
   void set_parts_max(uint16_t parts_max);
   void init();
   std::vector<uint16_t> get_indices_list();
-  bool& get_header_skipped_stat(uint16_t index);
   SocketOps* get_sock_ops(uint16_t index) const;
   void set_sock_ops(std::unique_ptr<SocketOps> socket_ops, uint16_t index);
   ssize_t get_end_pos(uint16_t index) const;

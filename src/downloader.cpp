@@ -155,9 +155,8 @@ void Downloader::receive_from_connection(size_t index, Buffer& buffer)
   SocketOps* sock_ops = connection_mngr.get_sock_ops(index);
   int sock_desc = sock_ops->get_socket_descriptor();
   if (FD_ISSET(sock_desc, &readfds)) {
-    bool transive_res = transceiver->receive(
-        buffer, sock_ops, connection_mngr.get_header_skipped_stat(index));
-    if (transive_res == false) {
+    const bool recvd = transceiver->receive(buffer, sock_ops);
+    if (recvd == false) {
       buffer.set_length(0);
       connection_mngr.set_error(index);
     }

@@ -12,8 +12,6 @@ class HttpTransceiver : public Transceiver
     virtual bool receive(Buffer& buffer, SocketOps* sock_ops) override;
     virtual bool send(const Buffer& buffer, Connection& connection) override;
     virtual bool send(const Buffer& buffer, SocketOps* sock_ops) override;
-    virtual bool receive(Buffer& buffer, SocketOps* sock_ops,
-                         bool& header_skipped) override;
 
   protected:
     static constexpr char kHeaderTerminator[] = "\r\n\r\n";

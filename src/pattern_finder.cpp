@@ -3,18 +3,22 @@
 #include <regex>
 #include <cstring>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
 size_t PatternFinder::find_http_header_delimiter(const Buffer& buffer)
 {
-  size_t result = 0;
   static constexpr char kHeaderDelimiter[] = "\r\n\r\n";
-  char* buffer_str = const_cast<Buffer&>(buffer);
-  const char* pos = strstr(buffer_str, kHeaderDelimiter);
-  if (pos != nullptr)
-    result = pos - buffer_str;
-
+  size_t result = 0;
+  if (buffer.length() < strlen(kHeaderDelimiter))
+    return result;
+  else {
+    char* buffer_str = const_cast<Buffer&>(buffer);
+    const char* pos = strstr(buffer_str, kHeaderDelimiter);
+    if (pos != nullptr)
+      result = pos - buffer_str;
+  }
   return result;
 }
 

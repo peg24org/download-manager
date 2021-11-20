@@ -10,8 +10,6 @@ class FtpTransceiver : public Transceiver
   public:
     virtual bool receive(Buffer& buffer, Connection& connection) override;
     virtual bool receive(Buffer& buffer, SocketOps* sock_ops) override;
-    bool receive(Buffer& buffer, SocketOps* sock_ops,
-                 bool& header_skipped) override;
     virtual bool send(const Buffer& buffer, Connection& connection) override;
     virtual bool send(const Buffer& buffer, SocketOps* sock_ops) override;
     bool send_init_commands(SocketOps* sock_ops);
