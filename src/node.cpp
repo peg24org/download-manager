@@ -64,31 +64,10 @@ void Node::run()
   CallBack callback = bind(&Node::on_data_received_node, this,
                            placeholders::_1);
 
-  unique_ptr<RequestManager> request_manager;
-
   Protocol protocol = info_extractor->get_protocol();
-  unique_ptr<Transceiver> transceiver;
 
-  switch (protocol) {
-    case Protocol::HTTP:
-      request_manager = make_unique<HttpRequestManager>(move(info_extractor),
-                                                    make_unique<HttpTransceiver>());
-      transceiver = make_unique<HttpTransceiver>();
-      break;
-    case Protocol::HTTPS:
-      request_manager = make_unique<HttpRequestManager>(move(info_extractor),
-                                                    make_unique<HttpsTransceiver>());
-      transceiver = make_unique<HttpsTransceiver>();
-      break;
-    case Protocol::FTP:
-      request_manager = make_unique<FtpRequestManager>(move(info_extractor),
-                                                    make_unique<FtpTransceiver>());
-      transceiver = make_unique<FtpTransceiver>();
-      break;
-  }
-
-  downloader = make_unique<Downloader>(move(request_manager), state_manager,
-                                       move(file_io), move(transceiver));
+  downloader = Downloader::get_downloader(protocol, move(info_extractor),
+                                          state_manager, move(file_io));
   downloader->register_callback(callback);
   downloader->set_parts(number_of_parts);
   downloader->set_speed_limit(speed_limit);

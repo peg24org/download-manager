@@ -24,11 +24,6 @@ class Downloader : public Thread {
   public:
     const static std::string HTTP_HEADER;
 
-    Downloader(std::unique_ptr<RequestManager> request_manager,
-               std::shared_ptr<StateManager> state_manager,
-               std::unique_ptr<FileIO> file_io,
-               std::unique_ptr<Transceiver> transceiver);
-
     /**
      * Check the size of file and redirection
      *
@@ -51,8 +46,15 @@ class Downloader : public Thread {
     void set_parts(uint16_t parts);
     void pause_download();
     void resume_download();
+    static std::unique_ptr<Downloader> get_downloader(
+        Protocol, std::unique_ptr<InfoExtractor>, std::shared_ptr<StateManager>,
+        std::unique_ptr<FileIO>);
 
   private:
+    Downloader(std::unique_ptr<RequestManager> request_manager,
+               std::shared_ptr<StateManager> state_manager,
+               std::unique_ptr<FileIO> file_io,
+               std::unique_ptr<Transceiver> transceiver);
     void run() override;
     // Return max_fd
     int set_descriptors();

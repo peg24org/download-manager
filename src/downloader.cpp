@@ -7,6 +7,12 @@
 #include "buffer.h"
 #include "downloader.h"
 #include "request_manager.h"
+#include "info_extractor.h"
+#include "ftp_request_manager.h"
+#include "http_request_manager.h"
+#include "ftp_transceiver.h"
+#include "http_transceiver.h"
+#include "https_transceiver.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -225,5 +231,34 @@ void Downloader::check_new_sock_ops()
     connection_mngr.set_sock_ops(move(new_available_part.sock_ops), index);
     new_available_parts.pop();
   }
+}
+
+unique_ptr<Downloader> Downloader::get_downloader(
+    Protocol protocol, unique_ptr<InfoExtractor> info_extractor,
+    shared_ptr<StateManager> state_manager, unique_ptr<FileIO> file_io)
+{
+  unique_ptr<Transceiver> transceiver;
+  unique_ptr<RequestManager> request_manager;
+  switch (protocol) {
+    case Protocol::HTTP:
+      request_manager = make_unique<HttpRequestManager>(
+          move(info_extractor), make_unique<HttpTransceiver>());
+      transceiver = make_unique<HttpTransceiver>();
+      break;
+    case Protocol::HTTPS:
+      request_manager = make_unique<HttpRequestManager>(
+          move(info_extractor), make_unique<HttpsTransceiver>());
+      transceiver = make_unique<HttpsTransceiver>();
+      break;
+    case Protocol::FTP:
+      request_manager = make_unique<FtpRequestManager>(
+          move(info_extractor), make_unique<FtpTransceiver>());
+      transceiver = make_unique<FtpTransceiver>();
+      break;
+  }
+  return unique_ptr<Downloader>(new Downloader(move(request_manager),
+                                               state_manager,
+                                               move(file_io),
+                                               move(transceiver)));
 }
 
